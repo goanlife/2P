@@ -865,3 +865,152 @@ input::placeholder { color: var(--text-3); }
     to   { transform: translateY(0); }
   }
 }
+
+/* ─── Temi colore ─────────────────────────────────────────────────────────
+   Applicati via data-theme="" sul <html>
+   Sovrascrivono le variabili :root
+───────────────────────────────────────────────────────────────────────── */
+
+/* TEMA 1: Navy (default — industrial scuro) */
+[data-theme="navy"] {
+  --navy:       #0D1B2A;
+  --navy-2:     #152232;
+  --navy-3:     #1C2E40;
+  --navy-4:     #243548;
+  --amber:      #F59E0B;
+  --amber-glow: #FCD34D;
+  --slate:      #8BA3B8;
+  --topbar-bg:  var(--navy);
+  --accent:     #F59E0B;
+  --accent-txt: #0D1B2A;
+}
+
+/* TEMA 2: Slate — grigio freddo professionale */
+[data-theme="slate"] {
+  --navy:       #1E293B;
+  --navy-2:     #263548;
+  --navy-3:     #2D3F55;
+  --navy-4:     #374960;
+  --amber:      #6366F1;
+  --amber-glow: #818CF8;
+  --slate:      #94A3B8;
+  --topbar-bg:  var(--navy);
+  --accent:     #6366F1;
+  --accent-txt: white;
+}
+
+/* TEMA 3: Forest — verde bosco */
+[data-theme="forest"] {
+  --navy:       #052E16;
+  --navy-2:     #0A3D20;
+  --navy-3:     #10512B;
+  --navy-4:     #166534;
+  --amber:      #86EFAC;
+  --amber-glow: #BBF7D0;
+  --slate:      #6EE7B7;
+  --topbar-bg:  var(--navy);
+  --accent:     #22C55E;
+  --accent-txt: #052E16;
+}
+
+/* TEMA 4: Sunset — caldo arancione/rosso */
+[data-theme="sunset"] {
+  --navy:       #431407;
+  --navy-2:     #5C1C0A;
+  --navy-3:     #7C2510;
+  --navy-4:     #9A2E14;
+  --amber:      #FB923C;
+  --amber-glow: #FDBA74;
+  --slate:      #FCA87A;
+  --topbar-bg:  var(--navy);
+  --accent:     #F97316;
+  --accent-txt: white;
+}
+
+/* TEMA 5: Ocean — teal/azzurro */
+[data-theme="ocean"] {
+  --navy:       #0C4A6E;
+  --navy-2:     #0E5A85;
+  --navy-3:     #126B9E;
+  --navy-4:     #1878AF;
+  --amber:      #38BDF8;
+  --amber-glow: #7DD3FC;
+  --slate:      #BAE6FD;
+  --topbar-bg:  var(--navy);
+  --accent:     #0EA5E9;
+  --accent-txt: white;
+}
+
+/* Aggiorna tutti gli elementi che usano --amber e --navy per tema */
+[data-theme="slate"] .topbar-logo-icon,
+[data-theme="forest"] .topbar-logo-icon,
+[data-theme="sunset"] .topbar-logo-icon,
+[data-theme="ocean"] .topbar-logo-icon {
+  background: var(--accent);
+  color: var(--accent-txt);
+}
+[data-theme="slate"] .btn-new,
+[data-theme="forest"] .btn-new,
+[data-theme="sunset"] .btn-new,
+[data-theme="ocean"] .btn-new {
+  background: var(--accent);
+  color: var(--accent-txt);
+  border-color: var(--accent);
+}
+[data-theme="slate"] .nav-btn.active,
+[data-theme="forest"] .nav-btn.active,
+[data-theme="sunset"] .nav-btn.active,
+[data-theme="ocean"] .nav-btn.active {
+  color: var(--amber);
+  background: rgba(255,255,255,.08);
+}
+[data-theme="slate"] .nav-btn.active::after,
+[data-theme="forest"] .nav-btn.active::after,
+[data-theme="sunset"] .nav-btn.active::after,
+[data-theme="ocean"] .nav-btn.active::after {
+  background: var(--amber);
+}
+[data-theme="slate"] .bottom-nav-btn.active,
+[data-theme="forest"] .bottom-nav-btn.active,
+[data-theme="sunset"] .bottom-nav-btn.active,
+[data-theme="ocean"] .bottom-nav-btn.active {
+  color: var(--amber);
+}
+[data-theme="slate"] input:focus,
+[data-theme="forest"] input:focus,
+[data-theme="sunset"] input:focus,
+[data-theme="ocean"] input:focus,
+[data-theme="slate"] select:focus,
+[data-theme="forest"] select:focus,
+[data-theme="sunset"] select:focus,
+[data-theme="ocean"] select:focus,
+[data-theme="slate"] textarea:focus,
+[data-theme="forest"] textarea:focus,
+[data-theme="sunset"] textarea:focus,
+[data-theme="ocean"] textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+/* Selettore tema UI */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+.theme-swatch {
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all .15s;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+}
+.theme-swatch:hover { transform: scale(1.05); }
+.theme-swatch.selected { border-color: var(--text-1); box-shadow: 0 0 0 2px var(--text-1); }
+.theme-swatch-top { flex: 1; }
+.theme-swatch-bot { height: 10px; }
+.theme-swatch-label { font-size: 10px; font-weight: 600; text-align: center; margin-top: 4px; color: var(--text-2); }

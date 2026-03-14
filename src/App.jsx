@@ -44,7 +44,7 @@ const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, prio
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo });
-const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore" });
+const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy" });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
 const mapGOp    = r => ({ id:r.id, gruppoId:r.gruppo_id, operatoreId:r.operatore_id });
@@ -286,11 +286,12 @@ function VistaCliente({ operatore, clienti, assets, manutenzioni, piani, siti, o
 
 // ─── Modal Utente (ex Operatore) ──────────────────────────────────────────
 function ModalUtente({ ini, onClose, onSalva }) {
-  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore"});
+  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore",email:"",tema:"navy"});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
     <Modal title={ini?"Modifica utente":"Nuovo utente"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveLabel={ini?"Aggiorna":"Aggiungi"}>
       <Field label="Nome e cognome *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Es. Mario Rossi..." style={{width:"100%"}} /></Field>
+      <Field label="Email (per accesso app)"><input type="email" value={f.email||""} onChange={e=>s("email",e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} /></Field>
       <Field label="Tipologia utente *">
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           {["fornitore","cliente","interno"].map(t=>{
@@ -319,6 +320,9 @@ function ModalUtente({ ini, onClose, onSalva }) {
           </div>
         </Field>
       </div>
+      <Field label="Tema colore preferito">
+        <SelettoreTema value={f.tema||"navy"} onChange={v=>s("tema",v)} />
+      </Field>
     </Modal>
   );
 }
@@ -719,9 +723,10 @@ function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel })
 }
 
 // ─── Gestione Utenti ──────────────────────────────────────────────────────
-function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, onSaveSiti }) {
+function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, onSaveSiti, onCreaAccesso }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
+  const [accessoModal,setAccessoModal]=useState(null);
   const [filtroTipo,setFiltroTipo]=useState("tutti");
   const assets=[];// passed through but not needed here
   const filtrati=useMemo(()=>operatori.filter(o=>filtroTipo==="tutti"||o.tipo===filtroTipo),[operatori,filtroTipo]);
@@ -808,12 +813,36 @@ function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, on
               {op.tipo!=="cliente"&&att.length>2&&<div style={{fontSize:11,color:"var(--text-3)",textAlign:"center",fontWeight:500}}>+{att.length-2} altre attività</div>}
               {op.tipo!=="cliente"&&att.length===0&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Nessuna attività attiva</div>}
 
+              {/* Tema badge */}
+              {op.tema&&op.tema!=="navy"&&(
+                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,padding:"6px 10px",borderRadius:"var(--radius-sm)",background:"var(--surface-2)",border:"1px solid var(--border)"}}>
+                  {TEMI.find(t=>t.id===op.tema)&&(
+                    <>
+                      <div style={{width:16,height:16,borderRadius:3,background:TEMI.find(t=>t.id===op.tema).top,flexShrink:0}} />
+                      <div style={{width:8,height:16,borderRadius:2,background:TEMI.find(t=>t.id===op.tema).bot,flexShrink:0}} />
+                      <span style={{fontSize:11.5,fontWeight:600,color:"var(--text-2)"}}>Tema: {TEMI.find(t=>t.id===op.tema).nome}</span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Stato accesso */}
+              <div style={{marginBottom:10,padding:"7px 10px",borderRadius:"var(--radius-sm)",background:op.email?"#ECFDF5":"var(--surface-2)",border:`1px solid ${op.email?"#A7F3D0":"var(--border)"}`,fontSize:12}}>
+                {op.email
+                  ? <span style={{color:"#065F46",fontWeight:500}}>✅ Accesso attivo — {op.email}</span>
+                  : <span style={{color:"var(--text-3)"}}>⭕ Nessun accesso configurato</span>
+                }
+              </div>
+
               {/* Azioni specifiche per tipo */}
               <div style={{borderTop:"1px solid var(--border)",paddingTop:10,marginTop:6,display:"flex",gap:6,flexWrap:"wrap"}}>
                 {op.tipo==="cliente"&&<>
                   <button className="btn-sm btn-green-outline" style={{flex:1}} onClick={()=>setSitiModal(op)}>🔗 Gestisci siti</button>
                   <button className="btn-sm" style={{flex:1,background:"#EEEDFE",color:"#4F46E5",borderColor:"#C4B5FD"}} onClick={()=>setVistaModal(op)}>👁 Anteprima vista</button>
                 </>}
+                <button className="btn-sm" style={{flex:1,background:"#FFF7ED",color:"#C2410C",borderColor:"#FED7AA",fontWeight:600}} onClick={()=>setAccessoModal(op)}>
+                  🔑 {op.email?"Modifica accesso":"Crea accesso"}
+                </button>
               </div>
             </div>
           );
@@ -823,7 +852,8 @@ function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, on
 
       {showM&&<ModalUtente ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
       {sitiModal&&<ModalSitiCliente operatore={sitiModal} clienti={clienti} siti={siti} onClose={()=>setSitiModal(null)} onSave={onSaveSiti} />}
-      {vistaModal&&<VistaCliente operatore={vistaModal} clienti={clienti} assets={assets} manutenzioni={man} piani={[]} siti={siti} onClose={()=>setVistaModal(null)} />}
+      {vistaModal&&<VistaCliente operatore={vistaModal} clienti={clienti} assets={[]} manutenzioni={man} piani={[]} siti={siti} onClose={()=>setVistaModal(null)} />}
+      {accessoModal&&<ModalCreaAccesso operatore={accessoModal} onClose={()=>setAccessoModal(null)} onSuccess={onCreaAccesso} />}
     </div>
   );
 }
@@ -1071,6 +1101,141 @@ function GestioneGruppi({ gruppi, operatori, clienti, man, gOps, gSiti, onAgg, o
 }
 
 
+
+// ─── Temi ─────────────────────────────────────────────────────────────────
+const TEMI = [
+  { id:"navy",   nome:"Navy",   top:"#0D1B2A", bot:"#F59E0B", desc:"Industrial scuro" },
+  { id:"slate",  nome:"Slate",  top:"#1E293B", bot:"#6366F1", desc:"Grigio professionale" },
+  { id:"forest", nome:"Forest", top:"#052E16", bot:"#22C55E", desc:"Verde bosco" },
+  { id:"sunset", nome:"Sunset", top:"#431407", bot:"#F97316", desc:"Caldo arancione" },
+  { id:"ocean",  nome:"Ocean",  top:"#0C4A6E", bot:"#0EA5E9", desc:"Azzurro oceano" },
+];
+
+function applyTheme(tema) {
+  document.documentElement.setAttribute("data-theme", tema||"navy");
+}
+
+// ─── Selettore tema ────────────────────────────────────────────────────────
+function SelettoreTema({ value, onChange }) {
+  return (
+    <div>
+      <div className="theme-grid">
+        {TEMI.map(t=>(
+          <div key={t.id} onClick={()=>onChange(t.id)}>
+            <div className={"theme-swatch"+(value===t.id?" selected":"")}>
+              <div className="theme-swatch-top" style={{background:t.top}} />
+              <div className="theme-swatch-bot" style={{background:t.bot}} />
+            </div>
+            <div className="theme-swatch-label">{t.nome}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal Crea Accesso ────────────────────────────────────────────────────
+function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
+  const [email,  setEmail]  = useState(operatore.email||"");
+  const [pass,   setPass]   = useState("");
+  const [pass2,  setPass2]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err,    setErr]    = useState(null);
+  const [done,   setDone]   = useState(false);
+
+  const ok = email.trim() && pass.length>=6 && pass===pass2;
+
+  const crea = async () => {
+    setLoading(true); setErr(null);
+    try {
+      // Usa un client separato per non toccare la sessione corrente
+      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+      const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const res = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": ANON_KEY,
+        },
+        body: JSON.stringify({ email: email.trim(), password: pass }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error?.message || data.msg || "Errore registrazione");
+      }
+
+      const authUserId = data.user?.id || data.id;
+      await onSuccess(operatore.id, email.trim(), authUserId);
+      setDone(true);
+    } catch(e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Overlay>
+      <div className="modal-box" style={{width:"min(460px,96vw)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div>
+            <div className="modal-title">🔑 Crea accesso</div>
+            <div style={{fontSize:12,color:"var(--text-3)",marginTop:3}}>{operatore.nome}</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {done ? (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:40,marginBottom:12}}>✅</div>
+            <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,marginBottom:8}}>Accesso creato!</div>
+            <div style={{fontSize:13,color:"var(--text-2)",marginBottom:16}}>
+              <strong>{email}</strong> può ora accedere all'app.
+            </div>
+            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"12px 16px",fontSize:12,color:"var(--text-2)",textAlign:"left"}}>
+              <div style={{fontWeight:600,marginBottom:4}}>⚠ Comunica queste credenziali all'utente:</div>
+              <div>Email: <strong>{email}</strong></div>
+              <div>Password: <strong>{pass}</strong></div>
+              <div style={{marginTop:8,fontSize:11,color:"var(--text-3)"}}>Suggerisci di cambiarla al primo accesso.</div>
+            </div>
+            <button className="btn-primary" onClick={onClose} style={{marginTop:16,width:"100%"}}>Chiudi</button>
+          </div>
+        ) : (
+          <>
+            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:12,color:"var(--text-2)",marginBottom:16}}>
+              ℹ Crea le credenziali per permettere a <strong>{operatore.nome}</strong> di accedere all'app con la propria email e password.
+            </div>
+            <div style={{display:"grid",gap:14}}>
+              <Field label="Email *">
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} />
+              </Field>
+              <Field label="Password temporanea * (min. 6 caratteri)">
+                <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%"}} />
+              </Field>
+              <Field label="Conferma password *">
+                <input type="password" value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••" style={{width:"100%"}}
+                  onKeyDown={e=>e.key==="Enter"&&ok&&!loading&&crea()} />
+              </Field>
+              {pass&&pass2&&pass!==pass2&&(
+                <div style={{fontSize:12,color:"var(--red)",fontWeight:500}}>⚠ Le password non coincidono</div>
+              )}
+              {err&&<div style={{background:"var(--red-bg)",border:"1px solid var(--red-bd)",borderRadius:"var(--radius-sm)",padding:"10px 12px",fontSize:12,color:"var(--red)",fontWeight:500}}>❌ {err}</div>}
+            </div>
+            <div className="modal-footer">
+              <button onClick={onClose}>Annulla</button>
+              <button className="btn-primary" disabled={!ok||loading} onClick={crea}>
+                {loading?"Creazione...":"🔑 Crea accesso"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
 // ─── Mobile Bottom Navigation ─────────────────────────────────────────────
 const PRIMARY_TABS = [
   {id:"dashboard",    l:"Dashboard",  icon:"◈"},
@@ -1143,8 +1308,13 @@ export default function App() {
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
+  const [temaModal, setTemaModal] = useState(false);
+  const [temaCorrente, setTemaCorrente] = useState("navy");
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
+
+  // Apply default theme on mount
+  useEffect(() => { applyTheme("navy"); }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
@@ -1177,7 +1347,8 @@ export default function App() {
         const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id}))).select();
         ops = seeded || [];
       }
-      sOp(ops.map(mapOp));
+      const mappedOps = ops.map(mapOp);
+      sOp(mappedOps);
       sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
@@ -1203,7 +1374,15 @@ export default function App() {
   const modA = async f => { await supabase.from("assets").update(toDbA(f,uid())).eq("id",f.id); sAs(p=>p.map(a=>a.id===f.id?{...a,...f}:a)); };
   const delA = async id => { await supabase.from("assets").delete().eq("id",id); sAs(p=>p.filter(a=>a.id!==id)); };
   const aggOp = async f => { const {data,error}=await supabase.from("operatori").insert(toDbOp(f,uid())).select().single(); if(!error)sOp(p=>[...p,mapOp(data)]); };
-  const modOp = async f => { const {error}=await supabase.from("operatori").update(toDbOp(f,uid())).eq("id",f.id); if(!error)sOp(p=>p.map(o=>o.id===f.id?{...o,...f}:o)); };
+  const modOp = async f => {
+    const {error}=await supabase.from("operatori").update(toDbOp(f,uid())).eq("id",f.id);
+    if(!error) sOp(p=>p.map(o=>o.id===f.id?{...o,...f}:o));
+  };
+  const creaAccesso = async (opId, email, authUserId) => {
+    await supabase.from("operatori").update({ email, auth_user_id: authUserId||null }).eq("id", opId);
+    sOp(p=>p.map(o=>o.id===opId?{...o,email,authUserId:authUserId||null}:o));
+    notify(`Accesso creato per ${email}`, "success");
+  };
   const delOp = async id => { await supabase.from("operatori").delete().eq("id",id); sOp(p=>p.filter(o=>o.id!==id)); sSiti(p=>p.filter(s=>s.operatoreId!==id)); };
 
   // Salva associazioni siti per un operatore cliente
@@ -1323,6 +1502,7 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
+          <button className="btn-logout" onClick={()=>setTemaModal(true)} title="Cambia tema" style={{fontSize:15}}>🎨</button>
           <button className="btn-logout" onClick={logout} title="Esci">↩</button>
         </div>
       </nav>
@@ -1333,12 +1513,42 @@ export default function App() {
         {vista==="piani"        && <GestionePiani piani={piani} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAttivaDisattiva={attivaDisattiva} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} />}
-        {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} />}
+        {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={delGruppo} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
       </main>
 
       <MobileNav vista={vista} sV={sV} />
+      {temaModal&&(
+        <Overlay>
+          <div className="modal-box" style={{width:"min(420px,94vw)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div className="modal-title">🎨 Tema colore</div>
+              <button className="modal-close" onClick={()=>setTemaModal(false)}>✕</button>
+            </div>
+            <div style={{display:"grid",gap:14}}>
+              <SelettoreTema value={temaCorrente} onChange={t=>{setTemaCorrente(t);applyTheme(t);}} />
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+                {TEMI.map(t=>(
+                  <div key={t.id} onClick={()=>{setTemaCorrente(t.id);applyTheme(t.id);}}
+                    style={{padding:"10px 12px",borderRadius:"var(--radius-sm)",border:`2px solid ${temaCorrente===t.id?"var(--text-1)":"var(--border)"}`,cursor:"pointer",transition:"all .15s",background:temaCorrente===t.id?"var(--surface-2)":"var(--surface)"}}>
+                    <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
+                      <div style={{width:14,height:14,borderRadius:3,background:t.top}} />
+                      <div style={{width:8,height:14,borderRadius:2,background:t.bot}} />
+                      <span style={{fontWeight:700,fontSize:13}}>{t.nome}</span>
+                      {temaCorrente===t.id&&<span style={{marginLeft:"auto",fontSize:11,color:"var(--green)",fontWeight:700}}>✓</span>}
+                    </div>
+                    <div style={{fontSize:11,color:"var(--text-3)"}}>{t.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={()=>setTemaModal(false)}>Chiudi</button>
+            </div>
+          </div>
+        </Overlay>
+      )}
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {modalM && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
