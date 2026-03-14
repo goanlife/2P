@@ -14,28 +14,25 @@ const FREQUENZE = [
 ];
 const COLORI_OP = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6"];
 const OP_DEFAULT = [
-  { nome:"Marco Rossi",   spec:"Elettrico",  col:"#378ADD" },
-  { nome:"Laura Bianchi", spec:"Meccanico",  col:"#1D9E75" },
-  { nome:"Giorgio Ferri", spec:"Idraulico",  col:"#D85A30" },
-  { nome:"Anna Conti",    spec:"Generico",   col:"#7F77DD" },
+  { nome:"Marco Rossi",   spec:"Elettrico",  col:"#378ADD", tipo:"fornitore" },
+  { nome:"Laura Bianchi", spec:"Meccanico",  col:"#1D9E75", tipo:"fornitore" },
+  { nome:"Giorgio Ferri", spec:"Idraulico",  col:"#D85A30", tipo:"fornitore" },
+  { nome:"Anna Conti",    spec:"Generico",   col:"#7F77DD", tipo:"interno"   },
 ];
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-const BADGE_MAP = {
-  ordinaria:   "badge badge-ordinaria",
-  straordinaria:"badge badge-straord",
-  pianificata: "badge badge-pianificata",
-  inCorso:     "badge badge-inCorso",
-  completata:  "badge badge-completata",
-  scaduta:     "badge badge-scaduta",
-};
 const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+const TIPO_OP = {
+  fornitore: { label:"Fornitore", cls:"badge", style:{background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #BFDBFE"} },
+  cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
+  interno:   { label:"Interno",   cls:"badge", style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
+};
 const TABS = [
   {id:"dashboard",   l:"Dashboard",    icon:"◈"},
   {id:"manutenzioni",l:"Manutenzioni", icon:"⚡"},
   {id:"piani",       l:"Piani",        icon:"🔄"},
   {id:"calendario",  l:"Calendario",   icon:"📅"},
   {id:"assets",      l:"Asset",        icon:"⚙"},
-  {id:"operatori",   l:"Operatori",    icon:"👥"},
+  {id:"utenti",      l:"Utenti",       icon:"👥"},
   {id:"clienti",     l:"Clienti",      icon:"🏢"},
 ];
 
@@ -44,12 +41,14 @@ const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, prio
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo });
-const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD" });
+const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore" });
+const mapSito = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
+
 const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
 const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
 const toDbA  = (f,uid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid });
 const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
-const toDbOp = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", user_id:uid });
+const toDbOp = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
 
 // ─── Utils ────────────────────────────────────────────────────────────────
 const fmtData  = d => d ? new Date(d).toLocaleDateString("it-IT") : "—";
@@ -76,21 +75,14 @@ function conflitti(manutenzioni,operatoreId,data,escludiId=null) {
 // ─── Atoms ───────────────────────────────────────────────────────────────
 function Av({ nome, col, size=36 }) {
   const initials = (nome||"?").split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase();
-  return (
-    <div className="av" style={{width:size,height:size,background:(col||"#888")+"22",color:col||"#888",fontSize:Math.round(size*.34)}}>
-      {initials}
-    </div>
-  );
+  return <div className="av" style={{width:size,height:size,background:(col||"#888")+"22",color:col||"#888",fontSize:Math.round(size*.34)}}>{initials}</div>;
 }
-
 function Field({ label, children }) {
   return <div className="field"><label>{label}</label>{children}</div>;
 }
-
 function Overlay({ children, zIndex=1000 }) {
   return <div className="overlay" style={{zIndex}}>{children}</div>;
 }
-
 function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, saveOk=true, children }) {
   return (
     <Overlay>
@@ -102,48 +94,233 @@ function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, saveOk=tr
         <div style={{display:"grid",gap:14}}>{children}</div>
         <div className="modal-footer">
           <button onClick={onClose}>Annulla</button>
-          <button
-            disabled={!saveOk}
-            onClick={()=>{onSave();onClose();}}
+          <button disabled={!saveOk} onClick={()=>{onSave();onClose();}}
             style={saveOk&&saveColor?{background:saveColor,color:"white",borderColor:saveColor}:{}}
-            className={saveOk?(saveColor?"":"btn-primary"):""}
+            className={saveOk&&!saveColor?"btn-primary":""}
           >{saveLabel}</button>
         </div>
       </div>
     </Overlay>
   );
 }
-
 function AvvisoConflitto({ conflitti: conf }) {
   if (!conf||!conf.length) return null;
   return (
     <div className="conflict-banner">
-      <strong>⚠ Conflitto operatore:</strong> {conf.length} attività già pianificata/e in questa data:
+      <strong>⚠ Conflitto:</strong> {conf.length} attività già pianificata/e in questa data:
       <ul style={{margin:"6px 0 0",paddingLeft:18}}>{conf.map(m=><li key={m.id}>{m.titolo} ({m.durata} min)</li>)}</ul>
     </div>
   );
 }
 
-// ─── Modal Operatore ──────────────────────────────────────────────────────
-function ModalOperatore({ ini, onClose, onSalva }) {
-  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD"});
+// ─── Modal Siti Cliente ───────────────────────────────────────────────────
+function ModalSitiCliente({ operatore, clienti, siti, onClose, onSave }) {
+  // siti = array di {operatoreId, clienteId} già salvati per questo operatore
+  const mieiSiti = useMemo(()=>siti.filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
+  const [sel, setSel] = useState(new Set(mieiSiti));
+  const toggle = id => setSel(prev => { const n=new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; });
+  return (
+    <Overlay>
+      <div className="modal-box" style={{width:"min(520px,96vw)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div>
+            <div className="modal-title">Siti associati</div>
+            <div style={{fontSize:13,color:"var(--text-3)",marginTop:3}}>Cliente: <strong>{operatore.nome}</strong></div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div style={{fontSize:12,color:"var(--text-2)",marginBottom:14,padding:"10px 12px",background:"var(--surface-2)",borderRadius:"var(--radius-sm)"}}>
+          ℹ Seleziona i clienti/siti che questo utente potrà visualizzare nella propria vista.
+        </div>
+        {clienti.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)"}}>Nessun cliente disponibile. Crea prima un cliente.</div>}
+        <div style={{display:"grid",gap:6,maxHeight:340,overflowY:"auto"}}>
+          {clienti.map(c=>{
+            const checked = sel.has(c.id);
+            return (
+              <label key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:"var(--radius-sm)",border:`1px solid ${checked?"#C4B5FD":"var(--border)"}`,background:checked?"#EEEDFE":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
+                <input type="checkbox" checked={checked} onChange={()=>toggle(c.id)} style={{width:16,height:16,accentColor:"#7F77DD",cursor:"pointer"}} />
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:13}}>{c.rs}</div>
+                  {c.settore&&<div style={{fontSize:11,color:"var(--text-3)"}}>{c.settore}</div>}
+                </div>
+                {checked&&<span style={{fontSize:11,fontWeight:700,color:"#4F46E5",background:"#EDE9FE",padding:"2px 7px",borderRadius:10}}>✓ Associato</span>}
+              </label>
+            );
+          })}
+        </div>
+        <div className="modal-footer">
+          <button onClick={onClose}>Annulla</button>
+          <button className="btn-primary" onClick={()=>{onSave(operatore.id,[...sel]);onClose();}}>
+            Salva associazioni ({sel.size})
+          </button>
+        </div>
+      </div>
+    </Overlay>
+  );
+}
+
+// ─── Vista Cliente ────────────────────────────────────────────────────────
+function VistaCliente({ operatore, clienti, assets, manutenzioni, piani, siti, onClose }) {
+  const clientiIds = useMemo(()=>siti.filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
+  const myClienti  = useMemo(()=>clienti.filter(c=>clientiIds.includes(c.id)),[clienti,clientiIds]);
+  const myAssets   = useMemo(()=>assets.filter(a=>clientiIds.includes(a.clienteId)),[assets,clientiIds]);
+  const myMan      = useMemo(()=>manutenzioni.filter(m=>clientiIds.includes(m.clienteId)),[manutenzioni,clientiIds]);
+  const myPiani    = useMemo(()=>piani.filter(p=>clientiIds.includes(p.clienteId)),[piani,clientiIds]);
+  const [tab,setTab] = useState("manutenzioni");
+
+  return (
+    <Overlay>
+      <div className="modal-box" style={{width:"min(860px,98vw)",maxHeight:"95vh"}}>
+        {/* Header */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,paddingBottom:16,borderBottom:"1px solid var(--border)"}}>
+          <div style={{width:44,height:44,borderRadius:"var(--radius)",background:"#EEEDFE",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>👁</div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>Vista Cliente — {operatore.nome}</div>
+            <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{clientiIds.length} siti associati · Anteprima di ciò che vede questo utente</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {clientiIds.length===0?(
+          <div style={{textAlign:"center",padding:"40px 20px",color:"var(--text-3)"}}>
+            <div style={{fontSize:32,marginBottom:12}}>🔗</div>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Nessun sito associato</div>
+            <div style={{fontSize:13}}>Associa almeno un cliente/sito a questo utente per attivarne la vista.</div>
+          </div>
+        ):(
+          <>
+            {/* KPI bar */}
+            <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+              {[{v:myClienti.length,l:"Siti",c:"#7F77DD"},{v:myAssets.length,l:"Asset",c:"#2563EB"},{v:myMan.filter(m=>m.stato==="pianificata").length,l:"Pianificate",c:"#F59E0B"},{v:myMan.filter(m=>m.stato==="inCorso").length,l:"In corso",c:"#D97706"},{v:myMan.filter(m=>m.stato==="scaduta").length,l:"Scadute",c:"#DC2626"}].map(k=>(
+                <div key={k.l} style={{flex:1,minWidth:90,background:"var(--surface-2)",borderRadius:"var(--radius-sm)",padding:"12px 14px",border:"1px solid var(--border)"}}>
+                  <div style={{fontFamily:"var(--font-head)",fontSize:22,fontWeight:700,color:k.c}}>{k.v}</div>
+                  <div style={{fontSize:11,color:"var(--text-3)",fontWeight:600,textTransform:"uppercase",letterSpacing:".04em",marginTop:2}}>{k.l}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tabs */}
+            <div style={{display:"flex",gap:4,marginBottom:14,borderBottom:"1px solid var(--border)",paddingBottom:0}}>
+              {[{id:"manutenzioni",l:"Manutenzioni"},{id:"assets",l:"Asset"},{id:"piani",l:"Piani"},{id:"siti",l:"Siti associati"}].map(t=>(
+                <button key={t.id} onClick={()=>setTab(t.id)} style={{border:"none",borderBottom:tab===t.id?"2px solid #7F77DD":"2px solid transparent",background:"none",padding:"8px 14px",fontWeight:tab===t.id?600:400,color:tab===t.id?"#7F77DD":"var(--text-3)",borderRadius:0,cursor:"pointer",fontSize:13}}>{t.l}</button>
+              ))}
+            </div>
+
+            {/* Content */}
+            <div style={{overflowY:"auto",maxHeight:380}}>
+              {tab==="manutenzioni"&&(
+                <div style={{display:"grid",gap:6}}>
+                  {myMan.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)"}}>Nessuna manutenzione</div>}
+                  {myMan.sort((a,b)=>a.data.localeCompare(b.data)).map(m=>{
+                    const cl=myClienti.find(c=>c.id===m.clienteId);const as=myAssets.find(a=>a.id===m.assetId);
+                    return (
+                      <div key={m.id} style={{display:"flex",gap:12,alignItems:"flex-start",padding:"11px 14px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface)"}}>
+                        <div style={{width:3,borderRadius:99,background:PRI_COLOR[m.priorita]||"#ccc",alignSelf:"stretch",flexShrink:0}} />
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontWeight:600,fontSize:13,marginBottom:3}}>{m.titolo}</div>
+                          <div style={{fontSize:11.5,color:"var(--text-3)",display:"flex",gap:10,flexWrap:"wrap"}}>
+                            {cl&&<span style={{color:"#7F77DD",fontWeight:500}}>🏢 {cl.rs}</span>}
+                            {as&&<span>⚙ {as.nome}</span>}
+                            <span>📅 {fmtData(m.data)}</span>
+                            <span>⏱ {m.durata} min</span>
+                          </div>
+                        </div>
+                        <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,...(m.stato==="completata"?{background:"#ECFDF5",color:"#065F46"}:m.stato==="scaduta"?{background:"#FEF2F2",color:"#991B1B"}:m.stato==="inCorso"?{background:"#FFFBEB",color:"#B45309"}:{background:"#EFF6FF",color:"#1D4ED8"})}}>{STATO_LABEL[m.stato]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {tab==="assets"&&(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:10}}>
+                  {myAssets.map(a=>{const cl=myClienti.find(c=>c.id===a.clienteId);return(
+                    <div key={a.id} style={{padding:"12px 14px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface)"}}>
+                      <div style={{fontWeight:600,fontSize:13,marginBottom:4}}>⚙ {a.nome}</div>
+                      {a.tipo&&<div style={{fontSize:11.5,color:"var(--text-3)"}}>{a.tipo}</div>}
+                      {cl&&<div style={{fontSize:11.5,color:"#7F77DD",fontWeight:500,marginTop:3}}>🏢 {cl.rs}</div>}
+                      {a.ubicazione&&<div style={{fontSize:11,color:"var(--text-3)",marginTop:2}}>📍 {a.ubicazione}</div>}
+                    </div>
+                  );})}
+                  {myAssets.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)"}}>Nessun asset</div>}
+                </div>
+              )}
+              {tab==="piani"&&(
+                <div style={{display:"grid",gap:6}}>
+                  {myPiani.map(p=>{const cl=myClienti.find(c=>c.id===p.clienteId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);return(
+                    <div key={p.id} style={{padding:"11px 14px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface)",display:"flex",gap:10,alignItems:"center"}}>
+                      <span style={{fontSize:18}}>🔄</span>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:600,fontSize:13}}>{p.nome}</div>
+                        <div style={{fontSize:11.5,color:"var(--text-3)",marginTop:2}}>{freq?.l}{cl?` · ${cl.rs}`:""} · Dal {fmtData(p.dataInizio)}</div>
+                      </div>
+                      <span style={{fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:600,...(p.attivo?{background:"#ECFDF5",color:"#065F46"}:{background:"var(--surface-3)",color:"var(--text-2)"})}}>{p.attivo?"Attivo":"Sospeso"}</span>
+                    </div>
+                  );})}
+                  {myPiani.length===0&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)"}}>Nessun piano</div>}
+                </div>
+              )}
+              {tab==="siti"&&(
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:10}}>
+                  {myClienti.map(c=>(
+                    <div key={c.id} style={{padding:"12px 14px",borderRadius:"var(--radius-sm)",border:"1px solid #C4B5FD",background:"#EEEDFE",display:"flex",gap:10,alignItems:"center"}}>
+                      <div style={{width:36,height:36,borderRadius:"var(--radius-sm)",background:"#DDD6FE",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12,color:"#4F46E5",flexShrink:0}}>{c.rs.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase()}</div>
+                      <div><div style={{fontWeight:600,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.rs}</div>{c.settore&&<div style={{fontSize:11,color:"#6D28D9"}}>{c.settore}</div>}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
+// ─── Modal Utente (ex Operatore) ──────────────────────────────────────────
+function ModalUtente({ ini, onClose, onSalva }) {
+  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore"});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
-    <Modal title={ini?"Modifica operatore":"Nuovo operatore"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveLabel={ini?"Aggiorna":"Aggiungi"}>
-      <Field label="Nome *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Es. Mario Rossi..." style={{width:"100%"}} /></Field>
-      <Field label="Specializzazione"><input value={f.spec} onChange={e=>s("spec",e.target.value)} placeholder="Es. Elettrico, Meccanico..." style={{width:"100%"}} /></Field>
-      <Field label="Colore calendario">
-        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:4}}>
-          {COLORI_OP.map(c=><div key={c} className={"color-dot"+(f.col===c?" selected":"")} style={{background:c}} onClick={()=>s("col",c)} />)}
+    <Modal title={ini?"Modifica utente":"Nuovo utente"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveLabel={ini?"Aggiorna":"Aggiungi"}>
+      <Field label="Nome e cognome *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Es. Mario Rossi..." style={{width:"100%"}} /></Field>
+      <Field label="Tipologia utente *">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+          {["fornitore","cliente","interno"].map(t=>{
+            const desc={fornitore:"Assegnabile alle manutenzioni",cliente:"Vista limitata ai propri siti",interno:"Accesso interno, non assegnabile"}[t];
+            const label={fornitore:"Fornitore",cliente:"Cliente",interno:"Interno"}[t];
+            const color={fornitore:"#1D4ED8",cliente:"#4F46E5",interno:"#065F46"}[t];
+            const bg={fornitore:"#EFF6FF",cliente:"#EEEDFE",interno:"#ECFDF5"}[t];
+            const bd={fornitore:"#BFDBFE",cliente:"#C4B5FD",interno:"#A7F3D0"}[t];
+            return (
+              <label key={t} style={{display:"flex",flexDirection:"column",gap:4,padding:"10px 12px",borderRadius:"var(--radius-sm)",border:`1.5px solid ${f.tipo===t?color:"var(--border)"}`,background:f.tipo===t?bg:"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
+                <input type="radio" name="tipo" value={t} checked={f.tipo===t} onChange={()=>s("tipo",t)} style={{display:"none"}} />
+                <span style={{fontWeight:700,fontSize:12,color:f.tipo===t?color:"var(--text-2)"}}>{f.tipo===t?"✓ ":""}{label}</span>
+                <span style={{fontSize:10.5,color:"var(--text-3)",lineHeight:1.3}}>{desc}</span>
+              </label>
+            );
+          })}
         </div>
       </Field>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <Field label="Specializzazione / Ruolo">
+          <input value={f.spec} onChange={e=>s("spec",e.target.value)} placeholder="Es. Elettrico, Meccanico..." style={{width:"100%"}} />
+        </Field>
+        <Field label="Colore calendario">
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",paddingTop:4}}>
+            {COLORI_OP.map(c=><div key={c} className={"color-dot"+(f.col===c?" selected":"")} style={{background:c}} onClick={()=>s("col",c)} />)}
+          </div>
+        </Field>
+      </div>
     </Modal>
   );
 }
 
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
 function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva }) {
-  const defOp = operatori[0]?.id||"";
+  // Solo i fornitori sono assegnabili
+  const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
+  const defOp = fornitori[0]?.id||"";
   const [f,sf]=useState(ini||{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:defOp,clienteId:"",assetId:"",data:"",durata:60,note:"",stato:"pianificata",pianoId:null});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   const ok=f.titolo.trim()&&f.data;
@@ -162,7 +339,13 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
         <Field label="Data *"><input type="date" value={f.data} onChange={e=>s("data",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Durata (min)"><input type="number" value={f.durata} onChange={e=>s("durata",Number(e.target.value))} min={15} step={15} style={{width:"100%"}} /></Field>
       </div>
-      <Field label="Operatore"><select value={f.operatoreId||""} onChange={e=>s("operatoreId",Number(e.target.value))} style={{width:"100%"}}><option value="">— Nessun operatore —</option>{operatori.map(o=><option key={o.id} value={o.id}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}</select></Field>
+      <Field label="Fornitore assegnato">
+        <select value={f.operatoreId||""} onChange={e=>s("operatoreId",Number(e.target.value))} style={{width:"100%"}}>
+          <option value="">— Nessun fornitore —</option>
+          {fornitori.map(o=><option key={o.id} value={o.id}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}
+        </select>
+        {fornitori.length===0&&<div style={{fontSize:11,color:"var(--text-3)",marginTop:4}}>⚠ Nessun fornitore disponibile. Crea un utente di tipo Fornitore.</div>}
+      </Field>
       <AvvisoConflitto conflitti={conf} />
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
     </Modal>
@@ -171,100 +354,33 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
 function Dashboard({ man, clienti, assets, piani, operatori }) {
-  const stats=useMemo(()=>({tot:man.length,pi:man.filter(m=>m.stato==="pianificata").length,ic:man.filter(m=>m.stato==="inCorso").length,co:man.filter(m=>m.stato==="completata").length,sc:man.filter(m=>m.stato==="scaduta").length,ur:man.filter(m=>m.priorita==="urgente"&&m.stato!=="completata").length}),[man]);
+  const stats=useMemo(()=>({tot:man.length,pi:man.filter(m=>m.stato==="pianificata").length,ic:man.filter(m=>m.stato==="inCorso").length,sc:man.filter(m=>m.stato==="scaduta").length,ur:man.filter(m=>m.priorita==="urgente"&&m.stato!=="completata").length}),[man]);
   const prossime=useMemo(()=>man.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6),[man]);
-  const carichi=useMemo(()=>operatori.map(op=>({...op,att:man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").length,ore:Math.round(man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").reduce((a,m)=>a+m.durata,0)/60*10)/10})),[man,operatori]);
+  const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
+  const carichi=useMemo(()=>fornitori.map(op=>({...op,att:man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").length,ore:Math.round(man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").reduce((a,m)=>a+m.durata,0)/60*10)/10})),[man,fornitori]);
   const maxOre=Math.max(...carichi.map(c=>c.ore),1);
   const confMap=useMemo(()=>{const m={};man.filter(x=>x.stato!=="completata").forEach(x=>{const k=`${x.operatoreId}_${x.data}`;if(!m[k])m[k]=[];m[k].push(x);});return Object.values(m).filter(g=>g.length>1);},[man]);
-
-  const kpis = [
-    {v:stats.tot, l:"Totale attività", c:"#0D1B2A"},
-    {v:clienti.length, l:"Clienti", c:"#7F77DD"},
-    {v:assets.length, l:"Asset", c:"#2563EB"},
-    {v:piani.filter(p=>p.attivo).length, l:"Piani attivi", c:"#059669"},
-    {v:stats.pi, l:"Pianificate", c:"#3B82F6"},
-    {v:stats.ic, l:"In corso", c:"#D97706"},
-    {v:stats.sc, l:"Scadute", c:"#DC2626"},
-    {v:stats.ur, l:"Urgenti", c:"#EF4444"},
-  ];
-
+  const kpis=[{v:stats.tot,l:"Totale attività",c:"#0D1B2A"},{v:clienti.length,l:"Clienti",c:"#7F77DD"},{v:assets.length,l:"Asset",c:"#2563EB"},{v:piani.filter(p=>p.attivo).length,l:"Piani attivi",c:"#059669"},{v:stats.pi,l:"Pianificate",c:"#3B82F6"},{v:stats.ic,l:"In corso",c:"#D97706"},{v:stats.sc,l:"Scadute",c:"#DC2626"},{v:stats.ur,l:"Urgenti",c:"#EF4444"}];
   return (
     <div style={{display:"grid",gap:20}}>
-      {confMap.length>0&&(
-        <div className="global-conflict">
-          <div className="global-conflict-title">⚠ {confMap.length} conflitto/i di calendario rilevati</div>
-          {confMap.map((g,i)=>{const op=operatori.find(o=>o.id===g[0].operatoreId);return <div key={i} className="global-conflict-item">→ {op?.nome||"—"} ha {g.length} attività il {fmtData(g[0].data)}: {g.map(x=>x.titolo).join(", ")}</div>;})}
-        </div>
-      )}
-
-      <div className="kpi-grid">
-        {kpis.map(k=>(
-          <div key={k.l} className="kpi-card" style={{"--c":k.c}}>
-            <div className="kpi-value">{k.v}</div>
-            <div className="kpi-label">{k.l}</div>
-          </div>
-        ))}
-      </div>
-
+      {confMap.length>0&&(<div className="global-conflict"><div className="global-conflict-title">⚠ {confMap.length} conflitto/i di calendario</div>{confMap.map((g,i)=>{const op=operatori.find(o=>o.id===g[0].operatoreId);return <div key={i} className="global-conflict-item">→ {op?.nome||"—"}: {g.length} attività il {fmtData(g[0].data)}</div>;})}</div>)}
+      <div className="kpi-grid">{kpis.map(k=><div key={k.l} className="kpi-card" style={{"--c":k.c}}><div className="kpi-value">{k.v}</div><div className="kpi-label">{k.l}</div></div>)}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
         <div className="card">
           <div className="section-head"><span className="section-title">📋 Prossime attività</span></div>
-          <div style={{display:"grid",gap:1}}>
-            {prossime.map(m=>{
-              const op=operatori.find(o=>o.id===m.operatoreId); const cl=clienti.find(c=>c.id===m.clienteId);
-              return (
-                <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--border)"}}>
-                  <Av nome={op?.nome||"?"} col={op?.col||"#888"} size={32} />
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--text-1)"}}>{m.titolo}</div>
-                    <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)} · {m.durata}min{cl?` · ${cl.rs}`:""}</div>
-                  </div>
-                  <div style={{display:"flex",gap:4,alignItems:"center"}}>
-                    {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡</span>}
-                    {m.pianoId&&<span style={{fontSize:9,fontWeight:700,color:"var(--green)",letterSpacing:".04em"}}>PIANO</span>}
-                  </div>
-                </div>
-              );
-            })}
-            {!prossime.length&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)",fontSize:13}}>Nessuna attività pianificata</div>}
-          </div>
+          {prossime.map(m=>{const op=fornitori.find(o=>o.id===m.operatoreId)||operatori.find(o=>o.id===m.operatoreId);const cl=clienti.find(c=>c.id===m.clienteId);return(<div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--border)"}}><Av nome={op?.nome||"?"} col={op?.col||"#888"} size={32} /><div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.titolo}</div><div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)} · {m.durata}min{cl?` · ${cl.rs}`:""}</div></div>{m.pianoId&&<span style={{fontSize:9,fontWeight:700,color:"var(--green)",letterSpacing:".04em"}}>PIANO</span>}</div>);})}
+          {!prossime.length&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)",fontSize:13}}>Nessuna attività pianificata</div>}
         </div>
-
         <div className="card">
-          <div className="section-head"><span className="section-title">👥 Carico operatori</span></div>
-          {carichi.map(op=>(
-            <div key={op.id} style={{marginBottom:16}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <Av nome={op.nome} col={op.col} size={28} />
-                  <span style={{fontSize:13,fontWeight:600}}>{op.nome}</span>
-                </div>
-                <span style={{fontSize:11,color:"var(--text-3)",fontWeight:500}}>{op.att} att · {op.ore}h</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{width:`${(op.ore/maxOre)*100}%`,background:op.col}} />
-              </div>
-            </div>
-          ))}
+          <div className="section-head"><span className="section-title">🔧 Carico fornitori</span></div>
+          {carichi.map(op=>(<div key={op.id} style={{marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><div style={{display:"flex",alignItems:"center",gap:8}}><Av nome={op.nome} col={op.col} size={28} /><span style={{fontSize:13,fontWeight:600}}>{op.nome}</span></div><span style={{fontSize:11,color:"var(--text-3)",fontWeight:500}}>{op.att} att · {op.ore}h</span></div><div className="progress-track"><div className="progress-fill" style={{width:`${(op.ore/maxOre)*100}%`,background:op.col}} /></div></div>))}
+          {carichi.length===0&&<div style={{fontSize:13,color:"var(--text-3)",textAlign:"center",padding:"12px 0"}}>Nessun fornitore attivo</div>}
         </div>
-
         <div className="card">
           <div className="section-head"><span className="section-title">⚙ Asset per stato</span></div>
-          {[{s:"attivo",l:"Attivi",c:"#059669"},{s:"manutenzione",l:"In manutenzione",c:"#D97706"},{s:"inattivo",l:"Inattivi",c:"#DC2626"}].map(({s:st,l,c})=>{
-            const n=assets.filter(a=>a.stato===st).length;
-            return n>0?<div key={st} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid var(--border)"}}>
-              <span style={{fontSize:13,color:"var(--text-2)"}}>{l}</span>
-              <span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,color:c}}>{n}</span>
-            </div>:null;
-          })}
-          <div style={{marginTop:16}}>
-            <div className="section-title" style={{marginBottom:10}}>🔄 Piani recenti</div>
-            {piani.slice(0,3).map(p=>{const cl=clienti.find(c=>c.id===p.clienteId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);return(
-              <div key={p.id} style={{padding:"8px 0",borderBottom:"1px solid var(--border)"}}>
-                <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
-                <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{freq?.l}{cl?` · ${cl.rs}`:""}</div>
-              </div>
-            );})}
+          {[{s:"attivo",l:"Attivi",c:"#059669"},{s:"manutenzione",l:"In manutenzione",c:"#D97706"},{s:"inattivo",l:"Inattivi",c:"#DC2626"}].map(({s:st,l,c})=>{const n=assets.filter(a=>a.stato===st).length;return n>0?<div key={st} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid var(--border)"}}><span style={{fontSize:13,color:"var(--text-2)"}}>{l}</span><span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,color:c}}>{n}</span></div>:null;})}
+          <div style={{marginTop:16}}><div className="section-title" style={{marginBottom:10}}>👥 Utenti per tipo</div>
+            {["fornitore","cliente","interno"].map(t=>{const n=operatori.filter(o=>o.tipo===t).length;const cfg=TIPO_OP[t];return <div key={t} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}><span className="badge" style={cfg.style}>{cfg.label}</span><span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>{n}</span></div>;})}
           </div>
         </div>
       </div>
@@ -296,17 +412,16 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod }) 
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
                   {haConf&&<span style={{fontSize:12}}>⚠️</span>}
-                  <span style={{fontWeight:600,fontSize:14,color:"var(--text-1)"}}>{m.titolo}</span>
-                  <span className={BADGE_MAP[m.tipo]||"badge"}>{m.tipo==="ordinaria"?"Ordinaria":"Straord."}</span>
-                  <span className={BADGE_MAP[m.stato]||"badge"}>{STATO_LABEL[m.stato]}</span>
+                  <span style={{fontWeight:600,fontSize:14}}>{m.titolo}</span>
+                  <span className={"badge "+(m.tipo==="ordinaria"?"badge-ordinaria":"badge-straord")}>{m.tipo==="ordinaria"?"Ordinaria":"Straord."}</span>
+                  <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
                   {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡ Urgente</span>}
-                  {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",letterSpacing:".04em",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
+                  {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
                 </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:12,color:"var(--text-3)"}}>
                   {cl&&<span style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</span>}
                   {as&&<span>⚙ {as.nome}</span>}
-                  <span>📅 {fmtData(m.data)}</span>
-                  <span>⏱ {m.durata} min</span>
+                  <span>📅 {fmtData(m.data)}</span><span>⏱ {m.durata} min</span>
                   {op&&<span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:"50%",background:op.col,display:"inline-block"}} />{op.nome}</span>}
                 </div>
                 {m.note&&<div style={{fontSize:11.5,color:"var(--text-3)",marginTop:4,fontStyle:"italic"}}>{m.note}</div>}
@@ -328,6 +443,7 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod }) 
 
 // ─── Calendario ───────────────────────────────────────────────────────────
 function ModalRipianifica({ manut, nuovaData, man, operatori, onConferma, onClose }) {
+  const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const [data,sd]=useState(nuovaData);const [opId,sOp]=useState(manut.operatoreId||"");
   const conf=useMemo(()=>opId?conflitti(man,opId,data,manut.id):[],[man,opId,data]);
   return (
@@ -340,7 +456,7 @@ function ModalRipianifica({ manut, nuovaData, man, operatori, onConferma, onClos
         <div style={{fontSize:13,color:"var(--text-2)",marginBottom:16,padding:"10px 12px",background:"var(--surface-2)",borderRadius:"var(--radius-sm)",fontWeight:500}}>📌 {manut.titolo}</div>
         <div style={{display:"grid",gap:14}}>
           <Field label="Nuova data"><input type="date" value={data} onChange={e=>sd(e.target.value)} style={{width:"100%"}} /></Field>
-          <Field label="Operatore"><select value={opId} onChange={e=>sOp(Number(e.target.value))} style={{width:"100%"}}><option value="">— Nessun operatore —</option>{operatori.map(o=><option key={o.id} value={o.id}>{o.nome}</option>)}</select></Field>
+          <Field label="Fornitore"><select value={opId} onChange={e=>sOp(Number(e.target.value))} style={{width:"100%"}}><option value="">— Nessun fornitore —</option>{fornitori.map(o=><option key={o.id} value={o.id}>{o.nome}</option>)}</select></Field>
           <AvvisoConflitto conflitti={conf} />
         </div>
         <div className="modal-footer">
@@ -356,6 +472,7 @@ function Calendario({ man, clienti, assets, operatori, onRipianifica, onNuovaDat
   const oggi=new Date();
   const [anno,sA]=useState(oggi.getFullYear());const [mese,sM]=useState(oggi.getMonth());
   const [opF,sOpF]=useState(0);const [drag,sDrag]=useState(null);const [drop,sDrop]=useState(null);const [ripModal,sRip]=useState(null);
+  const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const primoG=new Date(anno,mese,1).getDay();const giorniN=new Date(anno,mese+1,0).getDate();
   const attPerG=useMemo(()=>{const m={};man.filter(x=>{if(opF!==0&&x.operatoreId!==opF)return false;const d=new Date(x.data);return d.getFullYear()===anno&&d.getMonth()===mese;}).forEach(x=>{const g=new Date(x.data).getDate();if(!m[g])m[g]=[];m[g].push(x);});return m;},[man,anno,mese,opF]);
   const celle=[];for(let i=0;i<primoG;i++)celle.push(null);for(let g=1;g<=giorniN;g++)celle.push(g);
@@ -370,44 +487,29 @@ function Calendario({ man, clienti, assets, operatori, onRipianifica, onNuovaDat
         <button className="btn-sm" onClick={()=>{sM(oggi.getMonth());sA(oggi.getFullYear());}}>Oggi</button>
         <div style={{flex:1}} />
         <select value={opF} onChange={e=>sOpF(Number(e.target.value))} style={{minWidth:160}}>
-          <option value={0}>Tutti gli operatori</option>
-          {operatori.map(o=><option key={o.id} value={o.id}>{o.nome}</option>)}
+          <option value={0}>Tutti i fornitori</option>
+          {fornitori.map(o=><option key={o.id} value={o.id}>{o.nome}</option>)}
         </select>
       </div>
       <div style={{display:"flex",gap:12,flexWrap:"wrap",padding:"8px 12px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)"}}>
-        {operatori.map(op=><div key={op.id} style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:500,color:"var(--text-2)"}}><span style={{width:10,height:10,borderRadius:2,background:op.col,display:"inline-block"}} />{op.nome.split(" ")[0]}</div>)}
+        {fornitori.map(op=><div key={op.id} style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:500,color:"var(--text-2)"}}><span style={{width:10,height:10,borderRadius:2,background:op.col,display:"inline-block"}} />{op.nome.split(" ")[0]}</div>)}
         <span style={{fontSize:11,color:"var(--text-3)",marginLeft:"auto"}}>🔄 piano · ⚠ conflitto · trascina per spostare</span>
       </div>
       <div className="cal-grid">
-        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:"var(--surface-2)"}}>
-          {GIORNI.map(g=><div key={g} className="cal-day-header">{g}</div>)}
-        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:"var(--surface-2)"}}>{GIORNI.map(g=><div key={g} className="cal-day-header">{g}</div>)}</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)"}}>
           {celle.map((g,i)=>{
             const isOggi=g&&g===oggi.getDate()&&mese===oggi.getMonth()&&anno===oggi.getFullYear();
             const isDrop=drop===g&&!!drag;const hasConf=g&&giorniConflitto.has(g);const att=g?(attPerG[g]||[]):[];
-            let cls="cal-cell";
-            if(!g)cls+=" empty";else if(isDrop)cls+=" drop-target";else if(hasConf)cls+=" conflict";
+            let cls="cal-cell";if(!g)cls+=" empty";else if(isDrop)cls+=" drop-target";else if(hasConf)cls+=" conflict";
             return (
-              <div key={i} className={cls}
-                onDragOver={e=>{if(!g||!drag)return;e.preventDefault();sDrop(g);}}
-                onDragLeave={()=>sDrop(null)}
-                onDrop={e=>{e.preventDefault();if(!g||!drag)return;const nd=toIso(g);if(nd!==drag.data)sRip({manut:drag,nuovaData:nd});sDrag(null);sDrop(null);}}
-                onClick={()=>g&&!drag&&onNuovaData(toIso(g))}
-              >
-                <div className={"cal-day-num"+(isOggi?" today":"")} style={isOggi?{background:"var(--navy)",color:"white",borderRadius:"50%",width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center"}:{}}>{g}</div>
+              <div key={i} className={cls} onDragOver={e=>{if(!g||!drag)return;e.preventDefault();sDrop(g);}} onDragLeave={()=>sDrop(null)} onDrop={e=>{e.preventDefault();if(!g||!drag)return;const nd=toIso(g);if(nd!==drag.data)sRip({manut:drag,nuovaData:nd});sDrag(null);sDrop(null);}} onClick={()=>g&&!drag&&onNuovaData(toIso(g))}>
+                <div className="cal-day-num" style={isOggi?{background:"var(--navy)",color:"white",borderRadius:"50%",width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center"}:{}}>{g}</div>
                 {hasConf&&<div style={{fontSize:9,color:"#B45309",marginBottom:2,fontWeight:700}}>⚠</div>}
-                {att.slice(0,3).map(m=>{const op=operatori.find(o=>o.id===m.operatoreId);return(
-                  <div key={m.id} className="cal-event"
-                    draggable={m.stato!=="completata"}
-                    onDragStart={e=>{sDrag(m);e.dataTransfer.effectAllowed="move";}}
-                    onDragEnd={()=>{sDrag(null);sDrop(null);}}
-                    onClick={e=>e.stopPropagation()}
-                    title={m.titolo}
-                    style={{background:(op?.col||"#888")+"18",color:op?.col||"#888",borderLeftColor:op?.col||"#888",opacity:drag?.id===m.id?.4:1}}
-                  >{m.pianoId?"🔄 ":""}{m.titolo}</div>
-                );})}
-                {att.length>3&&<div style={{fontSize:9,color:"var(--text-3)",paddingLeft:2,fontWeight:600}}>+{att.length-3} altri</div>}
+                <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                  {att.slice(0,3).map(m=>{const op=operatori.find(o=>o.id===m.operatoreId);return(<div key={m.id} className="cal-event" draggable={m.stato!=="completata"} onDragStart={e=>{sDrag(m);e.dataTransfer.effectAllowed="move";}} onDragEnd={()=>{sDrag(null);sDrop(null);}} onClick={e=>e.stopPropagation()} title={m.titolo} style={{background:(op?.col||"#888")+"18",color:op?.col||"#888",borderLeftColor:op?.col||"#888",opacity:drag?.id===m.id?.4:1}}>{m.pianoId?"🔄 ":""}{m.titolo}</div>);})}
+                  {att.length>3&&<div style={{fontSize:9,color:"var(--text-3)",paddingLeft:2,fontWeight:600}}>+{att.length-3}</div>}
+                </div>
               </div>
             );
           })}
@@ -447,7 +549,7 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) 
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
-  const STATO_ASSET = {attivo:{cls:"badge badge-attivo",l:"Attivo"},manutenzione:{cls:"badge badge-inCorso",l:"In manutenzione"},inattivo:{cls:"badge badge-scaduta",l:"Inattivo"}};
+  const STATO_ASSET={attivo:{cls:"badge badge-attivo",l:"Attivo"},manutenzione:{cls:"badge badge-inCorso",l:"In manutenzione"},inattivo:{cls:"badge badge-scaduta",l:"Inattivo"}};
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
@@ -457,34 +559,25 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) 
         <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo asset</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
-        {filtrati.map(a=>{const cl=clienti.find(c=>c.id===a.clienteId);const manAss=manutenzioni.filter(m=>m.assetId===a.id);const manAtt=manAss.filter(m=>m.stato!=="completata");const sc=STATO_ASSET[a.stato]||STATO_ASSET.inattivo;
-          return (
-            <div key={a.id} className="asset-card">
-              <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:14}}>
-                <div style={{width:44,height:44,borderRadius:"var(--radius)",background:"var(--blue-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:"1px solid var(--blue-bd)"}}>⚙</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div>
-                  <div style={{fontSize:11.5,color:"var(--text-3)",marginTop:2}}>{a.tipo}</div>
-                </div>
-                <div style={{display:"flex",gap:4}}>
-                  <button className="btn-sm btn-icon" onClick={()=>{siM(a);ssM(true);}}>✏</button>
-                  <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(a.id)}>✕</button>
-                </div>
-              </div>
-              <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
-                {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
-                {a.ubicazione&&<div>📍 {a.ubicazione}</div>}
-                {a.matricola&&<div>🔖 {a.matricola}{a.marca?` · ${a.marca}`:""}{a.modello?` ${a.modello}`:""}</div>}
-                {a.dataInst&&<div>📅 Installato: {fmtData(a.dataInst)}</div>}
-              </div>
-              {a.note&&<div style={{fontSize:11.5,color:"var(--text-3)",fontStyle:"italic",marginBottom:10}}>{a.note}</div>}
-              <div style={{display:"flex",alignItems:"center",gap:8,borderTop:"1px solid var(--border)",paddingTop:10}}>
-                <span className={sc.cls}>{sc.l}</span>
-                <span style={{flex:1}} />
-                <span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{manAtt.length} attive · {manAss.length} tot.</span>
-              </div>
+        {filtrati.map(a=>{const cl=clienti.find(c=>c.id===a.clienteId);const manAss=manutenzioni.filter(m=>m.assetId===a.id);const sc=STATO_ASSET[a.stato]||STATO_ASSET.inattivo;
+          return(<div key={a.id} className="asset-card">
+            <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:14}}>
+              <div style={{width:44,height:44,borderRadius:"var(--radius)",background:"var(--blue-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:"1px solid var(--blue-bd)"}}>⚙</div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div><div style={{fontSize:11.5,color:"var(--text-3)",marginTop:2}}>{a.tipo}</div></div>
+              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(a);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(a.id)}>✕</button></div>
             </div>
-          );
+            <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
+              {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
+              {a.ubicazione&&<div>📍 {a.ubicazione}</div>}
+              {a.matricola&&<div>🔖 {a.matricola}{a.marca?` · ${a.marca}`:""}{a.modello?` ${a.modello}`:""}</div>}
+              {a.dataInst&&<div>📅 Installato: {fmtData(a.dataInst)}</div>}
+            </div>
+            {a.note&&<div style={{fontSize:11.5,color:"var(--text-3)",fontStyle:"italic",marginBottom:10}}>{a.note}</div>}
+            <div style={{display:"flex",alignItems:"center",gap:8,borderTop:"1px solid var(--border)",paddingTop:10}}>
+              <span className={sc.cls}>{sc.l}</span><span style={{flex:1}} />
+              <span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{manAss.filter(m=>m.stato!=="completata").length} attive · {manAss.length} tot.</span>
+            </div>
+          </div>);
         })}
       </div>
       {!filtrati.length&&<div className="empty"><div className="empty-icon">⚙</div><div className="empty-text">Nessun asset trovato</div></div>}
@@ -495,7 +588,8 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) 
 
 // ─── Piani ────────────────────────────────────────────────────────────────
 function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva }) {
-  const defOp = operatori[0]?.id?String(operatori[0].id):"";
+  const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
+  const defOp=fornitori[0]?.id?String(fornitori[0].id):"";
   const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true};
   const normalize=obj=>obj?{...obj,operatoreId:String(obj.operatoreId||defOp),clienteId:obj.clienteId?String(obj.clienteId):"",assetId:obj.assetId?String(obj.assetId):""}:null;
   const [f,sf]=useState(normalize(ini)||vuoto);const s=(k,v)=>sf(p=>({...p,[k]:v}));const ok=f.nome.trim()&&f.dataInizio&&f.frequenza;
@@ -503,7 +597,7 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
   const preview=useMemo(()=>{if(!ok)return[];return generaOccorrenze(f,f.dataInizio,6).slice(0,8);},[f,ok]);
   const previewConf=useMemo(()=>preview.filter(data=>f.operatoreId&&conflitti(manutenzioni,Number(f.operatoreId),data).length>0),[preview,f.operatoreId,manutenzioni]);
   return (
-    <Modal title={ini?"Modifica piano":"Nuovo piano di manutenzione"} onClose={onClose} onSave={()=>onSalva({...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})} saveOk={!!ok} saveColor="#059669" saveLabel={ini?"Aggiorna piano":"Crea piano e genera attività"}>
+    <Modal title={ini?"Modifica piano":"Nuovo piano"} onClose={onClose} onSave={()=>onSalva({...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})} saveOk={!!ok} saveColor="#059669" saveLabel={ini?"Aggiorna piano":"Crea piano e genera attività"}>
       <Field label="Nome piano *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Descrizione"><textarea value={f.descrizione} onChange={e=>s("descrizione",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
       <Field label="Cliente"><select value={f.clienteId} onChange={e=>{s("clienteId",e.target.value);s("assetId","");}} style={{width:"100%"}}><option value="">— Nessun cliente —</option>{clienti.map(c=><option key={c.id} value={String(c.id)}>{c.rs}</option>)}</select></Field>
@@ -516,20 +610,17 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
         <Field label="Frequenza"><select value={f.frequenza} onChange={e=>s("frequenza",e.target.value)} style={{width:"100%"}}>{FREQUENZE.map(fr=><option key={fr.v} value={fr.v}>{fr.l}</option>)}</select></Field>
         <Field label="Durata (min)"><input type="number" value={f.durata} onChange={e=>s("durata",Number(e.target.value))} min={15} step={15} style={{width:"100%"}} /></Field>
       </div>
-      <Field label="Operatore"><select value={f.operatoreId} onChange={e=>s("operatoreId",e.target.value)} style={{width:"100%"}}><option value="">— Nessun operatore —</option>{operatori.map(o=><option key={o.id} value={String(o.id)}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}</select></Field>
+      <Field label="Fornitore assegnato">
+        <select value={f.operatoreId} onChange={e=>s("operatoreId",e.target.value)} style={{width:"100%"}}>
+          <option value="">— Nessun fornitore —</option>
+          {fornitori.map(o=><option key={o.id} value={String(o.id)}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}
+        </select>
+      </Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="Data inizio *"><input type="date" value={f.dataInizio} onChange={e=>s("dataInizio",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Data fine (opzionale)"><input type="date" value={f.dataFine} onChange={e=>s("dataFine",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
-      {preview.length>0&&(
-        <div className="preview-dates">
-          <div style={{fontSize:12,fontWeight:700,marginBottom:8,color:"var(--text-2)"}}>Anteprima {preview.length} occorrenze nei prossimi 6 mesi:</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-            {preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}
-          </div>
-          {ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicheranno alle attività future non completate.</div>}
-        </div>
-      )}
+      {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
     </Modal>
   );
 }
@@ -538,44 +629,29 @@ function GestionePiani({ piani, clienti, assets, manutenzioni, operatori, onAgg,
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   return (
     <div style={{display:"grid",gap:12}}>
-      <div style={{display:"flex",justifyContent:"flex-end"}}>
-        <button className="btn-green-outline" style={{fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo piano di manutenzione</button>
-      </div>
-      {!piani.length&&<div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun piano. Crea il primo per generare le attività automaticamente.</div></div>}
+      <div style={{display:"flex",justifyContent:"flex-end"}}><button className="btn-green-outline" style={{fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo piano</button></div>
+      {!piani.length&&<div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun piano. Crea il primo per generare attività automaticamente.</div></div>}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:12}}>
-        {piani.map(p=>{
-          const cl=clienti.find(c=>c.id===p.clienteId);const as=assets.find(a=>a.id===p.assetId);const op=operatori.find(o=>o.id===p.operatoreId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);
-          const manP=manutenzioni.filter(m=>m.pianoId===p.id);const prossima=manP.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data))[0];
-          return (
-            <div key={p.id} className={"piano-card"+(p.attivo?" active":"")}>
-              <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}}>
-                <div style={{width:44,height:44,borderRadius:"var(--radius)",background:p.attivo?"#ECFDF5":"var(--surface-2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:`1px solid ${p.attivo?"#A7F3D0":"var(--border)"}`}}>🔄</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div>
-                  <div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}>
-                    <span className={"badge"+(p.attivo?" badge-attivo":" badge-sospeso")}>{p.attivo?"Attivo":"Sospeso"}</span>
-                    <span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{freq?.l}</span>
-                  </div>
-                </div>
-                <div style={{display:"flex",gap:4}}>
-                  <button className="btn-sm btn-icon" onClick={()=>{siM(p);ssM(true);}}>✏</button>
-                  <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(p.id)}>✕</button>
-                </div>
-              </div>
-              {p.descrizione&&<div style={{fontSize:12.5,color:"var(--text-2)",marginBottom:10}}>{p.descrizione}</div>}
-              <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
-                {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
-                {as&&<div>⚙ {as.nome}</div>}
-                {op&&<div style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:"50%",background:op.col,display:"inline-block"}} />{op.nome}</div>}
-                <div style={{color:"var(--text-3)"}}>📅 Dal {fmtData(p.dataInizio)}{p.dataFine?` al ${fmtData(p.dataFine)}`:""} · ⏱ {p.durata} min</div>
-              </div>
-              <div style={{display:"flex",gap:8,alignItems:"center",borderTop:"1px solid var(--border)",paddingTop:10}}>
-                <span style={{fontSize:12,color:"var(--text-3)",fontWeight:500}}>{manP.length} generate · {prossima?`Prossima: ${fmtData(prossima.data)}`:"Nessuna pianificata"}</span>
-                <span style={{flex:1}} />
-                <button className={"btn-sm"+(p.attivo?"":" btn-green-outline")} onClick={()=>onAttivaDisattiva(p.id,!p.attivo)}>{p.attivo?"Sospendi":"▶ Riattiva"}</button>
-              </div>
+        {piani.map(p=>{const cl=clienti.find(c=>c.id===p.clienteId);const as=assets.find(a=>a.id===p.assetId);const op=operatori.find(o=>o.id===p.operatoreId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);const manP=manutenzioni.filter(m=>m.pianoId===p.id);const prossima=manP.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data))[0];
+          return(<div key={p.id} className={"piano-card"+(p.attivo?" active":"")}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}}>
+              <div style={{width:44,height:44,borderRadius:"var(--radius)",background:p.attivo?"#ECFDF5":"var(--surface-2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:`1px solid ${p.attivo?"#A7F3D0":"var(--border)"}`}}>🔄</div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div><div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}><span className={"badge"+(p.attivo?" badge-attivo":" badge-sospeso")}>{p.attivo?"Attivo":"Sospeso"}</span><span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{freq?.l}</span></div></div>
+              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(p);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(p.id)}>✕</button></div>
             </div>
-          );
+            {p.descrizione&&<div style={{fontSize:12.5,color:"var(--text-2)",marginBottom:10}}>{p.descrizione}</div>}
+            <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
+              {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
+              {as&&<div>⚙ {as.nome}</div>}
+              {op&&<div style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:"50%",background:op.col,display:"inline-block"}} />{op.nome}</div>}
+              <div style={{color:"var(--text-3)"}}>📅 Dal {fmtData(p.dataInizio)}{p.dataFine?` al ${fmtData(p.dataFine)}`:""} · ⏱ {p.durata} min</div>
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"center",borderTop:"1px solid var(--border)",paddingTop:10}}>
+              <span style={{fontSize:12,color:"var(--text-3)",fontWeight:500}}>{manP.length} generate · {prossima?`Prossima: ${fmtData(prossima.data)}`:"Nessuna pianificata"}</span>
+              <span style={{flex:1}} />
+              <button className={"btn-sm"+(p.attivo?"":" btn-green-outline")} onClick={()=>onAttivaDisattiva(p.id,!p.attivo)}>{p.attivo?"Sospendi":"▶ Riattiva"}</button>
+            </div>
+          </div>);
         })}
       </div>
       {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
@@ -608,8 +684,7 @@ function ModalCliente({ ini, onClose, onSalva }) {
 function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
-  const BG_COLORS=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];
-  const TX_COLORS=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
+  const BG=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];const TX=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
@@ -617,40 +692,18 @@ function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel })
         <button style={{color:"#7F77DD",borderColor:"#C4B5FD",background:"#EEEDFE",fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo cliente</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
-        {filtrati.map((c,idx)=>{
-          const nAtt=manutenzioni.filter(m=>m.clienteId===c.id&&m.stato!=="completata").length;
-          const nAs=assets.filter(a=>a.clienteId===c.id).length;
-          const ur=manutenzioni.filter(m=>m.clienteId===c.id&&m.priorita==="urgente"&&m.stato!=="completata").length;
-          const ini=c.rs.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase();
-          const bg=BG_COLORS[idx%BG_COLORS.length];const tx=TX_COLORS[idx%TX_COLORS.length];
-          return (
-            <div key={c.id} className="client-card">
-              <div style={{display:"flex",gap:12,marginBottom:12}}>
-                <div style={{width:46,height:46,borderRadius:"var(--radius)",background:bg,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-head)",fontWeight:700,fontSize:14,color:tx,flexShrink:0}}>{ini}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.rs}</div>
-                  {c.settore&&<div style={{fontSize:11.5,color:"#7F77DD",fontWeight:500,marginTop:2}}>{c.settore}</div>}
-                </div>
-                <div style={{display:"flex",gap:4}}>
-                  <button className="btn-sm btn-icon" onClick={()=>{siM(c);ssM(true);}}>✏</button>
-                  <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(c.id)}>✕</button>
-                </div>
-              </div>
-              <div style={{fontSize:12,color:"var(--text-2)",display:"grid",gap:3,marginBottom:12}}>
-                {c.contatto&&<div>👤 {c.contatto}</div>}
-                {c.tel&&<div>📞 {c.tel}</div>}
-                {c.email&&<div>✉ {c.email}</div>}
-              </div>
-              <div style={{display:"flex",gap:0,borderTop:"1px solid var(--border)",paddingTop:10}}>
-                {[{v:nAtt,l:"Attive",c:"#2563EB"},{v:nAs,l:"Asset",c:"var(--text-1)"},{v:ur>0?ur:null,l:"Urgenti",c:"#DC2626"}].map(({v,l,c})=>v!=null?(
-                  <div key={l} style={{flex:1,textAlign:"center",padding:"4px 0"}}>
-                    <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,color:c}}>{v}</div>
-                    <div style={{fontSize:10,color:"var(--text-3)",fontWeight:600,textTransform:"uppercase",letterSpacing:".04em"}}>{l}</div>
-                  </div>
-                ):null)}
-              </div>
+        {filtrati.map((c,idx)=>{const nAtt=manutenzioni.filter(m=>m.clienteId===c.id&&m.stato!=="completata").length;const nAs=assets.filter(a=>a.clienteId===c.id).length;const ur=manutenzioni.filter(m=>m.clienteId===c.id&&m.priorita==="urgente"&&m.stato!=="completata").length;const ini=c.rs.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase();
+          return(<div key={c.id} className="client-card">
+            <div style={{display:"flex",gap:12,marginBottom:12}}>
+              <div style={{width:46,height:46,borderRadius:"var(--radius)",background:BG[idx%BG.length],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-head)",fontWeight:700,fontSize:14,color:TX[idx%TX.length],flexShrink:0}}>{ini}</div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.rs}</div>{c.settore&&<div style={{fontSize:11.5,color:"#7F77DD",fontWeight:500,marginTop:2}}>{c.settore}</div>}</div>
+              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(c);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(c.id)}>✕</button></div>
             </div>
-          );
+            <div style={{fontSize:12,color:"var(--text-2)",display:"grid",gap:3,marginBottom:12}}>{c.contatto&&<div>👤 {c.contatto}</div>}{c.tel&&<div>📞 {c.tel}</div>}{c.email&&<div>✉ {c.email}</div>}</div>
+            <div style={{display:"flex",borderTop:"1px solid var(--border)",paddingTop:10}}>
+              {[{v:nAtt,l:"Attive",c:"#2563EB"},{v:nAs,l:"Asset",c:"var(--text-1)"},{v:ur>0?ur:null,l:"Urgenti",c:"#DC2626"}].map(({v,l,c})=>v!=null?<div key={l} style={{flex:1,textAlign:"center",padding:"4px 0"}}><div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,color:c}}>{v}</div><div style={{fontSize:10,color:"var(--text-3)",fontWeight:600,textTransform:"uppercase",letterSpacing:".04em"}}>{l}</div></div>:null)}
+            </div>
+          </div>);
         })}
       </div>
       {showM&&<ModalCliente ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
@@ -658,56 +711,112 @@ function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel })
   );
 }
 
-// ─── Operatori ────────────────────────────────────────────────────────────
-function GestioneOperatori({ operatori, man, onAgg, onMod, onDel }) {
+// ─── Gestione Utenti ──────────────────────────────────────────────────────
+function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, onSaveSiti }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
+  const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
+  const [filtroTipo,setFiltroTipo]=useState("tutti");
+  const assets=[];// passed through but not needed here
+  const filtrati=useMemo(()=>operatori.filter(o=>filtroTipo==="tutti"||o.tipo===filtroTipo),[operatori,filtroTipo]);
+
   return (
     <div style={{display:"grid",gap:12}}>
-      <div style={{display:"flex",justifyContent:"flex-end"}}>
-        <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo operatore</button>
+      {/* Toolbar */}
+      <div className="filters">
+        <div style={{display:"flex",gap:6}}>
+          {["tutti","fornitore","cliente","interno"].map(t=>{
+            const label={tutti:"Tutti",fornitore:"Fornitori",cliente:"Clienti",interno:"Interni"}[t];
+            const count=t==="tutti"?operatori.length:operatori.filter(o=>o.tipo===t).length;
+            return <button key={t} onClick={()=>setFiltroTipo(t)} style={{fontWeight:filtroTipo===t?700:400,background:filtroTipo===t?"var(--navy)":"var(--surface)",color:filtroTipo===t?"white":"var(--text-2)",borderColor:filtroTipo===t?"var(--navy)":"var(--border)",fontSize:12,padding:"5px 12px"}}>{label} <span style={{opacity:.6}}>({count})</span></button>;
+          })}
+        </div>
+        <span style={{flex:1}} />
+        <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo utente</button>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
-        {operatori.map(op=>{
+
+      {/* Leggenda */}
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",padding:"10px 14px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",fontSize:12}}>
+        {Object.entries(TIPO_OP).map(([k,v])=>(
+          <div key={k} style={{display:"flex",alignItems:"center",gap:6}}>
+            <span className="badge" style={v.style}>{v.label}</span>
+            <span style={{color:"var(--text-3)"}}>{k==="fornitore"?"→ assegnabile alle manutenzioni":k==="cliente"?"→ vista limitata ai propri siti":"→ accesso interno"}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Cards */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
+        {filtrati.map(op=>{
           const sue=man.filter(m=>m.operatoreId===op.id);const att=sue.filter(m=>m.stato!=="completata");
           const ore=Math.round(att.reduce((s,m)=>s+m.durata,0)/60*10)/10;const urg=att.filter(m=>m.priorita==="urgente");
+          const mieiSiti=siti.filter(s=>s.operatoreId===op.id);
+          const cfg=TIPO_OP[op.tipo]||TIPO_OP.interno;
           return (
             <div key={op.id} className="op-card">
               <div className="op-card-accent" style={{background:op.col}} />
-              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:16,marginTop:4}}>
-                <Av nome={op.nome} col={op.col} size={46} />
+              <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,marginTop:4}}>
+                <Av nome={op.nome} col={op.col} size={44} />
                 <div style={{flex:1}}>
-                  <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:15}}>{op.nome}</div>
-                  <div style={{fontSize:12,color:"var(--text-3)",marginTop:1}}>{op.spec||"—"}</div>
+                  <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:14}}>{op.nome}</div>
+                  <div style={{display:"flex",gap:6,alignItems:"center",marginTop:3}}>
+                    <span className="badge" style={cfg.style}>{cfg.label}</span>
+                    {op.spec&&<span style={{fontSize:11.5,color:"var(--text-3)"}}>{op.spec}</span>}
+                  </div>
                 </div>
                 <div style={{display:"flex",gap:4}}>
                   <button className="btn-sm btn-icon" onClick={()=>{siM(op);ssM(true);}}>✏</button>
                   <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(op.id)}>✕</button>
                 </div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
-                {[{v:att.length,l:"Attive",c:op.col},{v:sue.filter(m=>m.stato==="completata").length,l:"Completate",c:"#059669"},{v:ore+"h",l:"Ore totali",c:"var(--text-1)"}].map(({v,l,c})=>(
-                  <div key={l} className="stat-mini">
-                    <div className="stat-mini-value" style={{color:c}}>{v}</div>
-                    <div className="stat-mini-label">{l}</div>
+
+              {/* Stats (solo fornitori/interni hanno senso) */}
+              {op.tipo!=="cliente"&&(
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                  {[{v:att.length,l:"Attive",c:op.col},{v:sue.filter(m=>m.stato==="completata").length,l:"Completate",c:"#059669"},{v:ore+"h",l:"Ore"}].map(({v,l,c})=>(
+                    <div key={l} className="stat-mini"><div className="stat-mini-value" style={{color:c}}>{v}</div><div className="stat-mini-label">{l}</div></div>
+                  ))}
+                </div>
+              )}
+
+              {/* Siti cliente */}
+              {op.tipo==="cliente"&&(
+                <div style={{marginBottom:12,padding:"10px 12px",background:mieiSiti.length>0?"#EEEDFE":"var(--surface-2)",borderRadius:"var(--radius-sm)",border:`1px solid ${mieiSiti.length>0?"#C4B5FD":"var(--border)"}`}}>
+                  <div style={{fontSize:12,fontWeight:600,color:mieiSiti.length>0?"#4F46E5":"var(--text-3)",marginBottom:mieiSiti.length>0?6:0}}>
+                    {mieiSiti.length>0?`🔗 ${mieiSiti.length} sito/i associato/i`:"🔗 Nessun sito associato"}
                   </div>
-                ))}
-              </div>
-              {urg.length>0&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderLeft:"3px solid #EF4444",borderRadius:"var(--radius-sm)",padding:"8px 12px",fontSize:12,color:"#9F1239",marginBottom:10,fontWeight:500}}>⚡ {urg.length} attività urgente{urg.length>1?"i":""}</div>}
-              <div style={{display:"flex",flexDirection:"column",gap:5}}>
-                {att.slice(0,3).map(m=>(
-                  <div key={m.id} style={{fontSize:12,padding:"7px 10px",borderRadius:"var(--radius-sm)",background:"var(--surface-2)",border:"1px solid var(--border)"}}>
-                    <div style={{fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.pianoId?"🔄 ":""}{m.titolo}</div>
-                    <div style={{color:"var(--text-3)",fontSize:11,marginTop:2}}>{fmtData(m.data)} · {m.durata} min</div>
-                  </div>
-                ))}
-                {att.length>3&&<div style={{fontSize:11,color:"var(--text-3)",textAlign:"center",fontWeight:500}}>+{att.length-3} altre attività</div>}
-                {!att.length&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"10px 0"}}>Nessuna attività attiva</div>}
+                  {mieiSiti.slice(0,3).map(s=>{const c=clienti.find(x=>x.id===s.clienteId);return c?<div key={s.id} style={{fontSize:11.5,color:"#6D28D9",marginTop:2}}>· {c.rs}</div>:null;})}
+                  {mieiSiti.length>3&&<div style={{fontSize:11,color:"var(--text-3)",marginTop:2}}>+{mieiSiti.length-3} altri</div>}
+                </div>
+              )}
+
+              {urg.length>0&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderLeft:"3px solid #EF4444",borderRadius:"var(--radius-sm)",padding:"7px 10px",fontSize:12,color:"#9F1239",marginBottom:10}}>⚡ {urg.length} urgente{urg.length>1?"i":""}</div>}
+
+              {/* Attività recenti (non clienti) */}
+              {op.tipo!=="cliente"&&att.slice(0,2).map(m=>(
+                <div key={m.id} style={{fontSize:12,padding:"7px 10px",borderRadius:"var(--radius-sm)",background:"var(--surface-2)",border:"1px solid var(--border)",marginBottom:4}}>
+                  <div style={{fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.pianoId?"🔄 ":""}{m.titolo}</div>
+                  <div style={{color:"var(--text-3)",fontSize:11,marginTop:2}}>{fmtData(m.data)} · {m.durata} min</div>
+                </div>
+              ))}
+              {op.tipo!=="cliente"&&att.length>2&&<div style={{fontSize:11,color:"var(--text-3)",textAlign:"center",fontWeight:500}}>+{att.length-2} altre attività</div>}
+              {op.tipo!=="cliente"&&att.length===0&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Nessuna attività attiva</div>}
+
+              {/* Azioni specifiche per tipo */}
+              <div style={{borderTop:"1px solid var(--border)",paddingTop:10,marginTop:6,display:"flex",gap:6,flexWrap:"wrap"}}>
+                {op.tipo==="cliente"&&<>
+                  <button className="btn-sm btn-green-outline" style={{flex:1}} onClick={()=>setSitiModal(op)}>🔗 Gestisci siti</button>
+                  <button className="btn-sm" style={{flex:1,background:"#EEEDFE",color:"#4F46E5",borderColor:"#C4B5FD"}} onClick={()=>setVistaModal(op)}>👁 Anteprima vista</button>
+                </>}
               </div>
             </div>
           );
         })}
       </div>
-      {showM&&<ModalOperatore ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {!filtrati.length&&<div className="empty"><div className="empty-icon">👥</div><div className="empty-text">Nessun utente trovato</div></div>}
+
+      {showM&&<ModalUtente ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {sitiModal&&<ModalSitiCliente operatore={sitiModal} clienti={clienti} siti={siti} onClose={()=>setSitiModal(null)} onSave={onSaveSiti} />}
+      {vistaModal&&<VistaCliente operatore={vistaModal} clienti={clienti} assets={assets} manutenzioni={man} piani={[]} siti={siti} onClose={()=>setVistaModal(null)} />}
     </div>
   );
 }
@@ -722,6 +831,7 @@ export default function App() {
   const [assets,   sAs]   = useState([]);
   const [piani,    sPi]   = useState([]);
   const [operatori,sOp]   = useState([]);
+  const [siti,     sSiti] = useState([]);
   const [vista,   sV]  = useState("dashboard");
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
@@ -730,7 +840,7 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); }
+      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -744,14 +854,23 @@ export default function App() {
       supabase.from("assets").select("*").order("created_at"),
       supabase.from("piani").select("*").order("created_at"),
       supabase.from("manutenzioni").select("*").order("data"),
-    ]).then(async ([ro, rc, ra, rp, rm]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error) { setDbErr("Errore caricamento dati."); setLoad(false); return; }
-      let ops = ro.data;
+      supabase.from("operatore_siti").select("*").order("created_at"),
+    ]).then(async ([ro, rc, ra, rp, rm, rs]) => {
+      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
+        // operatore_siti potrebbe non esistere ancora — non bloccare
+        if (ro.error||rc.error||ra.error||rp.error||rm.error) {
+          setDbErr("Errore caricamento dati. Esegui schema.sql su Supabase (controlla la sezione AGGIORNAMENTI v2).");
+          setLoad(false); return;
+        }
+      }
+      let ops = ro.data||[];
       if (ops.length === 0) {
-        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o => ({ ...o, user_id: session.user.id }))).select();
+        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id}))).select();
         ops = seeded || [];
       }
-      sOp(ops.map(mapOp)); sCl(rc.data.map(mapC)); sAs(ra.data.map(mapA)); sPi(rp.data.map(mapP)); sMan(rm.data.map(mapM));
+      sOp(ops.map(mapOp));
+      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
+      sSiti((rs.data||[]).map(mapSito));
       setLoad(false);
     });
   }, [session]);
@@ -773,12 +892,23 @@ export default function App() {
   const delA = async id => { await supabase.from("assets").delete().eq("id",id); sAs(p=>p.filter(a=>a.id!==id)); };
   const aggOp = async f => { const {data,error}=await supabase.from("operatori").insert(toDbOp(f,uid())).select().single(); if(!error)sOp(p=>[...p,mapOp(data)]); };
   const modOp = async f => { const {error}=await supabase.from("operatori").update(toDbOp(f,uid())).eq("id",f.id); if(!error)sOp(p=>p.map(o=>o.id===f.id?{...o,...f}:o)); };
-  const delOp = async id => { await supabase.from("operatori").delete().eq("id",id); sOp(p=>p.filter(o=>o.id!==id)); };
+  const delOp = async id => { await supabase.from("operatori").delete().eq("id",id); sOp(p=>p.filter(o=>o.id!==id)); sSiti(p=>p.filter(s=>s.operatoreId!==id)); };
+
+  // Salva associazioni siti per un operatore cliente
+  const saveSiti = async (operatoreId, clienteIds) => {
+    // Elimina le vecchie associazioni
+    await supabase.from("operatore_siti").delete().eq("operatore_id", operatoreId);
+    sSiti(p=>p.filter(s=>s.operatoreId!==operatoreId));
+    if (!clienteIds.length) return;
+    const rows = clienteIds.map(cliente_id=>({ operatore_id:operatoreId, cliente_id, user_id:uid() }));
+    const {data,error} = await supabase.from("operatore_siti").insert(rows).select();
+    if (!error&&data) sSiti(p=>[...p,...data.map(mapSito)]);
+  };
 
   const aggPiano = async f => {
     const piano={...f,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
     const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(piano,uid())).select().single();
-    if(pErr){console.error("aggPiano:",pErr);return;}
+    if(pErr){console.error(pErr);return;}
     const np=mapP(pianoRow); sPi(p=>[...p,np]);
     if(!np.dataInizio)return;
     const occ=generaOccorrenze(np,np.dataInizio,12); if(!occ.length)return;
@@ -811,7 +941,7 @@ export default function App() {
   if (loading) return (
     <div className="loading-screen">
       <div className="loading-logo">🔧</div>
-      <div style={{fontFamily:"var(--font-head)",fontSize:22,fontWeight:700,color:"white",letterSpacing:"-.01em"}}>ManuMan</div>
+      <div style={{fontFamily:"var(--font-head)",fontSize:22,fontWeight:700,color:"white"}}>ManuMan</div>
       <div className="loading-text">Caricamento in corso…</div>
     </div>
   );
@@ -821,22 +951,21 @@ export default function App() {
       <div className="error-box">
         <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
         <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,marginBottom:8}}>Errore database</div>
-        <div style={{fontSize:13,color:"var(--red)"}}>{dbErr}</div>
-        <div style={{fontSize:12,color:"var(--text-3)",marginTop:10}}>Esegui di nuovo <strong>schema.sql</strong> nel SQL Editor di Supabase.</div>
+        <div style={{fontSize:13,color:"var(--red)",marginBottom:8}}>{dbErr}</div>
+        <div style={{fontSize:12,color:"var(--text-3)"}}>Esegui <strong>schema.sql</strong> (v2) nel SQL Editor di Supabase, poi ricarica.</div>
         <button className="btn-primary" onClick={logout} style={{marginTop:16}}>Logout</button>
       </div>
     </div>
   );
+
+  const fornitori = operatori.filter(o=>o.tipo==="fornitore");
 
   return (
     <div className="app-shell">
       <nav className="topbar">
         <div className="topbar-logo">
           <div className="topbar-logo-icon">🔧</div>
-          <div>
-            <div className="topbar-logo-text">ManuMan</div>
-            <div className="topbar-logo-sub">Gestione Manutenzioni</div>
-          </div>
+          <div><div className="topbar-logo-text">ManuMan</div><div className="topbar-logo-sub">Gestione Manutenzioni</div></div>
         </div>
         <div className="topbar-nav">
           {TABS.map(t=>(
@@ -846,9 +975,7 @@ export default function App() {
           ))}
         </div>
         <div className="topbar-actions">
-          <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>
-            + Nuova attività
-          </button>
+          <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
           <button className="btn-logout" onClick={logout} title="Esci">↩</button>
         </div>
       </nav>
@@ -859,12 +986,12 @@ export default function App() {
         {vista==="piani"        && <GestionePiani piani={piani} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAttivaDisattiva={attivaDisattiva} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} />}
-        {vista==="operatori"    && <GestioneOperatori operatori={operatori} man={man} onAgg={aggOp} onMod={modOp} onDel={delOp} />}
+        {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} />}
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
       </main>
 
       {modalM && <ModalManut
-        ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:operatori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
+        ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori}
         onClose={()=>{sMM(false);siMM(null);}}
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}

@@ -1,6 +1,7 @@
 -- ============================================================
--- ManuMan — Schema Supabase
+-- ManuMan — Schema Supabase (v2)
 -- Esegui questo file nell'editor SQL del tuo progetto Supabase
+-- Se hai già eseguito la v1, esegui solo la sezione "AGGIORNAMENTI v2"
 -- ============================================================
 
 -- Clienti
@@ -35,14 +36,25 @@ create table if not exists assets (
   created_at timestamptz default now()
 );
 
--- Operatori
+-- Operatori (v2: aggiunto campo tipo)
 create table if not exists operatori (
   id      bigserial primary key,
   nome    text not null,
   spec    text default '',
   col     text default '#378ADD',
+  tipo    text default 'fornitore',
   user_id uuid references auth.users on delete cascade not null,
   created_at timestamptz default now()
+);
+
+-- Associazione operatore-cliente ai siti visibili
+create table if not exists operatore_siti (
+  id           bigserial primary key,
+  operatore_id bigint references operatori on delete cascade not null,
+  cliente_id   bigint references clienti  on delete cascade not null,
+  user_id      uuid references auth.users on delete cascade not null,
+  created_at   timestamptz default now(),
+  unique(operatore_id, cliente_id)
 );
 
 -- Piani di manutenzione
@@ -83,16 +95,25 @@ create table if not exists manutenzioni (
 );
 
 -- ============================================================
--- Row Level Security — ogni utente vede solo i propri dati
+-- Row Level Security
 -- ============================================================
-alter table clienti      enable row level security;
-alter table assets       enable row level security;
-alter table operatori    enable row level security;
-alter table piani        enable row level security;
-alter table manutenzioni enable row level security;
+alter table clienti        enable row level security;
+alter table assets         enable row level security;
+alter table operatori      enable row level security;
+alter table operatore_siti enable row level security;
+alter table piani          enable row level security;
+alter table manutenzioni   enable row level security;
 
-create policy "own clienti"      on clienti      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own assets"       on assets       for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own operatori"    on operatori    for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own piani"        on piani        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own manutenzioni" on manutenzioni for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own clienti"        on clienti        for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own assets"         on assets         for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own operatori"      on operatori      for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own operatore_siti" on operatore_siti for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own piani"          on piani          for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "own manutenzioni"   on manutenzioni   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ============================================================
+-- AGGIORNAMENTI v2
+-- Se la tabella operatori esiste già, esegui solo questo:
+-- ============================================================
+-- alter table operatori add column if not exists tipo text default 'fornitore';
+-- create table if not exists operatore_siti ( ... vedi sopra ... );
