@@ -735,3 +735,133 @@ input::placeholder { color: var(--text-3); }
   .topbar { padding: 0 14px; }
   .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 }
+
+/* ─── Mobile bottom nav ──────────────────────────────────────────────────── */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Nascondi topbar nav su mobile */
+  .topbar-nav { display: none; }
+  .topbar-logo-sub { display: none; }
+  .topbar { height: 52px; }
+  .topbar-logo-text { font-size: 16px; }
+
+  /* Mostra bottom nav */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--navy);
+    z-index: 200;
+    border-top: 1px solid var(--navy-4);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.3);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .bottom-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px 6px;
+    border: none;
+    background: transparent;
+    color: var(--slate);
+    cursor: pointer;
+    gap: 3px;
+    min-width: 0;
+    transition: color .15s;
+    font-family: var(--font-body);
+  }
+  .bottom-nav-btn.active {
+    color: var(--amber);
+  }
+  .bottom-nav-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+  .bottom-nav-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Più menu button (i tab extra vanno in un drawer) */
+  .bottom-nav-more {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    gap: 3px;
+    color: var(--slate);
+    font-family: var(--font-body);
+  }
+
+  /* Drawer "Altro" */
+  .mobile-drawer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--navy-2);
+    border-top: 1px solid var(--navy-4);
+    border-radius: 20px 20px 0 0;
+    z-index: 300;
+    padding: 12px 0 calc(env(safe-area-inset-bottom) + 80px);
+    animation: slideUpDrawer .2s ease;
+  }
+  .mobile-drawer-handle {
+    width: 40px; height: 4px;
+    background: var(--navy-4);
+    border-radius: 99px;
+    margin: 0 auto 16px;
+  }
+  .mobile-drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 24px;
+    color: var(--white-dim);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: var(--font-body);
+    transition: background .15s;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+  }
+  .mobile-drawer-item:hover, .mobile-drawer-item.active {
+    background: var(--navy-3);
+    color: var(--amber);
+  }
+  .mobile-drawer-item.active { color: var(--amber); }
+  .mobile-drawer-icon { font-size: 20px; width: 28px; text-align: center; }
+  .mobile-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 299;
+  }
+
+  /* Padding bottom per il contenuto (non coperto dalla bottom nav) */
+  .page-content {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  }
+
+  @keyframes slideUpDrawer {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+}
