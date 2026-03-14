@@ -1503,7 +1503,28 @@ export default function App() {
         <div className="topbar-actions">
           <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
           <button className="btn-logout" onClick={()=>setTemaModal(true)} title="Cambia tema" style={{fontSize:15}}>🎨</button>
-          <button className="btn-logout" onClick={logout} title="Esci">↩</button>
+          {/* Utente loggato */}
+          {(() => {
+            const me = operatori.find(o=>o.email===session?.user?.email) || null;
+            const email = session?.user?.email || "";
+            const initials = me
+              ? me.nome.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase()
+              : email.slice(0,2).toUpperCase();
+            const col = me?.col || "#8BA3B8";
+            const nome = me?.nome || email;
+            return (
+              <div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 10px",borderRadius:"var(--radius-sm)",background:"var(--navy-3)",border:"1px solid var(--navy-4)",cursor:"default",flexShrink:0}}>
+                <div style={{width:28,height:28,borderRadius:"50%",background:col+"30",border:`1.5px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:col,flexShrink:0}}>{initials}</div>
+                <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
+                  <span style={{fontSize:12,fontWeight:600,color:"var(--white)",whiteSpace:"nowrap",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis"}}>{me?.nome || email.split("@")[0]}</span>
+                  {me&&<span style={{fontSize:10,color:"var(--slate)",whiteSpace:"nowrap"}}>{me.tipo==="fornitore"?"Fornitore":me.tipo==="cliente"?"Cliente":"Interno"}</span>}
+                </div>
+              </div>
+            );
+          })()}
+          <button className="btn-logout" onClick={logout} title="Esci" style={{fontSize:13,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
+            <span>↩</span><span style={{fontSize:11,fontWeight:600,color:"var(--slate)"}}>Esci</span>
+          </button>
         </div>
       </nav>
 

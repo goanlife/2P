@@ -1014,3 +1014,10 @@ input::placeholder { color: var(--text-3); }
 .theme-swatch-top { flex: 1; }
 .theme-swatch-bot { height: 10px; }
 .theme-swatch-label { font-size: 10px; font-weight: 600; text-align: center; margin-top: 4px; color: var(--text-2); }
+
+/* ─── User badge in topbar ───────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Su mobile piccolissimo nascondi il nome, tieni solo l'avatar */
+  .topbar-user-name { display: none; }
+  .topbar-user-tipo { display: none; }
+}
