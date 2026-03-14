@@ -26,6 +26,8 @@ const TIPO_OP = {
   cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
   interno:   { label:"Interno",   cls:"badge", style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
 };
+const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
+
 const TABS = [
   {id:"dashboard",   l:"Dashboard",    icon:"◈"},
   {id:"manutenzioni",l:"Manutenzioni", icon:"⚡"},
@@ -33,6 +35,7 @@ const TABS = [
   {id:"calendario",  l:"Calendario",   icon:"📅"},
   {id:"assets",      l:"Asset",        icon:"⚙"},
   {id:"utenti",      l:"Utenti",       icon:"👥"},
+  {id:"gruppi",      l:"Gruppi",       icon:"🗂"},
   {id:"clienti",     l:"Clienti",      icon:"🏢"},
 ];
 
@@ -42,13 +45,17 @@ const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||""
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore" });
-const mapSito = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
+const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
+const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
+const mapGOp    = r => ({ id:r.id, gruppoId:r.gruppo_id, operatoreId:r.operatore_id });
+const mapGSito  = r => ({ id:r.id, gruppoId:r.gruppo_id, clienteId:r.cliente_id });
 
 const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
 const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
 const toDbA  = (f,uid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid });
 const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
-const toDbOp = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
+const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
+const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
 
 // ─── Utils ────────────────────────────────────────────────────────────────
 const fmtData  = d => d ? new Date(d).toLocaleDateString("it-IT") : "—";
@@ -821,6 +828,248 @@ function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, on
   );
 }
 
+
+// ─── Gestione Gruppi ──────────────────────────────────────────────────────
+function ModalGruppo({ ini, onClose, onSalva }) {
+  const [f,sf] = useState(ini||{nome:"",descrizione:"",col:"#378ADD"});
+  const s = (k,v) => sf(p=>({...p,[k]:v}));
+  return (
+    <Modal title={ini?"Modifica gruppo":"Nuovo gruppo"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveLabel={ini?"Aggiorna":"Crea gruppo"}>
+      <Field label="Nome gruppo *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Es. Reparto Elettrico..." style={{width:"100%"}} /></Field>
+      <Field label="Descrizione"><textarea value={f.descrizione} onChange={e=>s("descrizione",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} placeholder="Descrizione opzionale..." /></Field>
+      <Field label="Colore">
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",paddingTop:4}}>
+          {COLORI_GRUPPI.map(c=><div key={c} className={"color-dot"+(f.col===c?" selected":"")} style={{background:c}} onClick={()=>s("col",c)} />)}
+        </div>
+      </Field>
+    </Modal>
+  );
+}
+
+function ModalAssegnaGruppo({ gruppo, operatori, clienti, gOps, gSiti, onClose, onSave }) {
+  const meiOps   = useMemo(()=>new Set(gOps.filter(g=>g.gruppoId===gruppo.id).map(g=>g.operatoreId)),[gOps,gruppo.id]);
+  const meiSiti  = useMemo(()=>new Set(gSiti.filter(g=>g.gruppoId===gruppo.id).map(g=>g.clienteId)),[gSiti,gruppo.id]);
+  const [selOps,  setSelOps]  = useState(new Set(meiOps));
+  const [selSiti, setSelSiti] = useState(new Set(meiSiti));
+  const [tab, setTab] = useState("utenti");
+
+  const toggleOp   = id => setSelOps(p  => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; });
+  const toggleSito = id => setSelSiti(p => { const n=new Set(p); n.has(id)?n.delete(id):n.add(id); return n; });
+
+  return (
+    <Overlay>
+      <div className="modal-box" style={{width:"min(580px,96vw)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+          <div>
+            <div className="modal-title" style={{display:"flex",alignItems:"center",gap:8}}>
+              <span style={{width:14,height:14,borderRadius:"50%",background:gruppo.col,display:"inline-block"}} />
+              {gruppo.nome}
+            </div>
+            <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>Assegna utenti e siti al gruppo</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:"flex",gap:4,marginBottom:14,borderBottom:"1px solid var(--border)"}}>
+          {[{id:"utenti",l:`Utenti (${selOps.size})`},{id:"siti",l:`Siti (${selSiti.size})`}].map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{border:"none",borderBottom:tab===t.id?"2px solid var(--navy)":"2px solid transparent",background:"none",padding:"8px 16px",fontWeight:tab===t.id?700:400,color:tab===t.id?"var(--navy)":"var(--text-3)",borderRadius:0,cursor:"pointer",fontSize:13}}>{t.l}</button>
+          ))}
+        </div>
+
+        <div style={{maxHeight:340,overflowY:"auto",display:"grid",gap:6}}>
+          {tab==="utenti"&&operatori.map(o=>{
+            const checked=selOps.has(o.id); const cfg=TIPO_OP[o.tipo]||TIPO_OP.interno;
+            return (
+              <label key={o.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:"var(--radius-sm)",border:`1px solid ${checked?gruppo.col:"var(--border)"}`,background:checked?gruppo.col+"10":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
+                <input type="checkbox" checked={checked} onChange={()=>toggleOp(o.id)} style={{width:15,height:15,cursor:"pointer"}} />
+                <Av nome={o.nome} col={o.col} size={28} />
+                <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{o.nome}</div><div style={{fontSize:11,color:"var(--text-3)"}}>{o.spec}</div></div>
+                <span className="badge" style={cfg.style}>{cfg.label}</span>
+              </label>
+            );
+          })}
+          {tab==="siti"&&clienti.map(c=>{
+            const checked=selSiti.has(c.id);
+            return (
+              <label key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:"var(--radius-sm)",border:`1px solid ${checked?gruppo.col:"var(--border)"}`,background:checked?gruppo.col+"10":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
+                <input type="checkbox" checked={checked} onChange={()=>toggleSito(c.id)} style={{width:15,height:15,cursor:"pointer"}} />
+                <div style={{width:32,height:32,borderRadius:"var(--radius-sm)",background:gruppo.col+"20",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:11,color:gruppo.col,flexShrink:0}}>{c.rs.slice(0,2).toUpperCase()}</div>
+                <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{c.rs}</div>{c.settore&&<div style={{fontSize:11,color:"var(--text-3)"}}>{c.settore}</div>}</div>
+              </label>
+            );
+          })}
+          {tab==="utenti"&&operatori.length===0&&<div style={{textAlign:"center",padding:"24px",color:"var(--text-3)"}}>Nessun utente disponibile</div>}
+          {tab==="siti"&&clienti.length===0&&<div style={{textAlign:"center",padding:"24px",color:"var(--text-3)"}}>Nessun sito disponibile</div>}
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={onClose}>Annulla</button>
+          <button className="btn-primary" onClick={()=>{onSave(gruppo.id,[...selOps],[...selSiti]);onClose();}}>
+            Salva ({selOps.size} utenti, {selSiti.size} siti)
+          </button>
+        </div>
+      </div>
+    </Overlay>
+  );
+}
+
+function GestioneGruppi({ gruppi, operatori, clienti, man, gOps, gSiti, onAgg, onMod, onDel, onSaveAssoc }) {
+  const [showM,  ssM]  = useState(false);
+  const [inMod,  siM]  = useState(null);
+  const [assocModal, setAssoc] = useState(null);
+  const [filtroGruppo, setFiltroGruppo] = useState(null); // null = tutti
+
+  // Filtra manutenzioni per gruppo selezionato
+  const manFiltrate = useMemo(()=>{
+    if (!filtroGruppo) return man;
+    const gSitiIds = gSiti.filter(g=>g.gruppoId===filtroGruppo).map(g=>g.clienteId);
+    const gOpsIds  = gOps.filter(g=>g.gruppoId===filtroGruppo).map(g=>g.operatoreId);
+    return man.filter(m=>gSitiIds.includes(m.clienteId)||gOpsIds.includes(m.operatoreId));
+  },[man,filtroGruppo,gSiti,gOps]);
+
+  return (
+    <div style={{display:"grid",gap:16}}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18}}>Gruppi</div>
+          <div style={{fontSize:13,color:"var(--text-3)",marginTop:2}}>Organizza utenti e siti in gruppi per filtrare la visibilità</div>
+        </div>
+        <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo gruppo</button>
+      </div>
+
+      {/* Filtro visibilità rapido */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"12px 16px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius-lg)",alignItems:"center"}}>
+        <span style={{fontSize:12,fontWeight:600,color:"var(--text-2)"}}>Filtra visibilità:</span>
+        <button onClick={()=>setFiltroGruppo(null)} style={{fontSize:12,fontWeight:filtroGruppo===null?700:400,background:filtroGruppo===null?"var(--navy)":"var(--surface)",color:filtroGruppo===null?"white":"var(--text-2)",borderColor:filtroGruppo===null?"var(--navy)":"var(--border)",padding:"4px 12px"}}>
+          Tutti ({man.length})
+        </button>
+        {gruppi.map(g=>{
+          const n = gSiti.filter(s=>s.gruppoId===g.id).reduce((acc,s)=>acc+man.filter(m=>m.clienteId===s.clienteId).length,0);
+          return (
+            <button key={g.id} onClick={()=>setFiltroGruppo(filtroGruppo===g.id?null:g.id)}
+              style={{fontSize:12,fontWeight:filtroGruppo===g.id?700:400,background:filtroGruppo===g.id?g.col:"var(--surface)",color:filtroGruppo===g.id?"white":"var(--text-2)",borderColor:filtroGruppo===g.id?g.col:"var(--border)",padding:"4px 12px",display:"flex",alignItems:"center",gap:6}}>
+              <span style={{width:8,height:8,borderRadius:"50%",background:filtroGruppo===g.id?"white":g.col,display:"inline-block"}} />
+              {g.nome} ({n})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Anteprima manutenzioni filtrate */}
+      {filtroGruppo&&(
+        <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius-lg)",padding:"16px 20px"}}>
+          <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>
+            📋 Manutenzioni visibili — {gruppi.find(g=>g.id===filtroGruppo)?.nome} ({manFiltrate.length})
+          </div>
+          <div style={{display:"grid",gap:6,maxHeight:280,overflowY:"auto"}}>
+            {manFiltrate.slice(0,20).map(m=>{
+              const op=operatori.find(o=>o.id===m.operatoreId); const cl=clienti.find(c=>c.id===m.clienteId);
+              return (
+                <div key={m.id} style={{display:"flex",gap:10,padding:"9px 12px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface-2)",alignItems:"center"}}>
+                  <div style={{width:3,borderRadius:99,background:PRI_COLOR[m.priorita]||"#ccc",alignSelf:"stretch",flexShrink:0}} />
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:600,fontSize:13,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.titolo}</div>
+                    <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)}{cl?` · ${cl.rs}`:""}{op?` · ${op.nome}`:""}</div>
+                  </div>
+                  <span className={"badge badge-"+m.stato} style={{flexShrink:0}}>{STATO_LABEL[m.stato]}</span>
+                </div>
+              );
+            })}
+            {manFiltrate.length===0&&<div style={{textAlign:"center",padding:"20px 0",color:"var(--text-3)",fontSize:13}}>Nessuna manutenzione per questo gruppo</div>}
+            {manFiltrate.length>20&&<div style={{textAlign:"center",fontSize:12,color:"var(--text-3)",padding:"8px 0"}}>... e altre {manFiltrate.length-20}</div>}
+          </div>
+        </div>
+      )}
+
+      {/* Cards gruppi */}
+      {!gruppi.length&&<div className="empty"><div className="empty-icon">🗂</div><div className="empty-text">Nessun gruppo. Creane uno per organizzare utenti e siti.</div></div>}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:12}}>
+        {gruppi.map(g=>{
+          const gOpIds  = gOps.filter(x=>x.gruppoId===g.id).map(x=>x.operatoreId);
+          const gSitiIds= gSiti.filter(x=>x.gruppoId===g.id).map(x=>x.clienteId);
+          const opsGruppo  = operatori.filter(o=>gOpIds.includes(o.id));
+          const sitiGruppo = clienti.filter(c=>gSitiIds.includes(c.id));
+          const manGruppo  = man.filter(m=>gSitiIds.includes(m.clienteId)||gOpIds.includes(m.operatoreId));
+          const attive = manGruppo.filter(m=>m.stato!=="completata").length;
+
+          return (
+            <div key={g.id} style={{background:"var(--surface)",border:`1px solid var(--border)`,borderTop:`3px solid ${g.col}`,borderRadius:"var(--radius-lg)",padding:"18px 20px",boxShadow:"var(--shadow-sm)",transition:"all .2s"}}
+              onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--shadow)"}
+              onMouseLeave={e=>e.currentTarget.style.boxShadow="var(--shadow-sm)"}
+            >
+              {/* Header */}
+              <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:14}}>
+                <div style={{width:44,height:44,borderRadius:"var(--radius)",background:g.col+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:`1px solid ${g.col}40`}}>🗂</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:15}}>{g.nome}</div>
+                  {g.descrizione&&<div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{g.descrizione}</div>}
+                </div>
+                <div style={{display:"flex",gap:4}}>
+                  <button className="btn-sm btn-icon" onClick={()=>{siM(g);ssM(true);}}>✏</button>
+                  <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(g.id)}>✕</button>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+                {[{v:opsGruppo.length,l:"Utenti"},{v:sitiGruppo.length,l:"Siti"},{v:attive,l:"Attività"}].map(({v,l})=>(
+                  <div key={l} className="stat-mini">
+                    <div className="stat-mini-value" style={{color:g.col,fontSize:18}}>{v}</div>
+                    <div className="stat-mini-label">{l}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Utenti preview */}
+              {opsGruppo.length>0&&(
+                <div style={{marginBottom:10}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".04em",marginBottom:6}}>Utenti</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {opsGruppo.slice(0,5).map(o=>(
+                      <div key={o.id} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 8px",borderRadius:20,background:o.col+"15",border:`1px solid ${o.col}40`,fontSize:11.5,fontWeight:500,color:o.col}}>
+                        <span style={{width:6,height:6,borderRadius:"50%",background:o.col,display:"inline-block"}} />{o.nome.split(" ")[0]}
+                      </div>
+                    ))}
+                    {opsGruppo.length>5&&<span style={{fontSize:11,color:"var(--text-3)",alignSelf:"center"}}>+{opsGruppo.length-5}</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* Siti preview */}
+              {sitiGruppo.length>0&&(
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:11,fontWeight:700,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".04em",marginBottom:6}}>Siti</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {sitiGruppo.slice(0,4).map(c=>(
+                      <span key={c.id} style={{fontSize:11.5,padding:"2px 8px",borderRadius:4,background:g.col+"12",color:g.col,fontWeight:500,border:`1px solid ${g.col}30`}}>{c.rs}</span>
+                    ))}
+                    {sitiGruppo.length>4&&<span style={{fontSize:11,color:"var(--text-3)",alignSelf:"center"}}>+{sitiGruppo.length-4}</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{borderTop:"1px solid var(--border)",paddingTop:10,display:"flex",gap:6}}>
+                <button style={{flex:1,fontSize:12,fontWeight:600,background:g.col+"10",color:g.col,borderColor:g.col+"40"}} onClick={()=>setAssoc(g)}>
+                  ⚙ Gestisci membri
+                </button>
+                <button style={{flex:1,fontSize:12,fontWeight:600}} onClick={()=>setFiltroGruppo(filtroGruppo===g.id?null:g.id)}>
+                  {filtroGruppo===g.id?"✓ Filtro attivo":"👁 Filtra vista"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {showM&&<ModalGruppo ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {assocModal&&<ModalAssegnaGruppo gruppo={assocModal} operatori={operatori} clienti={clienti} gOps={gOps} gSiti={gSiti} onClose={()=>setAssoc(null)} onSave={onSaveAssoc} />}
+    </div>
+  );
+}
+
 // ─── App root ─────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSess] = useState(null);
@@ -832,6 +1081,9 @@ export default function App() {
   const [piani,    sPi]   = useState([]);
   const [operatori,sOp]   = useState([]);
   const [siti,     sSiti] = useState([]);
+  const [gruppi,   sGruppi]= useState([]);
+  const [gOps,     sGOps]  = useState([]);
+  const [gSiti,    sGSiti] = useState([]);
   const [vista,   sV]  = useState("dashboard");
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
@@ -840,7 +1092,7 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); }
+      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -855,13 +1107,13 @@ export default function App() {
       supabase.from("piani").select("*").order("created_at"),
       supabase.from("manutenzioni").select("*").order("data"),
       supabase.from("operatore_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rm, rs]) => {
+      supabase.from("gruppi").select("*").order("created_at"),
+      supabase.from("gruppo_operatori").select("*").order("created_at"),
+      supabase.from("gruppo_siti").select("*").order("created_at"),
+    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs]) => {
       if (ro.error||rc.error||ra.error||rp.error||rm.error) {
-        // operatore_siti potrebbe non esistere ancora — non bloccare
-        if (ro.error||rc.error||ra.error||rp.error||rm.error) {
-          setDbErr("Errore caricamento dati. Esegui schema.sql su Supabase (controlla la sezione AGGIORNAMENTI v2).");
-          setLoad(false); return;
-        }
+        setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
+        setLoad(false); return;
       }
       let ops = ro.data||[];
       if (ops.length === 0) {
@@ -871,6 +1123,9 @@ export default function App() {
       sOp(ops.map(mapOp));
       sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
       sSiti((rs.data||[]).map(mapSito));
+      sGruppi((rg.data||[]).map(mapGruppo));
+      sGOps((rgo.data||[]).map(mapGOp));
+      sGSiti((rgs.data||[]).map(mapGSito));
       setLoad(false);
     });
   }, [session]);
@@ -903,6 +1158,38 @@ export default function App() {
     const rows = clienteIds.map(cliente_id=>({ operatore_id:operatoreId, cliente_id, user_id:uid() }));
     const {data,error} = await supabase.from("operatore_siti").insert(rows).select();
     if (!error&&data) sSiti(p=>[...p,...data.map(mapSito)]);
+  };
+
+  // ── Gruppi ───────────────────────────────────────────────────────────────
+  const aggGruppo = async f => {
+    const {data,error}=await supabase.from("gruppi").insert(toDbGruppo(f,uid())).select().single();
+    if(!error)sGruppi(p=>[...p,mapGruppo(data)]);
+  };
+  const modGruppo = async f => {
+    const {error}=await supabase.from("gruppi").update(toDbGruppo(f,uid())).eq("id",f.id);
+    if(!error)sGruppi(p=>p.map(g=>g.id===f.id?{...g,...f}:g));
+  };
+  const delGruppo = async id => {
+    await supabase.from("gruppi").delete().eq("id",id);
+    sGruppi(p=>p.filter(g=>g.id!==id));
+    sGOps(p=>p.filter(g=>g.gruppoId!==id));
+    sGSiti(p=>p.filter(g=>g.gruppoId!==id));
+  };
+  const saveAssocGruppo = async (gruppoId, opIds, sitoIds) => {
+    await supabase.from("gruppo_operatori").delete().eq("gruppo_id", gruppoId);
+    await supabase.from("gruppo_siti").delete().eq("gruppo_id", gruppoId);
+    sGOps(p=>p.filter(g=>g.gruppoId!==gruppoId));
+    sGSiti(p=>p.filter(g=>g.gruppoId!==gruppoId));
+    if (opIds.length) {
+      const rows=opIds.map(operatore_id=>({gruppo_id:gruppoId,operatore_id,user_id:uid()}));
+      const {data}=await supabase.from("gruppo_operatori").insert(rows).select();
+      if(data)sGOps(p=>[...p,...data.map(mapGOp)]);
+    }
+    if (sitoIds.length) {
+      const rows=sitoIds.map(cliente_id=>({gruppo_id:gruppoId,cliente_id,user_id:uid()}));
+      const {data}=await supabase.from("gruppo_siti").insert(rows).select();
+      if(data)sGSiti(p=>[...p,...data.map(mapGSito)]);
+    }
   };
 
   const aggPiano = async f => {
@@ -987,6 +1274,7 @@ export default function App() {
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} />}
+        {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={delGruppo} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
       </main>
 
