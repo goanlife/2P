@@ -1088,6 +1088,8 @@ export default function App() {
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
+  const [toast,   sToast] = useState(null);
+  const notify = (msg,type="error") => sToast({msg,type});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
@@ -1139,7 +1141,7 @@ export default function App() {
   const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
   const statoM = async (id,stato) => { await supabase.from("manutenzioni").update({stato}).eq("id",id); sMan(p=>p.map(m=>m.id===id?{...m,stato}:m)); };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
-  const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid())).select().single(); if(!error)sCl(p=>[...p,mapC(data)]); };
+  const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid())).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
   const modC = async f => { await supabase.from("clienti").update(toDbC(f,uid())).eq("id",f.id); sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c)); };
   const delC = async id => { await supabase.from("clienti").delete().eq("id",id); sCl(p=>p.filter(c=>c.id!==id)); };
   const aggA = async f => { const {data,error}=await supabase.from("assets").insert(toDbA(f,uid())).select().single(); if(!error)sAs(p=>[...p,mapA(data)]); };
@@ -1163,11 +1165,13 @@ export default function App() {
   // ── Gruppi ───────────────────────────────────────────────────────────────
   const aggGruppo = async f => {
     const {data,error}=await supabase.from("gruppi").insert(toDbGruppo(f,uid())).select().single();
-    if(!error)sGruppi(p=>[...p,mapGruppo(data)]);
+    if(error){ notify("Errore salvataggio gruppo: "+error.message+". Hai eseguito schema_v3.sql su Supabase?"); return; }
+    sGruppi(p=>[...p,mapGruppo(data)]); notify("Gruppo creato con successo","success");
   };
   const modGruppo = async f => {
     const {error}=await supabase.from("gruppi").update(toDbGruppo(f,uid())).eq("id",f.id);
-    if(!error)sGruppi(p=>p.map(g=>g.id===f.id?{...g,...f}:g));
+    if(error){ notify("Errore aggiornamento gruppo: "+error.message); return; }
+    sGruppi(p=>p.map(g=>g.id===f.id?{...g,...f}:g)); notify("Gruppo aggiornato","success");
   };
   const delGruppo = async id => {
     await supabase.from("gruppi").delete().eq("id",id);
@@ -1176,8 +1180,9 @@ export default function App() {
     sGSiti(p=>p.filter(g=>g.gruppoId!==id));
   };
   const saveAssocGruppo = async (gruppoId, opIds, sitoIds) => {
-    await supabase.from("gruppo_operatori").delete().eq("gruppo_id", gruppoId);
-    await supabase.from("gruppo_siti").delete().eq("gruppo_id", gruppoId);
+    const {error:e1}=await supabase.from("gruppo_operatori").delete().eq("gruppo_id", gruppoId);
+    const {error:e2}=await supabase.from("gruppo_siti").delete().eq("gruppo_id", gruppoId);
+    if(e1||e2){ notify("Errore: "+(e1||e2).message+". Hai eseguito schema_v3.sql su Supabase?"); return; }
     sGOps(p=>p.filter(g=>g.gruppoId!==gruppoId));
     sGSiti(p=>p.filter(g=>g.gruppoId!==gruppoId));
     if (opIds.length) {
@@ -1278,6 +1283,7 @@ export default function App() {
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
       </main>
 
+      {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {modalM && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori}
