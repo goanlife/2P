@@ -1678,7 +1678,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
+    supabase.auth.getSession().then(({ data: { session } }) => { setSess(session); if (!session) setTenantLoad(false); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSess(s);
       if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); setTenantLoad(true); }
@@ -1687,7 +1687,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setLoad(false); return; }
+    if (!session) { setLoad(false); setTenantLoad(false); return; }
 
     // Fase 1: carica il tenant se non ancora presente
     if (!tenant) {
