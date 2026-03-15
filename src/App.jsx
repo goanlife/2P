@@ -1678,7 +1678,12 @@ export default function App() {
   // ── Macchina a stati principale ─────────────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (!s) {
+      if (s) {
+        // Login avvenuto
+        setSess(s);
+        setFase('check_tenant');
+      } else {
+        // Logout
         setSess(null); setTenant(null);
         sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]);
         setFase('no_session');
