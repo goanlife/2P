@@ -1733,7 +1733,7 @@ export default function App() {
       sGSiti((rgs.data||[]).map(mapGSito));
       setLoad(false);
     });
-  }, [session]);
+  }, [session, tenant]);
 
   const uid = () => session?.user?.id;
   const tid = () => tenant?.id;
