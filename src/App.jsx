@@ -1297,17 +1297,15 @@ function iconaFile(mime) {
 }
 
 function GestoreAllegati({ entitaTipo, entitaId, userId }) {
-  const [allegati,    setAllegati]    = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [uploading,   setUploading]   = useState(false);
-  const [errore,      setErrore]      = useState(null);
-  const [successo,    setSuccesso]    = useState(null);
-  const [dragOver,    setDragOver]    = useState(false);
-  const [confirmDel,  setConfirmDel]  = useState(null); // id da eliminare
-  const [tabError,    setTabError]    = useState(false);
-  const fileRef = useRef();
+  const [allegati,   setAllegati]  = useState([]);
+  const [loading,    setLoading]   = useState(true);
+  const [uploading,  setUploading] = useState(false);
+  const [errore,     setErrore]    = useState(null);
+  const [successo,   setSuccesso]  = useState(null);
+  const [dragOver,   setDragOver]  = useState(false);
+  const [confirmDel, setConfirmDel] = useState(null);
+  const inputId = useMemo(() => `file-${entitaTipo}-${entitaId}`, [entitaTipo, entitaId]);
 
-  // Diagnostica: userId
   const uid = userId || "";
 
   const carica = async () => {
@@ -1317,12 +1315,11 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
       .from("allegati")
       .select("*")
       .eq("entita_tipo", entitaTipo)
-      .eq("entita_id", entitaId)
+      .eq("entita_id", Number(entitaId))
       .order("created_at", { ascending: false });
     if (error) {
       if (error.code === "42P01" || error.message?.includes("does not exist")) {
-        setTabError(true);
-        setErrore("⚠ Tabella allegati non trovata. Esegui lo SQL di setup su Supabase.");
+        setErrore("⚠ Tabella 'allegati' non trovata. Esegui lo SQL di setup su Supabase.");
       } else {
         setErrore("Errore caricamento: " + error.message);
       }
@@ -1336,8 +1333,7 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
 
   const upload = async (files) => {
     if (!files?.length) return;
-    if (!uid) { setErrore("Errore: userId mancante. Ricarica la pagina."); return; }
-    if (tabError) { setErrore("Crea prima la tabella allegati su Supabase."); return; }
+    if (!uid) { setErrore("Sessione scaduta — ricarica la pagina."); return; }
 
     setUploading(true); setErrore(null); setSuccesso(null);
     let ok = 0;
@@ -1347,25 +1343,30 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
         setErrore(`"${file.name}" supera i 20 MB`);
         continue;
       }
-      // Sanitizza nome file
-      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      // Sanitizza nome: rimuovi caratteri problematici
+      const safeName = file.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9.\-_]/g, "_");
       const path = `${uid}/${entitaTipo}/${entitaId}/${Date.now()}_${safeName}`;
 
-      // 1. Upload storage
+      // Upload storage
       const { error: upErr } = await supabase.storage
         .from("allegati")
         .upload(path, file, { upsert: false });
 
       if (upErr) {
-        if (upErr.message?.includes("not found") || upErr.message?.includes("bucket")) {
-          setErrore("⚠ Bucket storage 'allegati' non trovato. Crealo su Supabase → Storage.");
+        if (upErr.message?.includes("Bucket") || upErr.message?.includes("bucket") || upErr.message?.includes("not found")) {
+          setErrore("⚠ Bucket storage 'allegati' non trovato. Vai su Supabase → Storage → Crea bucket 'allegati'.");
+        } else if (upErr.message?.includes("row-level") || upErr.message?.includes("policy")) {
+          setErrore("⚠ Policy storage mancante. Esegui l'SQL della policy su Supabase.");
         } else {
           setErrore("Errore upload: " + upErr.message);
         }
         continue;
       }
 
-      // 2. Salva record DB
+      // Salva record DB
       const { data: row, error: dbErr } = await supabase
         .from("allegati")
         .insert({
@@ -1381,21 +1382,25 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
         .single();
 
       if (dbErr) {
-        // Rimuovi file orphan dallo storage
         await supabase.storage.from("allegati").remove([path]);
-        setErrore("Errore salvataggio: " + dbErr.message);
+        setErrore("Errore salvataggio DB: " + dbErr.message);
         continue;
       }
 
       setAllegati(prev => [mapAllegato(row), ...prev]);
       ok++;
     }
-
-    if (ok > 0) setSuccesso(`${ok} file caricato/i con successo ✅`);
-
-    // Reset file input per permettere ricaricamento stesso file
-    if (fileRef.current) fileRef.current.value = "";
+    if (ok > 0) setSuccesso(`${ok} file caricato/i ✅`);
     setUploading(false);
+  };
+
+  const handleInputChange = (e) => {
+    const files = e.target.files;
+    if (files?.length) {
+      upload(files);
+      // Reset per permettere ricaricamento stesso file
+      e.target.value = "";
+    }
   };
 
   const apri = async (a) => {
@@ -1410,16 +1415,10 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
     const a = allegati.find(x => x.id === id);
     if (!a) return;
     setConfirmDel(null);
-    await supabase.storage.from("allegati").remove([a.storagePath]);
-    const { error } = await supabase.from("allegati").delete().eq("id", id);
-    if (error) { setErrore("Errore eliminazione: " + error.message); return; }
+    const { error: stErr } = await supabase.storage.from("allegati").remove([a.storagePath]);
+    const { error: dbErr } = await supabase.from("allegati").delete().eq("id", id);
+    if (dbErr) { setErrore("Errore eliminazione: " + dbErr.message); return; }
     setAllegati(prev => prev.filter(x => x.id !== id));
-  };
-
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    upload(e.dataTransfer.files);
   };
 
   if (!entitaId) return (
@@ -1429,82 +1428,90 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
   );
 
   return (
-    <div style={{display:"grid",gap:8}}>
+    <div style={{display:"grid",gap:8}} onClick={e=>e.stopPropagation()}>
 
-      {/* Debug info - rimuovere dopo test */}
-      {!uid&&<div style={{fontSize:11,padding:"6px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,color:"#DC2626"}}>
-        ⚠ userId non disponibile — aggiorna l'app
-      </div>}
-
-      {/* Dropzone */}
+      {/* Drop zone — usa <label> per max compatibilità mobile */}
       <div
-        onDragOver={e=>{e.preventDefault();setDragOver(true);}}
-        onDragLeave={()=>setDragOver(false)}
-        onDrop={onDrop}
-        onClick={e=>{e.stopPropagation();if(!uploading)fileRef.current?.click();}}
-        style={{
-          border:`2px dashed ${dragOver?"var(--amber)":"var(--border-dim)"}`,
-          borderRadius:"var(--radius)",
-          padding:"16px",
-          textAlign:"center",
-          cursor:uploading?"not-allowed":"pointer",
-          background:dragOver?"rgba(245,158,11,.05)":"transparent",
-          transition:"all .15s",
-          userSelect:"none",
-        }}
+        onDragOver={e=>{e.preventDefault();e.stopPropagation();setDragOver(true);}}
+        onDragLeave={e=>{e.stopPropagation();setDragOver(false);}}
+        onDrop={e=>{e.preventDefault();e.stopPropagation();setDragOver(false);upload(e.dataTransfer.files);}}
+        style={{position:"relative"}}
       >
+        {/* Input nascosto collegato alla label */}
         <input
-          ref={fileRef}
+          id={inputId}
           type="file"
           multiple
-          style={{display:"none"}}
-          onChange={e=>{
-            const files = e.target.files;
-            if (files?.length) upload(files);
+          accept="*/*"
+          style={{
+            position:"absolute",
+            width:1,height:1,
+            opacity:0,
+            overflow:"hidden",
+            zIndex:-1,
           }}
+          onChange={handleInputChange}
+          disabled={uploading}
         />
-        {uploading ? (
-          <div style={{fontSize:13,color:"var(--amber)",fontWeight:600}}>
-            ⏳ Caricamento in corso...
-          </div>
-        ) : (
-          <>
-            <div style={{fontSize:20,marginBottom:4}}>📎</div>
-            <div style={{fontSize:13,fontWeight:600,color:"var(--text-2)"}}>
-              Trascina file qui o <span style={{color:"var(--blue)",textDecoration:"underline"}}>clicca per selezionare</span>
-            </div>
-            <div style={{fontSize:11,color:"var(--text-3)",marginTop:2}}>Max 20 MB per file</div>
-          </>
-        )}
+        <label
+          htmlFor={inputId}
+          style={{
+            display:"block",
+            border:`2px dashed ${dragOver?"var(--amber)":"var(--border-dim)"}`,
+            borderRadius:"var(--radius)",
+            padding:"18px 16px",
+            textAlign:"center",
+            cursor:uploading?"not-allowed":"pointer",
+            background:dragOver?"rgba(245,158,11,.06)":"transparent",
+            transition:"all .15s",
+            userSelect:"none",
+          }}
+        >
+          {uploading ? (
+            <div style={{fontSize:13,color:"var(--amber)",fontWeight:600}}>⏳ Caricamento in corso...</div>
+          ) : (
+            <>
+              <div style={{fontSize:22,marginBottom:4}}>📎</div>
+              <div style={{fontSize:13,fontWeight:600,color:"var(--text-2)"}}>
+                Tocca per selezionare un file
+              </div>
+              <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>
+                o trascina qui · max 20 MB
+              </div>
+            </>
+          )}
+        </label>
       </div>
 
-      {/* Messaggi */}
+      {/* Messaggi errore */}
       {errore&&(
         <div style={{fontSize:12,color:"#DC2626",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start"}}>
           <span style={{flexShrink:0}}>❌</span>
-          <div style={{flex:1}}>{errore}</div>
-          <button onClick={()=>setErrore(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#DC2626",lineHeight:1,flexShrink:0}}>✕</button>
+          <div style={{flex:1,lineHeight:1.5}}>{errore}</div>
+          <button type="button" onClick={()=>setErrore(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#DC2626",lineHeight:1,flexShrink:0}}>✕</button>
         </div>
       )}
+
+      {/* Messaggio successo */}
       {successo&&(
         <div style={{fontSize:12,color:"#065F46",background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:6,padding:"8px 12px",display:"flex",gap:8,alignItems:"center"}}>
           <span style={{flex:1}}>{successo}</span>
-          <button onClick={()=>setSuccesso(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#065F46"}}>✕</button>
+          <button type="button" onClick={()=>setSuccesso(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#065F46"}}>✕</button>
         </div>
       )}
 
-      {/* Conferma eliminazione inline (no window.confirm) */}
+      {/* Conferma eliminazione inline */}
       {confirmDel&&(
         <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:6,padding:"10px 12px",fontSize:12,color:"#C2410C",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <span style={{flex:1}}>Eliminare "{allegati.find(a=>a.id===confirmDel)?.nome}"?</span>
-          <button onClick={()=>elimina(confirmDel)} style={{background:"#DC2626",color:"white",borderColor:"#DC2626",fontSize:11,padding:"4px 10px"}}>Sì, elimina</button>
-          <button onClick={()=>setConfirmDel(null)} style={{fontSize:11,padding:"4px 10px"}}>Annulla</button>
+          <span style={{flex:1}}>Eliminare <strong>{allegati.find(a=>a.id===confirmDel)?.nome}</strong>?</span>
+          <button type="button" onClick={()=>elimina(confirmDel)} style={{background:"#DC2626",color:"white",borderColor:"#DC2626",fontSize:11,padding:"4px 10px",borderRadius:4,border:"none",cursor:"pointer"}}>Sì, elimina</button>
+          <button type="button" onClick={()=>setConfirmDel(null)} style={{fontSize:11,padding:"4px 10px",borderRadius:4,border:"1px solid var(--border)",cursor:"pointer",background:"white"}}>Annulla</button>
         </div>
       )}
 
-      {/* Lista */}
+      {/* Lista allegati */}
       {loading&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>⏳ Caricamento...</div>}
-      {!loading&&!tabError&&allegati.length===0&&(
+      {!loading&&allegati.length===0&&!errore&&(
         <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>Nessun allegato</div>
       )}
       {allegati.map(a=>(
@@ -1515,8 +1522,8 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
             <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtBytes(a.dimensione)} · {fmtData(a.createdAt)}</div>
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
-            <button onClick={()=>apri(a)} style={{fontSize:11,padding:"4px 8px",background:"#EFF6FF",color:"#1D4ED8",borderColor:"#BFDBFE"}}>⬇ Apri</button>
-            <button onClick={()=>setConfirmDel(a.id)} style={{fontSize:11,padding:"4px 8px",background:"#FEF2F2",color:"#DC2626",borderColor:"#FECACA"}}>🗑</button>
+            <button type="button" onClick={e=>{e.stopPropagation();apri(a);}} style={{fontSize:11,padding:"4px 8px",background:"#EFF6FF",color:"#1D4ED8",borderColor:"#BFDBFE",borderRadius:4,border:"1px solid",cursor:"pointer"}}>⬇ Apri</button>
+            <button type="button" onClick={e=>{e.stopPropagation();setConfirmDel(a.id);}} style={{fontSize:11,padding:"4px 8px",background:"#FEF2F2",color:"#DC2626",borderColor:"#FECACA",borderRadius:4,border:"1px solid",cursor:"pointer"}}>🗑</button>
           </div>
         </div>
       ))}
