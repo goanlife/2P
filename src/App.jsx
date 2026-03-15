@@ -1636,6 +1636,7 @@ export default function App() {
   const [session,  setSess] = useState(null);
   const [tenant,   setTenant] = useState(null); // azienda corrente
   const [loading,  setLoad] = useState(false);
+  const [tenantLoading, setTenantLoad] = useState(true); // true finché non sappiamo se l'utente ha un tenant
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
   const [clienti,  sCl]   = useState([]);
@@ -1680,7 +1681,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSess(s);
-      if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); }
+      if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); setTenantLoad(true); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -1690,6 +1691,7 @@ export default function App() {
 
     // Fase 1: carica il tenant se non ancora presente
     if (!tenant) {
+      setTenantLoad(true);
       supabase
         .from("tenant_users")
         .select("tenant_id, tenants(*)")
@@ -1697,9 +1699,9 @@ export default function App() {
         .single()
         .then(({ data: tu }) => {
           if (tu?.tenants) setTenant(tu.tenants);
-          else setLoad(false); // nessun tenant → Onboarding
+          setTenantLoad(false); // sappiamo ora se ha un tenant o no
         })
-        .catch(() => setLoad(false));
+        .catch(() => setTenantLoad(false));
       return;
     }
 
@@ -1880,8 +1882,22 @@ export default function App() {
   const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
+  // Non sappiamo ancora lo stato — mostra spinner neutro
+  if (!session && tenantLoading) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg,#0D1B2A)"}}>
+      <div style={{color:"var(--accent,#F59E0B)",fontSize:32,animation:"spin 1s linear infinite"}}>⚙</div>
+    </div>
+  );
   if (!session) return <Auth />;
-  if (!tenant) return <Onboarding session={session} onTenantReady={setTenant} />;
+  if (tenantLoading) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg,#0D1B2A)"}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{color:"var(--accent,#F59E0B)",fontSize:36,marginBottom:12}}>⚙</div>
+        <div style={{color:"var(--text-2,#8899aa)",fontSize:14}}>Caricamento azienda…</div>
+      </div>
+    </div>
+  );
+  if (!tenant) return <Onboarding session={session} onTenantReady={t => { setTenant(t); setTenantLoad(false); }} />;
 
   if (loading) return (
     <div className="loading-screen">
