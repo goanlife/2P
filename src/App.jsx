@@ -1635,7 +1635,7 @@ function MobileNav({ vista, sV }) {
 export default function App() {
   const [session,  setSess] = useState(null);
   const [tenant,   setTenant] = useState(null); // azienda corrente
-  const [loading,  setLoad] = useState(true);
+  const [loading,  setLoad] = useState(false);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
   const [clienti,  sCl]   = useState([]);
@@ -1685,51 +1685,71 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => { const run = async () => {
+  useEffect(() => {
     if (!session) { setLoad(false); return; }
-    // Carica il tenant dell'utente se non ancora caricato
+
+    // Fase 1: carica il tenant se non ancora presente
     if (!tenant) {
-      const { data: tu } = await supabase
+      supabase
         .from("tenant_users")
         .select("tenant_id, tenants(*)")
         .eq("user_id", session.user.id)
-        .single();
-      if (tu?.tenants) { setTenant(tu.tenants); return; }
-      setLoad(false); return; // nessun tenant → mostra Onboarding
+        .single()
+        .then(({ data: tu }) => {
+          if (tu?.tenants) setTenant(tu.tenants);
+          else setLoad(false); // nessun tenant → Onboarding
+        })
+        .catch(() => setLoad(false));
+      return;
     }
+
+    // Fase 2: carica tutti i dati dell'azienda
     setLoad(true);
-    Promise.all([
-      supabase.from("operatori").select("*").order("created_at"),
-      supabase.from("clienti").select("*").order("created_at"),
-      supabase.from("assets").select("*").order("created_at"),
-      supabase.from("piani").select("*").order("created_at"),
-      supabase.from("manutenzioni").select("*").order("data"),
-      supabase.from("operatore_siti").select("*").order("created_at"),
-      supabase.from("gruppi").select("*").order("created_at"),
-      supabase.from("gruppo_operatori").select("*").order("created_at"),
-      supabase.from("gruppo_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
-        setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
-        setLoad(false); return;
-      }
-      let ops = ro.data||[];
-      if (ops.length === 0) {
-        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id,tenant_id:tenant.id}))).select();
-        ops = seeded || [];
-      }
-      const mappedOps = ops.map(mapOp);
-      sOp(mappedOps);
-      // Applica tema dell'utente loggato se presente
-      const meOp = mappedOps.find(o => o.email === session?.user?.email);
-      if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
-      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
-      sSiti((rs.data||[]).map(mapSito));
-      sGruppi((rg.data||[]).map(mapGruppo));
-      sGOps((rgo.data||[]).map(mapGOp));
-      sGSiti((rgs.data||[]).map(mapGSito));
+    const carica = async () => {
+      try {
+        const [ro, rc, ra, rp, rm, rs, rg, rgo, rgs] = await Promise.all([
+          supabase.from("operatori").select("*").order("created_at"),
+          supabase.from("clienti").select("*").order("created_at"),
+          supabase.from("assets").select("*").order("created_at"),
+          supabase.from("piani").select("*").order("created_at"),
+          supabase.from("manutenzioni").select("*").order("data"),
+          supabase.from("operatore_siti").select("*").order("created_at"),
+          supabase.from("gruppi").select("*").order("created_at"),
+          supabase.from("gruppo_operatori").select("*").order("created_at"),
+          supabase.from("gruppo_siti").select("*").order("created_at"),
+        ]);
+        if (ro.error || rc.error || ra.error || rp.error || rm.error) {
+          setDbErr("Errore caricamento dati: " + (ro.error||rc.error||ra.error||rp.error||rm.error)?.message);
+          setLoad(false); return;
+        }
+        let ops = ro.data || [];
+        if (ops.length === 0) {
+          const { data: seeded } = await supabase.from("operatori")
+            .insert(OP_DEFAULT.map(o => ({ ...o, user_id: session.user.id, tenant_id: tenant.id })))
+            .select();
+          ops = seeded || [];
+        }
+        const mappedOps = ops.map(mapOp);
+        sOp(mappedOps);
+        const meOp = mappedOps.find(o => o.email === session?.user?.email);
+        if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
+        sCl((rc.data||[]).map(mapC));
+        sAs((ra.data||[]).map(mapA));
+        sPi((rp.data||[]).map(mapP));
+        sMan((rm.data||[]).map(mapM));
+        sSiti((rs.data||[]).map(mapSito));
+        sGruppi((rg.data||[]).map(mapGruppo));
+        sGOps((rgo.data||[]).map(mapGOp));
+        sGSiti((rgs.data||[]).map(mapGSito));
+      } catch(e) {
+        console.error("Errore caricamento:", e);
+        setDbErr("Errore imprevisto: " + e.message);
+      } finally {
         setLoad(false);
-    }); }; run(); }, [session, tenant]);
+      }
+    };
+    carica();
+  }, [session, tenant]);
 
   const uid = () => session?.user?.id;
   const UID = session?.user?.id || "";
