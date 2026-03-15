@@ -1,10 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://nnsylkjahuhttwajuxls.supabase.co'
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_m1QgYsOmtYGpQH7ceCvGxA_DYQwwt35'
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Mancano le variabili VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nel file .env')
-}
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const supabase = createClient(url, key)
