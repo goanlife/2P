@@ -364,22 +364,54 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
-function Dashboard({ man, clienti, assets, piani, operatori }) {
+function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }) {
   const stats=useMemo(()=>({tot:man.length,pi:man.filter(m=>m.stato==="pianificata").length,ic:man.filter(m=>m.stato==="inCorso").length,sc:man.filter(m=>m.stato==="scaduta").length,ur:man.filter(m=>m.priorita==="urgente"&&m.stato!=="completata").length}),[man]);
   const prossime=useMemo(()=>man.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6),[man]);
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const carichi=useMemo(()=>fornitori.map(op=>({...op,att:man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").length,ore:Math.round(man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").reduce((a,m)=>a+m.durata,0)/60*10)/10})),[man,fornitori]);
   const maxOre=Math.max(...carichi.map(c=>c.ore),1);
   const confMap=useMemo(()=>{const m={};man.filter(x=>x.stato!=="completata").forEach(x=>{const k=`${x.operatoreId}_${x.data}`;if(!m[k])m[k]=[];m[k].push(x);});return Object.values(m).filter(g=>g.length>1);},[man]);
-  const kpis=[{v:stats.tot,l:"Totale attività",c:"#0D1B2A"},{v:clienti.length,l:"Clienti",c:"#7F77DD"},{v:assets.length,l:"Asset",c:"#2563EB"},{v:piani.filter(p=>p.attivo).length,l:"Piani attivi",c:"#059669"},{v:stats.pi,l:"Pianificate",c:"#3B82F6"},{v:stats.ic,l:"In corso",c:"#D97706"},{v:stats.sc,l:"Scadute",c:"#DC2626"},{v:stats.ur,l:"Urgenti",c:"#EF4444"}];
+  const kpis=[
+    {v:stats.tot, l:"Totale attività", c:"#0D1B2A", action:()=>onNavigate("manutenzioni",{})},
+    {v:clienti.length, l:"Clienti", c:"#7F77DD", action:()=>onNavigate("clienti",{})},
+    {v:assets.length, l:"Asset", c:"#2563EB", action:()=>onNavigate("assets",{})},
+    {v:piani.filter(p=>p.attivo).length, l:"Piani attivi", c:"#059669", action:()=>onNavigate("piani",{})},
+    {v:stats.pi, l:"Pianificate", c:"#3B82F6", action:()=>onNavigate("manutenzioni",{stato:"pianificata"})},
+    {v:stats.ic, l:"In corso",    c:"#D97706", action:()=>onNavigate("manutenzioni",{stato:"inCorso"})},
+    {v:stats.sc, l:"Scadute",     c:"#DC2626", action:()=>onNavigate("manutenzioni",{stato:"scaduta"})},
+    {v:stats.ur, l:"Urgenti",     c:"#EF4444", action:()=>onNavigate("manutenzioni",{priorita:"urgente"})},
+  ];
   return (
     <div style={{display:"grid",gap:20}}>
       {confMap.length>0&&(<div className="global-conflict"><div className="global-conflict-title">⚠ {confMap.length} conflitto/i di calendario</div>{confMap.map((g,i)=>{const op=operatori.find(o=>o.id===g[0].operatoreId);return <div key={i} className="global-conflict-item">→ {op?.nome||"—"}: {g.length} attività il {fmtData(g[0].data)}</div>;})}</div>)}
-      <div className="kpi-grid">{kpis.map(k=><div key={k.l} className="kpi-card" style={{"--c":k.c}}><div className="kpi-value">{k.v}</div><div className="kpi-label">{k.l}</div></div>)}</div>
+      <div className="kpi-grid">{kpis.map(k=>(
+        <div key={k.l} className="kpi-card" style={{"--c":k.c, cursor:"pointer"}}
+          onClick={k.action}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="var(--shadow-lg)";}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="";}}>
+          <div className="kpi-value">{k.v}</div>
+          <div className="kpi-label">{k.l}</div>
+          <div style={{fontSize:10,color:"var(--c, var(--text-3))",opacity:.6,marginTop:4,fontWeight:600}}>Vai →</div>
+        </div>
+      ))}</div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
         <div className="card">
           <div className="section-head"><span className="section-title">📋 Prossime attività</span></div>
-          {prossime.map(m=>{const op=fornitori.find(o=>o.id===m.operatoreId)||operatori.find(o=>o.id===m.operatoreId);const cl=clienti.find(c=>c.id===m.clienteId);return(<div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--border)"}}><Av nome={op?.nome||"?"} col={op?.col||"#888"} size={32} /><div style={{flex:1,minWidth:0}}><div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.titolo}</div><div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)} · {m.durata}min{cl?` · ${cl.rs}`:""}</div></div>{m.pianoId&&<span style={{fontSize:9,fontWeight:700,color:"var(--green)",letterSpacing:".04em"}}>PIANO</span>}</div>);})}
+          {prossime.map(m=>{const op=fornitori.find(o=>o.id===m.operatoreId)||operatori.find(o=>o.id===m.operatoreId);const cl=clienti.find(c=>c.id===m.clienteId);return(
+            <div key={m.id}
+              onClick={()=>onNavigate("manutenzioni",{stato:"pianificata"})}
+              style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--border)",cursor:"pointer",transition:"background .12s",borderRadius:4}}
+              onMouseEnter={e=>e.currentTarget.style.background="var(--surface-2)"}
+              onMouseLeave={e=>e.currentTarget.style.background=""}>
+              <Av nome={op?.nome||"?"} col={op?.col||"#888"} size={32} />
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.titolo||"(senza titolo)"}</div>
+                <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)} · {m.durata}min{cl?` · ${cl.rs}`:""}</div>
+              </div>
+              {m.pianoId&&<span style={{fontSize:9,fontWeight:700,color:"var(--green)",letterSpacing:".04em",background:"#ECFDF5",padding:"2px 5px",borderRadius:3}}>PIANO</span>}
+              <span style={{fontSize:11,color:"var(--text-3)"}}>›</span>
+            </div>
+          );})}
           {!prossime.length&&<div style={{textAlign:"center",padding:"24px 0",color:"var(--text-3)",fontSize:13}}>Nessuna attività pianificata</div>}
         </div>
         <div className="card">
@@ -400,9 +432,13 @@ function Dashboard({ man, clienti, assets, piani, operatori }) {
 }
 
 // ─── Lista manutenzioni ───────────────────────────────────────────────────
-function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod }) {
-  const [fT,sfT]=useState("tutti");const [fS,sfS]=useState("tutti");const [fC,sfC]=useState("tutti");const [cerca,sCerca]=useState("");
-  const filtrate=useMemo(()=>man.filter(m=>{if(fT!=="tutti"&&m.tipo!==fT)return false;if(fS!=="tutti"&&m.stato!==fS)return false;if(fC!=="tutti"&&String(m.clienteId)!==fC)return false;if(cerca&&!m.titolo.toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[man,fT,fS,fC,cerca]);
+function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters }) {
+  const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
+  const [fS,sfS]=useState(initialFilters?.stato||"tutti");
+  const [fC,sfC]=useState("tutti");
+  const [cerca,sCerca]=useState("");
+  const [fPri,sfPri]=useState(initialFilters?.priorita||"tutti");
+  const filtrate=useMemo(()=>man.filter(m=>{if(fT!=="tutti"&&m.tipo!==fT)return false;if(fS!=="tutti"&&m.stato!==fS)return false;if(fC!=="tutti"&&String(m.clienteId)!==fC)return false;if(fPri!=="tutti"&&m.priorita!==fPri)return false;if(cerca&&!m.titolo.toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[man,fT,fS,fC,fPri,cerca]);
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
@@ -410,6 +446,7 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod }) 
         <select value={fT} onChange={e=>sfT(e.target.value)}><option value="tutti">Tutti i tipi</option><option value="ordinaria">Ordinaria</option><option value="straordinaria">Straordinaria</option></select>
         <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
         <select value={fC} onChange={e=>sfC(e.target.value)}><option value="tutti">Tutti i clienti</option>{clienti.map(c=><option key={c.id} value={c.id}>{c.rs}</option>)}</select>
+        <select value={fPri} onChange={e=>sfPri(e.target.value)}><option value="tutti">Tutte le priorità</option><option value="urgente">⚡ Urgente</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
         <span style={{fontSize:12,color:"var(--text-3)",alignSelf:"center",whiteSpace:"nowrap"}}>{filtrate.length} risultati</span>
       </div>
       <div style={{display:"grid",gap:8}}>
@@ -1305,6 +1342,7 @@ export default function App() {
   const [gOps,     sGOps]  = useState([]);
   const [gSiti,    sGSiti] = useState([]);
   const [vista,   sV]  = useState("dashboard");
+  const [filtroMan, setFiltroMan] = useState({});
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
@@ -1459,6 +1497,11 @@ export default function App() {
   const attivaDisattiva = async (id,attivo) => { await supabase.from("piani").update({attivo}).eq("id",id); sPi(p=>p.map(pi=>pi.id===id?{...pi,attivo}:pi)); };
 
   const apriConData = d => { sDD(d); siMM(null); sMM(true); };
+  const navigateTo = (tab, filters={}) => {
+    setFiltroMan(filters);
+    sV(tab);
+    window.scrollTo({top:0, behavior:"smooth"});
+  };
   const apriModM   = m => { siMM(m); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
@@ -1529,8 +1572,8 @@ export default function App() {
       </nav>
 
       <main className="page-content">
-        {vista==="dashboard"    && <Dashboard    man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
-        {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={delM} onMod={apriModM} />}
+        {vista==="dashboard"    && <Dashboard    man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} onNavigate={navigateTo} />}
+        {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={delM} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)} />}
         {vista==="piani"        && <GestionePiani piani={piani} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAttivaDisattiva={attivaDisattiva} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} />}
