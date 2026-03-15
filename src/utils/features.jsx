@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 // ─── Feature 9: Export CSV ───────────────────────────────────────────────────
 export function exportCSV(man, clienti, assets, operatori, filtrate) {
   const rows = filtrate || man;
@@ -33,7 +34,6 @@ export function exportCSV(man, clienti, assets, operatori, filtrate) {
 }
 
 // ─── Feature 10: QR Code (usando API qr-server) ──────────────────────────────
-import { useState, useEffect } from "react";
 
 export function QRCodeAsset({ asset, onClose }) {
   const [size] = useState(200);

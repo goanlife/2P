@@ -293,6 +293,39 @@ function VistaCliente({ operatore, clienti, assets, manutenzioni, piani, siti, o
   );
 }
 
+// ─── Temi ─────────────────────────────────────────────────────────────────
+const TEMI = [
+  { id:"navy",   nome:"Navy",   top:"#0D1B2A", bot:"#F59E0B", desc:"Industrial scuro" },
+  { id:"slate",  nome:"Slate",  top:"#1E293B", bot:"#6366F1", desc:"Grigio professionale" },
+  { id:"forest", nome:"Forest", top:"#052E16", bot:"#22C55E", desc:"Verde bosco" },
+  { id:"sunset", nome:"Sunset", top:"#431407", bot:"#F97316", desc:"Caldo arancione" },
+  { id:"ocean",  nome:"Ocean",  top:"#0C4A6E", bot:"#0EA5E9", desc:"Azzurro oceano" },
+];
+
+function applyTheme(tema) {
+  document.documentElement.setAttribute("data-theme", tema||"navy");
+}
+
+// ─── Selettore tema ────────────────────────────────────────────────────────
+function SelettoreTema({ value, onChange }) {
+  return (
+    <div>
+      <div className="theme-grid">
+        {TEMI.map(t=>(
+          <div key={t.id} onClick={()=>onChange(t.id)}>
+            <div className={"theme-swatch"+(value===t.id?" selected":"")}>
+              <div className="theme-swatch-top" style={{background:t.top}} />
+              <div className="theme-swatch-bot" style={{background:t.bot}} />
+            </div>
+            <div className="theme-swatch-label">{t.nome}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
 // ─── Modal Utente (ex Operatore) ──────────────────────────────────────────
 function ModalUtente({ ini, onClose, onSalva }) {
   const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore",email:"",tema:"navy"});
@@ -1155,38 +1188,6 @@ function GestioneGruppi({ gruppi, operatori, clienti, man, gOps, gSiti, onAgg, o
 }
 
 
-
-// ─── Temi ─────────────────────────────────────────────────────────────────
-const TEMI = [
-  { id:"navy",   nome:"Navy",   top:"#0D1B2A", bot:"#F59E0B", desc:"Industrial scuro" },
-  { id:"slate",  nome:"Slate",  top:"#1E293B", bot:"#6366F1", desc:"Grigio professionale" },
-  { id:"forest", nome:"Forest", top:"#052E16", bot:"#22C55E", desc:"Verde bosco" },
-  { id:"sunset", nome:"Sunset", top:"#431407", bot:"#F97316", desc:"Caldo arancione" },
-  { id:"ocean",  nome:"Ocean",  top:"#0C4A6E", bot:"#0EA5E9", desc:"Azzurro oceano" },
-];
-
-function applyTheme(tema) {
-  document.documentElement.setAttribute("data-theme", tema||"navy");
-}
-
-// ─── Selettore tema ────────────────────────────────────────────────────────
-function SelettoreTema({ value, onChange }) {
-  return (
-    <div>
-      <div className="theme-grid">
-        {TEMI.map(t=>(
-          <div key={t.id} onClick={()=>onChange(t.id)}>
-            <div className={"theme-swatch"+(value===t.id?" selected":"")}>
-              <div className="theme-swatch-top" style={{background:t.top}} />
-              <div className="theme-swatch-bot" style={{background:t.bot}} />
-            </div>
-            <div className="theme-swatch-label">{t.nome}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── Modal Crea Accesso ────────────────────────────────────────────────────
 function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
