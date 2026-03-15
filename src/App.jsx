@@ -1633,20 +1633,21 @@ function MobileNav({ vista, sV }) {
 
 // ─── App root ─────────────────────────────────────────────────────────────
 export default function App() {
-  const [session,  setSess] = useState(null);
+  // ── Stato macchina ──────────────────────────────────────────────────────
+  // fase: 'init' | 'no_session' | 'check_tenant' | 'onboarding' | 'loading' | 'ready' | 'error'
+  const [fase,     setFase]   = useState('init');
+  const [session,  setSess]   = useState(null);
   const [tenant,   setTenant] = useState(null);
-  const [tenantLoading, setTenantLoad] = useState(false);
-  const [loading,  setLoad] = useState(false);
-  const [dbErr,    setDbErr] = useState(null);
-  const [man,      sMan]  = useState([]);
-  const [clienti,  sCl]   = useState([]);
-  const [assets,   sAs]   = useState([]);
-  const [piani,    sPi]   = useState([]);
-  const [operatori,sOp]   = useState([]);
-  const [siti,     sSiti] = useState([]);
-  const [gruppi,   sGruppi]= useState([]);
-  const [gOps,     sGOps]  = useState([]);
-  const [gSiti,    sGSiti] = useState([]);
+  const [dbErr,    setDbErr]  = useState(null);
+  const [man,      sMan]    = useState([]);
+  const [clienti,  sCl]     = useState([]);
+  const [assets,   sAs]     = useState([]);
+  const [piani,    sPi]     = useState([]);
+  const [operatori,sOp]     = useState([]);
+  const [siti,     sSiti]   = useState([]);
+  const [gruppi,   sGruppi] = useState([]);
+  const [gOps,     sGOps]   = useState([]);
+  const [gSiti,    sGSiti]  = useState([]);
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
   const [modalM,  sMM] = useState(false);
@@ -1654,86 +1655,111 @@ export default function App() {
   const [dataDef, sDD] = useState("");
   const [temaModal, setTemaModal] = useState(false);
   const [temaCorrente, setTemaCorrente] = useState("navy");
-  const [chiudiModal, setChiudiModal] = useState(null); // manutenzione da chiudere
+  const [chiudiModal, setChiudiModal] = useState(null);
   const [ricercaAperta, setRicercaAperta] = useState(false);
   const [qrAsset, setQrAsset] = useState(null);
-  const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
+  const [vistaLista, setVistaLista] = useState("lista");
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
 
   // Apply default theme on mount
   useEffect(() => { applyTheme("navy"); }, []);
 
-  // Keyboard shortcut: Ctrl+K / Cmd+K per ricerca globale
+  // Keyboard shortcut Ctrl+K
   useEffect(() => {
     const handler = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        setRicercaAperta(v => !v);
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setRicercaAperta(v => !v); }
       if (e.key === "Escape") setRicercaAperta(false);
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // ── Macchina a stati principale ─────────────────────────────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => { setSess(session); setTenantLoad(!!session); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSess(s); if (s) { setTenantLoad(true); } else { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); setTenantLoad(false); }
+      if (!s) {
+        setSess(null); setTenant(null);
+        sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]);
+        setFase('no_session');
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!session) { setLoad(false); return; }
-
-    if (!tenant) {
-      const t = setTimeout(() => setTenantLoad(false), 5000);
-      supabase.from("tenant_users").select("tenant_id, tenants(*)")
-        .eq("user_id", session.user.id).single()
-        .then(({ data: tu }) => {
-          clearTimeout(t);
-          if (tu?.tenants) setTenant(tu.tenants);
-          setTenantLoad(false);
-        }).catch(() => { clearTimeout(t); setTenantLoad(false); });
-      return;
-    }
-
-    setLoad(true);
-    Promise.all([
-      supabase.from("operatori").select("*").order("created_at"),
-      supabase.from("clienti").select("*").order("created_at"),
-      supabase.from("assets").select("*").order("created_at"),
-      supabase.from("piani").select("*").order("created_at"),
-      supabase.from("manutenzioni").select("*").order("data"),
-      supabase.from("operatore_siti").select("*").order("created_at"),
-      supabase.from("gruppi").select("*").order("created_at"),
-      supabase.from("gruppo_operatori").select("*").order("created_at"),
-      supabase.from("gruppo_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
-        setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
-        setLoad(false); return;
-      }
-      let ops = ro.data||[];
-      if (ops.length === 0) {
-        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id,tenant_id:tenant.id}))).select();
-        ops = seeded || [];
-      }
-      const mappedOps = ops.map(mapOp);
-      sOp(mappedOps);
-      // Applica tema dell'utente loggato se presente
-      const meOp = mappedOps.find(o => o.email === session?.user?.email);
-      if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
-      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
-      sSiti((rs.data||[]).map(mapSito));
-      sGruppi((rg.data||[]).map(mapGruppo));
-      sGOps((rgo.data||[]).map(mapGOp));
-      sGSiti((rgs.data||[]).map(mapGSito));
-      setLoad(false);
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!s) { setSess(null); setFase('no_session'); return; }
+      setSess(s);
+      setFase('check_tenant');
     });
-  }, [session, tenant]);
+  }, []);
+
+  useEffect(() => {
+    if (fase === 'check_tenant' && session) {
+      supabase.from("tenant_users")
+        .select("tenant_id, tenants(*)")
+        .eq("user_id", session.user.id)
+        .single()
+        .then(({ data: tu, error }) => {
+          if (!error && tu?.tenants) {
+            setTenant(tu.tenants);
+            setFase('loading');
+          } else {
+            setFase('onboarding');
+          }
+        })
+        .catch(() => setFase('onboarding'));
+    }
+  }, [fase, session]);
+
+  useEffect(() => {
+    if (fase !== 'loading' || !session || !tenant) return;
+    const carica = async () => {
+      try {
+        const [ro, rc, ra, rp, rm, rs, rg, rgo, rgs] = await Promise.all([
+          supabase.from("operatori").select("*").order("created_at"),
+          supabase.from("clienti").select("*").order("created_at"),
+          supabase.from("assets").select("*").order("created_at"),
+          supabase.from("piani").select("*").order("created_at"),
+          supabase.from("manutenzioni").select("*").order("data"),
+          supabase.from("operatore_siti").select("*").order("created_at"),
+          supabase.from("gruppi").select("*").order("created_at"),
+          supabase.from("gruppo_operatori").select("*").order("created_at"),
+          supabase.from("gruppo_siti").select("*").order("created_at"),
+        ]);
+        if (ro.error || rc.error || ra.error || rp.error || rm.error) {
+          const err = ro.error || rc.error || ra.error || rp.error || rm.error;
+          setDbErr("Errore DB: " + err.message);
+          setFase('error'); return;
+        }
+        let ops = ro.data || [];
+        if (ops.length === 0) {
+          const { data: seeded } = await supabase.from("operatori")
+            .insert(OP_DEFAULT.map(o => ({...o, user_id: session.user.id, tenant_id: tenant.id})))
+            .select();
+          ops = seeded || [];
+        }
+        const mappedOps = ops.map(mapOp);
+        sOp(mappedOps);
+        const meOp = mappedOps.find(o => o.email === session?.user?.email);
+        if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
+        sCl((rc.data||[]).map(mapC));
+        sAs((ra.data||[]).map(mapA));
+        sPi((rp.data||[]).map(mapP));
+        sMan((rm.data||[]).map(mapM));
+        sSiti((rs.data||[]).map(mapSito));
+        sGruppi((rg.data||[]).map(mapGruppo));
+        sGOps((rgo.data||[]).map(mapGOp));
+        sGSiti((rgs.data||[]).map(mapGSito));
+        setFase('ready');
+      } catch(e) {
+        setDbErr("Errore imprevisto: " + e.message);
+        setFase('error');
+      }
+    };
+    carica();
+  }, [fase, session, tenant]);
 
   const uid = () => session?.user?.id;
   const tid = () => tenant?.id;
@@ -1865,35 +1891,39 @@ export default function App() {
   const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
-  if (!session) return <Auth />;
-  if (tenantLoading) return (
+  // ── Render in base alla fase ────────────────────────────────────────────
+  if (fase === 'init' || fase === 'check_tenant') return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"#0D1B2A"}}>
       <div style={{textAlign:"center"}}>
-        <div style={{fontSize:36,marginBottom:12}}>⚙️</div>
-        <div style={{color:"#8899aa",fontSize:14,fontFamily:"DM Sans,sans-serif"}}>Caricamento azienda…</div>
+        <div style={{fontSize:36,marginBottom:12,animation:"spin 2s linear infinite",display:"inline-block"}}>⚙️</div>
+        <div style={{color:"#8899aa",fontSize:14,fontFamily:"DM Sans,sans-serif",marginTop:12}}>
+          {fase === 'check_tenant' ? 'Caricamento azienda…' : 'Avvio…'}
+        </div>
       </div>
     </div>
   );
-  if (!tenant) return <Onboarding session={session} onTenantReady={t=>{setTenant(t);}} />;
-  if (loading) return (
+  if (fase === 'no_session') return <Auth />;
+  if (fase === 'onboarding') return (
+    <Onboarding session={session} onTenantReady={t => { setTenant(t); setFase('loading'); }} />
+  );
+  if (fase === 'loading') return (
     <div className="loading-screen">
       <div className="loading-logo">🔧</div>
       <div style={{fontFamily:"var(--font-head)",fontSize:22,fontWeight:700,color:"white"}}>ManuMan</div>
       <div className="loading-text">Caricamento in corso…</div>
     </div>
   );
-
-  if (dbErr) return (
+  if (fase === 'error') return (
     <div className="error-screen">
       <div className="error-box">
         <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
-        <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,marginBottom:8}}>Errore database</div>
+        <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,marginBottom:8}}>Errore</div>
         <div style={{fontSize:13,color:"var(--red)",marginBottom:8}}>{dbErr}</div>
-        <div style={{fontSize:12,color:"var(--text-3)"}}>Esegui <strong>schema.sql</strong> (v2) nel SQL Editor di Supabase, poi ricarica.</div>
-        <button className="btn-primary" onClick={logout} style={{marginTop:16}}>Logout</button>
+        <button className="btn-primary" onClick={()=>supabase.auth.signOut()} style={{marginTop:16}}>Logout</button>
       </div>
     </div>
   );
+  if (fase !== 'ready') return null;
 
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
   const meOperatore = operatori.find(o => o.email === session?.user?.email);
