@@ -8,6 +8,7 @@ import { RicercaGlobale } from "./components/RicercaGlobale";
 import { Statistiche } from "./components/Statistiche";
 import { KanbanView } from "./components/KanbanView";
 import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
+import { Onboarding } from "./components/Onboarding";
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -59,12 +60,12 @@ const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', c
 const mapGOp    = r => ({ id:r.id, gruppoId:r.gruppo_id, operatoreId:r.operatore_id });
 const mapGSito  = r => ({ id:r.id, gruppoId:r.gruppo_id, clienteId:r.cliente_id });
 
-const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
-const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
-const toDbA  = (f,uid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid });
-const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
-const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
-const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
+const toDbM  = (f,uid,tid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid, tenant_id:tid });
+const toDbC  = (f,uid,tid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, tenant_id:tid });
+const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, tenant_id:tid });
+const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, tenant_id:tid });
+const toDbOp    = (f,uid,tid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid, tenant_id:tid });
+const toDbGruppo = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid, tenant_id:tid });
 
 // ─── Utils ────────────────────────────────────────────────────────────────
 const fmtData  = d => d ? new Date(d).toLocaleDateString("it-IT") : "—";
@@ -1633,6 +1634,7 @@ function MobileNav({ vista, sV }) {
 // ─── App root ─────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSess] = useState(null);
+  const [tenant,   setTenant] = useState(null); // azienda corrente
   const [loading,  setLoad] = useState(true);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
@@ -1677,13 +1679,24 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      setSess(s);
+      if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { const run = async () => {
     if (!session) { setLoad(false); return; }
+    // Carica il tenant dell'utente se non ancora caricato
+    if (!tenant) {
+      const { data: tu } = await supabase
+        .from("tenant_users")
+        .select("tenant_id, tenants(*)")
+        .eq("user_id", session.user.id)
+        .single();
+      if (tu?.tenants) { setTenant(tu.tenants); return; }
+      setLoad(false); return; // nessun tenant → mostra Onboarding
+    }
     setLoad(true);
     Promise.all([
       supabase.from("operatori").select("*").order("created_at"),
@@ -1702,7 +1715,7 @@ export default function App() {
       }
       let ops = ro.data||[];
       if (ops.length === 0) {
-        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id}))).select();
+        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id,tenant_id:tenant.id}))).select();
         ops = seeded || [];
       }
       const mappedOps = ops.map(mapOp);
@@ -1715,29 +1728,28 @@ export default function App() {
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
       sGSiti((rgs.data||[]).map(mapGSito));
-      setLoad(false);
-    });
-  }, [session]);
+        setLoad(false);
+    }); }; run(); }, [session, tenant]);
 
   const uid = () => session?.user?.id;
   const UID = session?.user?.id || "";
   const BATCH = 50;
-  const buildRowM = (piano, data) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid() });
+  const buildRowM = (piano, data) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), tenant_id:tenant?.id });
 
-  const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid())).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
-  const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid())).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
+  const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
+  const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
   const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
   const statoM = async (id,stato) => { await supabase.from("manutenzioni").update({stato}).eq("id",id); sMan(p=>p.map(m=>m.id===id?{...m,stato}:m)); };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
-  const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid())).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
-  const modC = async f => { await supabase.from("clienti").update(toDbC(f,uid())).eq("id",f.id); sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c)); };
+  const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid(),tenant?.id)).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
+  const modC = async f => { await supabase.from("clienti").update(toDbC(f,uid(),tenant?.id)).eq("id",f.id); sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c)); };
   const delC = async id => { await supabase.from("clienti").delete().eq("id",id); sCl(p=>p.filter(c=>c.id!==id)); };
-  const aggA = async f => { const {data,error}=await supabase.from("assets").insert(toDbA(f,uid())).select().single(); if(!error)sAs(p=>[...p,mapA(data)]); };
-  const modA = async f => { await supabase.from("assets").update(toDbA(f,uid())).eq("id",f.id); sAs(p=>p.map(a=>a.id===f.id?{...a,...f}:a)); };
+  const aggA = async f => { const {data,error}=await supabase.from("assets").insert(toDbA(f,uid(),tenant?.id)).select().single(); if(!error)sAs(p=>[...p,mapA(data)]); };
+  const modA = async f => { await supabase.from("assets").update(toDbA(f,uid(),tenant?.id)).eq("id",f.id); sAs(p=>p.map(a=>a.id===f.id?{...a,...f}:a)); };
   const delA = async id => { await supabase.from("assets").delete().eq("id",id); sAs(p=>p.filter(a=>a.id!==id)); };
-  const aggOp = async f => { const {data,error}=await supabase.from("operatori").insert(toDbOp(f,uid())).select().single(); if(!error)sOp(p=>[...p,mapOp(data)]); };
+  const aggOp = async f => { const {data,error}=await supabase.from("operatori").insert(toDbOp(f,uid(),tenant?.id)).select().single(); if(!error)sOp(p=>[...p,mapOp(data)]); };
   const modOp = async f => {
-    const {error}=await supabase.from("operatori").update(toDbOp(f,uid())).eq("id",f.id);
+    const {error}=await supabase.from("operatori").update(toDbOp(f,uid(),tenant?.id)).eq("id",f.id);
     if(!error) sOp(p=>p.map(o=>o.id===f.id?{...o,...f}:o));
   };
   const creaAccesso = async (opId, email, authUserId) => {
@@ -1760,12 +1772,12 @@ export default function App() {
 
   // ── Gruppi ───────────────────────────────────────────────────────────────
   const aggGruppo = async f => {
-    const {data,error}=await supabase.from("gruppi").insert(toDbGruppo(f,uid())).select().single();
+    const {data,error}=await supabase.from("gruppi").insert(toDbGruppo(f,uid(),tenant?.id)).select().single();
     if(error){ notify("Errore salvataggio gruppo: "+error.message+". Hai eseguito schema_v3.sql su Supabase?"); return; }
     sGruppi(p=>[...p,mapGruppo(data)]); notify("Gruppo creato con successo","success");
   };
   const modGruppo = async f => {
-    const {error}=await supabase.from("gruppi").update(toDbGruppo(f,uid())).eq("id",f.id);
+    const {error}=await supabase.from("gruppi").update(toDbGruppo(f,uid(),tenant?.id)).eq("id",f.id);
     if(error){ notify("Errore aggiornamento gruppo: "+error.message); return; }
     sGruppi(p=>p.map(g=>g.id===f.id?{...g,...f}:g)); notify("Gruppo aggiornato","success");
   };
@@ -1795,7 +1807,7 @@ export default function App() {
 
   const aggPiano = async f => {
     const piano={...f,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
-    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(piano,uid())).select().single();
+    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(piano,uid(),tenant?.id)).select().single();
     if(pErr){console.error(pErr);return;}
     const np=mapP(pianoRow); sPi(p=>[...p,np]);
     if(!np.dataInizio)return;
@@ -1806,7 +1818,7 @@ export default function App() {
   };
   const modPiano = async f => {
     const upd={...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null};
-    const {error}=await supabase.from("piani").update(toDbP(upd,uid())).eq("id",upd.id); if(error){console.error(error);return;}
+    const {error}=await supabase.from("piani").update(toDbP(upd,uid(),tenant?.id)).eq("id",upd.id); if(error){console.error(error);return;}
     sPi(p=>p.map(pi=>pi.id===upd.id?upd:pi));
     const oggi=isoDate(new Date());
     await supabase.from("manutenzioni").delete().eq("piano_id",upd.id).eq("stato","pianificata");
@@ -1849,6 +1861,7 @@ export default function App() {
   const logout     = () => supabase.auth.signOut();
 
   if (!session) return <Auth />;
+  if (!tenant) return <Onboarding session={session} onTenantReady={setTenant} />;
 
   if (loading) return (
     <div className="loading-screen">
