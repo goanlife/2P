@@ -1,1 +1,22 @@
+# Dipendenze
+node_modules/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GitHub Actions (token senza permesso workflow)
 .github/
