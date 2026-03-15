@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 
-const url = import.meta.env.VITE_SUPABASE_URL
-const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!url || !key) console.error('Variabili Supabase mancanti!')
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  throw new Error('Mancano le variabili VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nel file .env')
+}
 
-export const supabase = createClient(
-  url  || 'https://placeholder.supabase.co',
-  key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder'
-)
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
