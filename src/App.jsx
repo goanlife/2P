@@ -328,7 +328,7 @@ function ModalUtente({ ini, onClose, onSalva }) {
 }
 
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
-function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva }) {
+function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva, userId }) {
   // Solo i fornitori sono assegnabili
   const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp = fornitori[0]?.id||"";
@@ -359,7 +359,7 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       </Field>
       <AvvisoConflitto conflitti={conf} />
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
-      {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={ini.userId||""} />}
+      {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
 }
@@ -570,7 +570,7 @@ function Calendario({ man, clienti, assets, operatori, onRipianifica, onNuovaDat
 }
 
 // ─── Asset ────────────────────────────────────────────────────────────────
-function ModalAsset({ ini, clienti, onClose, onSalva }) {
+function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {
   const [f,sf]=useState(ini||{nome:"",tipo:"",clienteId:"",ubicazione:"",matricola:"",marca:"",modello:"",dataInst:"",stato:"attivo",note:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   const TIPI=["Impianto elettrico","Linea produzione","Impianto termico","Impianto pneumatico","Impianto idraulico","Sicurezza","Meccanico","Altro"];
@@ -590,7 +590,7 @@ function ModalAsset({ ini, clienti, onClose, onSalva }) {
       </div>
       <Field label="Data installazione"><input type="date" value={f.dataInst} onChange={e=>s("dataInst",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
-      {ini?.id&&<PannelloAllegati entitaTipo="asset" entitaId={ini.id} userId={ini.userId||""} />}
+      {ini?.id&&<PannelloAllegati entitaTipo="asset" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
 }
@@ -631,13 +631,13 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) 
         })}
       </div>
       {!filtrati.length&&<div className="empty"><div className="empty-icon">⚙</div><div className="empty-text">Nessun asset trovato</div></div>}
-      {showM&&<ModalAsset ini={inMod} clienti={clienti} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {showM&&<ModalAsset ini={inMod} clienti={clienti} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
     </div>
   );
 }
 
 // ─── Piani ────────────────────────────────────────────────────────────────
-function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva }) {
+function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva, userId }) {
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp=fornitori[0]?.id?String(fornitori[0].id):"";
   const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true};
@@ -671,7 +671,7 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
         <Field label="Data fine (opzionale)"><input type="date" value={f.dataFine} onChange={e=>s("dataFine",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
       {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
-      {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={ini.userId||""} />}
+      {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
 }
@@ -705,13 +705,13 @@ function GestionePiani({ piani, clienti, assets, manutenzioni, operatori, onAgg,
           </div>);
         })}
       </div>
-      {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
+      {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
     </div>
   );
 }
 
 // ─── Clienti ──────────────────────────────────────────────────────────────
-function ModalCliente({ ini, onClose, onSalva }) {
+function ModalCliente({ ini, onClose, onSalva, userId }) {
   const [f,sf]=useState(ini||{rs:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
@@ -728,7 +728,7 @@ function ModalCliente({ ini, onClose, onSalva }) {
       </div>
       <Field label="Indirizzo"><input value={f.ind} onChange={e=>s("ind",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
-      {ini?.id&&<PannelloAllegati entitaTipo="cliente" entitaId={ini.id} userId={ini.userId||""} />}
+      {ini?.id&&<PannelloAllegati entitaTipo="cliente" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
 }
@@ -758,7 +758,7 @@ function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel })
           </div>);
         })}
       </div>
-      {showM&&<ModalCliente ini={inMod} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {showM&&<ModalCliente ini={inMod} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
     </div>
   );
 }
@@ -1285,145 +1285,238 @@ function fmtBytes(b) {
   if (b < 1024*1024) return (b/1024).toFixed(1) + " KB";
   return (b/(1024*1024)).toFixed(1) + " MB";
 }
-
 function iconaFile(mime) {
   if (!mime) return "📄";
   if (mime.startsWith("image/")) return "🖼";
   if (mime === "application/pdf") return "📕";
   if (mime.includes("word") || mime.includes("document")) return "📝";
   if (mime.includes("sheet") || mime.includes("excel") || mime.includes("csv")) return "📊";
-  if (mime.includes("zip") || mime.includes("rar") || mime.includes("7z")) return "🗜";
+  if (mime.includes("zip") || mime.includes("rar")) return "🗜";
   if (mime.startsWith("video/")) return "🎬";
-  if (mime.startsWith("audio/")) return "🎵";
   return "📄";
 }
 
 function GestoreAllegati({ entitaTipo, entitaId, userId }) {
-  const [allegati,  setAllegati]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [err,       setErr]       = useState(null);
-  const [dragOver,  setDragOver]  = useState(false);
+  const [allegati,    setAllegati]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [uploading,   setUploading]   = useState(false);
+  const [errore,      setErrore]      = useState(null);
+  const [successo,    setSuccesso]    = useState(null);
+  const [dragOver,    setDragOver]    = useState(false);
+  const [confirmDel,  setConfirmDel]  = useState(null); // id da eliminare
+  const [tabError,    setTabError]    = useState(false);
   const fileRef = useRef();
 
-  // Carica allegati
+  // Diagnostica: userId
+  const uid = userId || "";
+
   const carica = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("allegati")
+    if (!entitaId) return;
+    setLoading(true); setErrore(null);
+    const { data, error } = await supabase
+      .from("allegati")
       .select("*")
       .eq("entita_tipo", entitaTipo)
       .eq("entita_id", entitaId)
       .order("created_at", { ascending: false });
-    if (!error) setAllegati((data||[]).map(mapAllegato));
+    if (error) {
+      if (error.code === "42P01" || error.message?.includes("does not exist")) {
+        setTabError(true);
+        setErrore("⚠ Tabella allegati non trovata. Esegui lo SQL di setup su Supabase.");
+      } else {
+        setErrore("Errore caricamento: " + error.message);
+      }
+    } else {
+      setAllegati((data||[]).map(mapAllegato));
+    }
     setLoading(false);
   };
 
-  useEffect(() => { if (entitaId) carica(); }, [entitaId, entitaTipo]);
+  useEffect(() => { carica(); }, [entitaId, entitaTipo]);
 
-  // Upload
   const upload = async (files) => {
     if (!files?.length) return;
-    setUploading(true); setErr(null);
+    if (!uid) { setErrore("Errore: userId mancante. Ricarica la pagina."); return; }
+    if (tabError) { setErrore("Crea prima la tabella allegati su Supabase."); return; }
+
+    setUploading(true); setErrore(null); setSuccesso(null);
+    let ok = 0;
+
     for (const file of Array.from(files)) {
       if (file.size > 20 * 1024 * 1024) {
-        setErr(`File troppo grande: ${file.name} (max 20 MB)`); continue;
+        setErrore(`"${file.name}" supera i 20 MB`);
+        continue;
       }
-      const ext = file.name.split(".").pop();
-      const path = `${userId}/${entitaTipo}/${entitaId}/${Date.now()}_${file.name}`;
-      const { error: upErr } = await supabase.storage.from("allegati").upload(path, file);
-      if (upErr) { setErr("Errore upload: " + upErr.message); continue; }
-      const { data: row, error: dbErr } = await supabase.from("allegati").insert({
-        entita_tipo: entitaTipo,
-        entita_id:   entitaId,
-        nome:        file.name,
-        storage_path: path,
-        mime_type:   file.type,
-        dimensione:  file.size,
-        user_id:     userId,
-      }).select().single();
-      if (!dbErr && row) setAllegati(p => [mapAllegato(row), ...p]);
+      // Sanitizza nome file
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const path = `${uid}/${entitaTipo}/${entitaId}/${Date.now()}_${safeName}`;
+
+      // 1. Upload storage
+      const { error: upErr } = await supabase.storage
+        .from("allegati")
+        .upload(path, file, { upsert: false });
+
+      if (upErr) {
+        if (upErr.message?.includes("not found") || upErr.message?.includes("bucket")) {
+          setErrore("⚠ Bucket storage 'allegati' non trovato. Crealo su Supabase → Storage.");
+        } else {
+          setErrore("Errore upload: " + upErr.message);
+        }
+        continue;
+      }
+
+      // 2. Salva record DB
+      const { data: row, error: dbErr } = await supabase
+        .from("allegati")
+        .insert({
+          entita_tipo:  entitaTipo,
+          entita_id:    Number(entitaId),
+          nome:         file.name,
+          storage_path: path,
+          mime_type:    file.type || "",
+          dimensione:   file.size,
+          user_id:      uid,
+        })
+        .select()
+        .single();
+
+      if (dbErr) {
+        // Rimuovi file orphan dallo storage
+        await supabase.storage.from("allegati").remove([path]);
+        setErrore("Errore salvataggio: " + dbErr.message);
+        continue;
+      }
+
+      setAllegati(prev => [mapAllegato(row), ...prev]);
+      ok++;
     }
+
+    if (ok > 0) setSuccesso(`${ok} file caricato/i con successo ✅`);
+
+    // Reset file input per permettere ricaricamento stesso file
+    if (fileRef.current) fileRef.current.value = "";
     setUploading(false);
   };
 
-  // Download / anteprima
   const apri = async (a) => {
-    const { data } = await supabase.storage.from("allegati").createSignedUrl(a.storagePath, 60);
+    const { data, error } = await supabase.storage
+      .from("allegati")
+      .createSignedUrl(a.storagePath, 120);
+    if (error) { setErrore("Impossibile aprire: " + error.message); return; }
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
 
-  // Elimina
-  const elimina = async (a) => {
-    if (!window.confirm(`Eliminare "${a.nome}"?`)) return;
+  const elimina = async (id) => {
+    const a = allegati.find(x => x.id === id);
+    if (!a) return;
+    setConfirmDel(null);
     await supabase.storage.from("allegati").remove([a.storagePath]);
-    await supabase.from("allegati").delete().eq("id", a.id);
-    setAllegati(p => p.filter(x => x.id !== a.id));
+    const { error } = await supabase.from("allegati").delete().eq("id", id);
+    if (error) { setErrore("Errore eliminazione: " + error.message); return; }
+    setAllegati(prev => prev.filter(x => x.id !== id));
   };
 
-  // Drag & drop
   const onDrop = (e) => {
-    e.preventDefault(); setDragOver(false);
+    e.preventDefault();
+    setDragOver(false);
     upload(e.dataTransfer.files);
   };
 
   if (!entitaId) return (
-    <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"12px 0"}}>
+    <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>
       Salva prima l'elemento per poter aggiungere allegati.
     </div>
   );
 
   return (
-    <div style={{display:"grid",gap:10}}>
-      {/* Drop zone */}
+    <div style={{display:"grid",gap:8}}>
+
+      {/* Debug info - rimuovere dopo test */}
+      {!uid&&<div style={{fontSize:11,padding:"6px 10px",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,color:"#DC2626"}}>
+        ⚠ userId non disponibile — aggiorna l'app
+      </div>}
+
+      {/* Dropzone */}
       <div
         onDragOver={e=>{e.preventDefault();setDragOver(true);}}
         onDragLeave={()=>setDragOver(false)}
         onDrop={onDrop}
-        onClick={()=>!uploading&&fileRef.current?.click()}
+        onClick={e=>{e.stopPropagation();if(!uploading)fileRef.current?.click();}}
         style={{
           border:`2px dashed ${dragOver?"var(--amber)":"var(--border-dim)"}`,
           borderRadius:"var(--radius)",
-          padding:"18px 16px",
+          padding:"16px",
           textAlign:"center",
-          cursor:"pointer",
-          background:dragOver?"var(--surface-2)":"transparent",
+          cursor:uploading?"not-allowed":"pointer",
+          background:dragOver?"rgba(245,158,11,.05)":"transparent",
           transition:"all .15s",
+          userSelect:"none",
         }}
       >
-        <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>upload(e.target.files)} />
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          style={{display:"none"}}
+          onChange={e=>{
+            const files = e.target.files;
+            if (files?.length) upload(files);
+          }}
+        />
         {uploading ? (
-          <div style={{fontSize:13,color:"var(--text-3)"}}>⏳ Caricamento in corso...</div>
+          <div style={{fontSize:13,color:"var(--amber)",fontWeight:600}}>
+            ⏳ Caricamento in corso...
+          </div>
         ) : (
           <>
-            <div style={{fontSize:22,marginBottom:4}}>📎</div>
-            <div style={{fontSize:13,fontWeight:600,color:"var(--text-2)"}}>Trascina file qui o clicca per selezionare</div>
-            <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>Max 20 MB per file — qualsiasi formato</div>
+            <div style={{fontSize:20,marginBottom:4}}>📎</div>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--text-2)"}}>
+              Trascina file qui o <span style={{color:"var(--blue)",textDecoration:"underline"}}>clicca per selezionare</span>
+            </div>
+            <div style={{fontSize:11,color:"var(--text-3)",marginTop:2}}>Max 20 MB per file</div>
           </>
         )}
       </div>
 
-      {err&&<div style={{fontSize:12,color:"var(--red)",background:"var(--red-bg)",border:"1px solid var(--red-bd)",borderRadius:"var(--radius-sm)",padding:"8px 12px"}}>{err}</div>}
+      {/* Messaggi */}
+      {errore&&(
+        <div style={{fontSize:12,color:"#DC2626",background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:6,padding:"8px 12px",display:"flex",gap:8,alignItems:"flex-start"}}>
+          <span style={{flexShrink:0}}>❌</span>
+          <div style={{flex:1}}>{errore}</div>
+          <button onClick={()=>setErrore(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#DC2626",lineHeight:1,flexShrink:0}}>✕</button>
+        </div>
+      )}
+      {successo&&(
+        <div style={{fontSize:12,color:"#065F46",background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:6,padding:"8px 12px",display:"flex",gap:8,alignItems:"center"}}>
+          <span style={{flex:1}}>{successo}</span>
+          <button onClick={()=>setSuccesso(null)} style={{background:"none",border:"none",padding:0,cursor:"pointer",fontSize:14,color:"#065F46"}}>✕</button>
+        </div>
+      )}
 
-      {/* Lista allegati */}
-      {loading&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Caricamento...</div>}
-      {!loading&&allegati.length===0&&(
-        <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Nessun allegato</div>
+      {/* Conferma eliminazione inline (no window.confirm) */}
+      {confirmDel&&(
+        <div style={{background:"#FFF7ED",border:"1px solid #FED7AA",borderRadius:6,padding:"10px 12px",fontSize:12,color:"#C2410C",display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+          <span style={{flex:1}}>Eliminare "{allegati.find(a=>a.id===confirmDel)?.nome}"?</span>
+          <button onClick={()=>elimina(confirmDel)} style={{background:"#DC2626",color:"white",borderColor:"#DC2626",fontSize:11,padding:"4px 10px"}}>Sì, elimina</button>
+          <button onClick={()=>setConfirmDel(null)} style={{fontSize:11,padding:"4px 10px"}}>Annulla</button>
+        </div>
+      )}
+
+      {/* Lista */}
+      {loading&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>⏳ Caricamento...</div>}
+      {!loading&&!tabError&&allegati.length===0&&(
+        <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>Nessun allegato</div>
       )}
       {allegati.map(a=>(
-        <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface)",transition:"box-shadow .15s"}}
-          onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--shadow-sm)"}
-          onMouseLeave={e=>e.currentTarget.style.boxShadow=""}>
-          <span style={{fontSize:22,flexShrink:0}}>{iconaFile(a.mimeType)}</span>
+        <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:6,border:"1px solid var(--border)",background:"var(--surface)"}}>
+          <span style={{fontSize:20,flexShrink:0}}>{iconaFile(a.mimeType)}</span>
           <div style={{flex:1,minWidth:0}}>
-            <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div>
+            <div style={{fontSize:12.5,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div>
             <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtBytes(a.dimensione)} · {fmtData(a.createdAt)}</div>
           </div>
           <div style={{display:"flex",gap:4,flexShrink:0}}>
-            <button className="btn-sm" onClick={()=>apri(a)} title="Apri / scarica"
-              style={{background:"var(--blue-bg)",color:"var(--blue)",borderColor:"var(--blue-bd)",fontSize:12}}>
-              ⬇ Apri
-            </button>
-            <button className="btn-sm btn-danger btn-icon" onClick={()=>elimina(a)} title="Elimina">✕</button>
+            <button onClick={()=>apri(a)} style={{fontSize:11,padding:"4px 8px",background:"#EFF6FF",color:"#1D4ED8",borderColor:"#BFDBFE"}}>⬇ Apri</button>
+            <button onClick={()=>setConfirmDel(a.id)} style={{fontSize:11,padding:"4px 8px",background:"#FEF2F2",color:"#DC2626",borderColor:"#FECACA"}}>🗑</button>
           </div>
         </div>
       ))}
@@ -1434,17 +1527,26 @@ function GestoreAllegati({ entitaTipo, entitaId, userId }) {
 // ─── Pannello allegati collassabile ──────────────────────────────────────
 function PannelloAllegati({ entitaTipo, entitaId, userId }) {
   const [aperto, setAperto] = useState(false);
+  const [count, setCount] = useState(null);
+
+  useEffect(() => {
+    if (!entitaId || !aperto) return;
+  }, [entitaId, aperto]);
+
   return (
-    <div style={{borderTop:"1px solid var(--border)",marginTop:12,paddingTop:12}}>
+    <div style={{borderTop:"1px solid var(--border)",marginTop:14,paddingTop:12}}>
       <button
-        onClick={()=>setAperto(v=>!v)}
-        style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",padding:"4px 0",cursor:"pointer",color:"var(--text-2)",fontWeight:600,fontSize:13,width:"100%"}}>
-        <span>📎</span>
+        type="button"
+        onClick={e=>{e.stopPropagation();setAperto(v=>!v);}}
+        style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",padding:"4px 0",cursor:"pointer",color:"var(--text-2)",fontWeight:600,fontSize:13,width:"100%",textAlign:"left"}}
+      >
+        <span style={{fontSize:16}}>📎</span>
         <span>Allegati</span>
-        <span style={{marginLeft:"auto",fontSize:11,color:"var(--text-3)"}}>{aperto?"▲":"▼"}</span>
+        {!aperto&&<span style={{fontSize:11,color:"var(--text-3)",fontWeight:400,marginLeft:4}}>— clicca per aprire</span>}
+        <span style={{marginLeft:"auto",fontSize:12,color:"var(--text-3)"}}>{aperto?"▲":"▼"}</span>
       </button>
       {aperto&&(
-        <div style={{marginTop:10}}>
+        <div style={{marginTop:10}} onClick={e=>e.stopPropagation()}>
           <GestoreAllegati entitaTipo={entitaTipo} entitaId={entitaId} userId={userId} />
         </div>
       )}
@@ -1797,6 +1899,7 @@ export default function App() {
       {modalM && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori}
+        userId={UID}
         onClose={()=>{sMM(false);siMM(null);}}
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}
       />}
