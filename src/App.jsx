@@ -1675,18 +1675,40 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // ── Auth: unico punto di ingresso ──────────────────────────────────────
+  // ── Auth: gestione sessione ─────────────────────────────────────────────
   useEffect(() => {
-    // 1. Leggi sessione corrente
+    const cercaTenant = async (s) => {
+      try {
+        const { data: tu } = await supabase
+          .from("tenant_users")
+          .select("tenant_id, tenants(*)")
+          .eq("user_id", s.user.id)
+          .single();
+        if (tu?.tenants) {
+          setTenant(tu.tenants);
+          setFase('loading');
+        } else {
+          setFase('onboarding');
+        }
+      } catch {
+        setFase('onboarding');
+      }
+    };
+
+    // Sessione iniziale
     supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!s) { setSess(null); setFase('no_session'); }
-      else    { setSess(s);    setFase('check_tenant'); }
+      if (!s) { setSess(null); setFase('no_session'); return; }
+      setSess(s);
+      setFase('check_tenant');
+      cercaTenant(s);
     });
-    // 2. Ascolta cambi futuri (login/logout durante la sessione)
+
+    // Cambi durante la navigazione
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, s) => {
       if (s) {
         setSess(s);
-        setFase(f => f === 'no_session' || f === 'init' ? 'check_tenant' : f);
+        setFase('check_tenant');
+        cercaTenant(s);
       } else {
         setSess(null); setTenant(null);
         sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]);
@@ -1695,24 +1717,6 @@ export default function App() {
     });
     return () => subscription.unsubscribe();
   }, []);
-
-  useEffect(() => {
-    if (fase === 'check_tenant' && session) {
-      supabase.from("tenant_users")
-        .select("tenant_id, tenants(*)")
-        .eq("user_id", session.user.id)
-        .single()
-        .then(({ data: tu, error }) => {
-          if (!error && tu?.tenants) {
-            setTenant(tu.tenants);
-            setFase('loading');
-          } else {
-            setFase('onboarding');
-          }
-        })
-        .catch(() => setFase('onboarding'));
-    }
-  }, [fase, session]);
 
   useEffect(() => {
     if (fase !== 'loading' || !session || !tenant) return;
