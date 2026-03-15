@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
 
@@ -40,10 +40,10 @@ const TABS = [
 ];
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"" });
-const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"" });
-const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"" });
-const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"" });
+const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
+const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
+const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy" });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
@@ -359,6 +359,7 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       </Field>
       <AvvisoConflitto conflitti={conf} />
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
+      {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={ini.userId||""} />}
     </Modal>
   );
 }
@@ -589,6 +590,7 @@ function ModalAsset({ ini, clienti, onClose, onSalva }) {
       </div>
       <Field label="Data installazione"><input type="date" value={f.dataInst} onChange={e=>s("dataInst",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
+      {ini?.id&&<PannelloAllegati entitaTipo="asset" entitaId={ini.id} userId={ini.userId||""} />}
     </Modal>
   );
 }
@@ -669,6 +671,7 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
         <Field label="Data fine (opzionale)"><input type="date" value={f.dataFine} onChange={e=>s("dataFine",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
       {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
+      {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={ini.userId||""} />}
     </Modal>
   );
 }
@@ -725,6 +728,7 @@ function ModalCliente({ ini, onClose, onSalva }) {
       </div>
       <Field label="Indirizzo"><input value={f.ind} onChange={e=>s("ind",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
+      {ini?.id&&<PannelloAllegati entitaTipo="cliente" entitaId={ini.id} userId={ini.userId||""} />}
     </Modal>
   );
 }
@@ -1273,6 +1277,181 @@ function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
   );
 }
 
+
+// ─── Gestore Allegati ─────────────────────────────────────────────────────
+function fmtBytes(b) {
+  if (!b) return "—";
+  if (b < 1024) return b + " B";
+  if (b < 1024*1024) return (b/1024).toFixed(1) + " KB";
+  return (b/(1024*1024)).toFixed(1) + " MB";
+}
+
+function iconaFile(mime) {
+  if (!mime) return "📄";
+  if (mime.startsWith("image/")) return "🖼";
+  if (mime === "application/pdf") return "📕";
+  if (mime.includes("word") || mime.includes("document")) return "📝";
+  if (mime.includes("sheet") || mime.includes("excel") || mime.includes("csv")) return "📊";
+  if (mime.includes("zip") || mime.includes("rar") || mime.includes("7z")) return "🗜";
+  if (mime.startsWith("video/")) return "🎬";
+  if (mime.startsWith("audio/")) return "🎵";
+  return "📄";
+}
+
+function GestoreAllegati({ entitaTipo, entitaId, userId }) {
+  const [allegati,  setAllegati]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [err,       setErr]       = useState(null);
+  const [dragOver,  setDragOver]  = useState(false);
+  const fileRef = useRef();
+
+  // Carica allegati
+  const carica = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("allegati")
+      .select("*")
+      .eq("entita_tipo", entitaTipo)
+      .eq("entita_id", entitaId)
+      .order("created_at", { ascending: false });
+    if (!error) setAllegati((data||[]).map(mapAllegato));
+    setLoading(false);
+  };
+
+  useEffect(() => { if (entitaId) carica(); }, [entitaId, entitaTipo]);
+
+  // Upload
+  const upload = async (files) => {
+    if (!files?.length) return;
+    setUploading(true); setErr(null);
+    for (const file of Array.from(files)) {
+      if (file.size > 20 * 1024 * 1024) {
+        setErr(`File troppo grande: ${file.name} (max 20 MB)`); continue;
+      }
+      const ext = file.name.split(".").pop();
+      const path = `${userId}/${entitaTipo}/${entitaId}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await supabase.storage.from("allegati").upload(path, file);
+      if (upErr) { setErr("Errore upload: " + upErr.message); continue; }
+      const { data: row, error: dbErr } = await supabase.from("allegati").insert({
+        entita_tipo: entitaTipo,
+        entita_id:   entitaId,
+        nome:        file.name,
+        storage_path: path,
+        mime_type:   file.type,
+        dimensione:  file.size,
+        user_id:     userId,
+      }).select().single();
+      if (!dbErr && row) setAllegati(p => [mapAllegato(row), ...p]);
+    }
+    setUploading(false);
+  };
+
+  // Download / anteprima
+  const apri = async (a) => {
+    const { data } = await supabase.storage.from("allegati").createSignedUrl(a.storagePath, 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  };
+
+  // Elimina
+  const elimina = async (a) => {
+    if (!window.confirm(`Eliminare "${a.nome}"?`)) return;
+    await supabase.storage.from("allegati").remove([a.storagePath]);
+    await supabase.from("allegati").delete().eq("id", a.id);
+    setAllegati(p => p.filter(x => x.id !== a.id));
+  };
+
+  // Drag & drop
+  const onDrop = (e) => {
+    e.preventDefault(); setDragOver(false);
+    upload(e.dataTransfer.files);
+  };
+
+  if (!entitaId) return (
+    <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"12px 0"}}>
+      Salva prima l'elemento per poter aggiungere allegati.
+    </div>
+  );
+
+  return (
+    <div style={{display:"grid",gap:10}}>
+      {/* Drop zone */}
+      <div
+        onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+        onDragLeave={()=>setDragOver(false)}
+        onDrop={onDrop}
+        onClick={()=>!uploading&&fileRef.current?.click()}
+        style={{
+          border:`2px dashed ${dragOver?"var(--amber)":"var(--border-dim)"}`,
+          borderRadius:"var(--radius)",
+          padding:"18px 16px",
+          textAlign:"center",
+          cursor:"pointer",
+          background:dragOver?"var(--surface-2)":"transparent",
+          transition:"all .15s",
+        }}
+      >
+        <input ref={fileRef} type="file" multiple style={{display:"none"}} onChange={e=>upload(e.target.files)} />
+        {uploading ? (
+          <div style={{fontSize:13,color:"var(--text-3)"}}>⏳ Caricamento in corso...</div>
+        ) : (
+          <>
+            <div style={{fontSize:22,marginBottom:4}}>📎</div>
+            <div style={{fontSize:13,fontWeight:600,color:"var(--text-2)"}}>Trascina file qui o clicca per selezionare</div>
+            <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>Max 20 MB per file — qualsiasi formato</div>
+          </>
+        )}
+      </div>
+
+      {err&&<div style={{fontSize:12,color:"var(--red)",background:"var(--red-bg)",border:"1px solid var(--red-bd)",borderRadius:"var(--radius-sm)",padding:"8px 12px"}}>{err}</div>}
+
+      {/* Lista allegati */}
+      {loading&&<div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Caricamento...</div>}
+      {!loading&&allegati.length===0&&(
+        <div style={{fontSize:12,color:"var(--text-3)",textAlign:"center",padding:"8px 0"}}>Nessun allegato</div>
+      )}
+      {allegati.map(a=>(
+        <div key={a.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:"var(--radius-sm)",border:"1px solid var(--border)",background:"var(--surface)",transition:"box-shadow .15s"}}
+          onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--shadow-sm)"}
+          onMouseLeave={e=>e.currentTarget.style.boxShadow=""}>
+          <span style={{fontSize:22,flexShrink:0}}>{iconaFile(a.mimeType)}</span>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div>
+            <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtBytes(a.dimensione)} · {fmtData(a.createdAt)}</div>
+          </div>
+          <div style={{display:"flex",gap:4,flexShrink:0}}>
+            <button className="btn-sm" onClick={()=>apri(a)} title="Apri / scarica"
+              style={{background:"var(--blue-bg)",color:"var(--blue)",borderColor:"var(--blue-bd)",fontSize:12}}>
+              ⬇ Apri
+            </button>
+            <button className="btn-sm btn-danger btn-icon" onClick={()=>elimina(a)} title="Elimina">✕</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Pannello allegati collassabile ──────────────────────────────────────
+function PannelloAllegati({ entitaTipo, entitaId, userId }) {
+  const [aperto, setAperto] = useState(false);
+  return (
+    <div style={{borderTop:"1px solid var(--border)",marginTop:12,paddingTop:12}}>
+      <button
+        onClick={()=>setAperto(v=>!v)}
+        style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",padding:"4px 0",cursor:"pointer",color:"var(--text-2)",fontWeight:600,fontSize:13,width:"100%"}}>
+        <span>📎</span>
+        <span>Allegati</span>
+        <span style={{marginLeft:"auto",fontSize:11,color:"var(--text-3)"}}>{aperto?"▲":"▼"}</span>
+      </button>
+      {aperto&&(
+        <div style={{marginTop:10}}>
+          <GestoreAllegati entitaTipo={entitaTipo} entitaId={entitaId} userId={userId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Mobile Bottom Navigation ─────────────────────────────────────────────
 const PRIMARY_TABS = [
   {id:"dashboard",    l:"Dashboard",  icon:"◈"},
@@ -1397,6 +1576,7 @@ export default function App() {
   }, [session]);
 
   const uid = () => session?.user?.id;
+  const UID = session?.user?.id || "";
   const BATCH = 50;
   const buildRowM = (piano, data) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid() });
 
@@ -1502,7 +1682,7 @@ export default function App() {
     sV(tab);
     window.scrollTo({top:0, behavior:"smooth"});
   };
-  const apriModM   = m => { siMM(m); sDD(""); sMM(true); };
+  const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
   if (!session) return <Auth />;

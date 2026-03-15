@@ -1021,3 +1021,18 @@ input::placeholder { color: var(--text-3); }
   .topbar-user-name { display: none; }
   .topbar-user-tipo { display: none; }
 }
+
+/* ─── Allegati ───────────────────────────────────────────────────────────── */
+.allegati-dropzone {
+  border: 2px dashed var(--border-dim);
+  border-radius: var(--radius);
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .15s;
+}
+.allegati-dropzone:hover,
+.allegati-dropzone.drag-over {
+  border-color: var(--amber);
+  background: var(--surface-2);
+}
