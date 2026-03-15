@@ -1675,29 +1675,25 @@ export default function App() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // ── Macchina a stati principale ─────────────────────────────────────────
+  // ── Auth: unico punto di ingresso ──────────────────────────────────────
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+    // 1. Leggi sessione corrente
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (!s) { setSess(null); setFase('no_session'); }
+      else    { setSess(s);    setFase('check_tenant'); }
+    });
+    // 2. Ascolta cambi futuri (login/logout durante la sessione)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_evt, s) => {
       if (s) {
-        // Login avvenuto
         setSess(s);
-        setFase('check_tenant');
+        setFase(f => f === 'no_session' || f === 'init' ? 'check_tenant' : f);
       } else {
-        // Logout
         setSess(null); setTenant(null);
         sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]);
         setFase('no_session');
       }
     });
     return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!s) { setSess(null); setFase('no_session'); return; }
-      setSess(s);
-      setFase('check_tenant');
-    });
   }, []);
 
   useEffect(() => {
@@ -1733,6 +1729,7 @@ export default function App() {
           supabase.from("gruppo_operatori").select("*").order("created_at"),
           supabase.from("gruppo_siti").select("*").order("created_at"),
         ]);
+        // Solo le tabelle core bloccano il caricamento
         if (ro.error || rc.error || ra.error || rp.error || rm.error) {
           const err = ro.error || rc.error || ra.error || rp.error || rm.error;
           setDbErr("Errore DB: " + err.message);
