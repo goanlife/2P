@@ -1636,7 +1636,7 @@ export default function App() {
   const [session,  setSess] = useState(null);
   const [tenant,   setTenant] = useState(null); // azienda corrente
   const [loading,  setLoad] = useState(false);
-  const [tenantLoading, setTenantLoad] = useState(true); // true finché non sappiamo se l'utente ha un tenant
+  const [tenantLoading, setTenantLoad] = useState(false);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
   const [clienti,  sCl]   = useState([]);
@@ -1678,30 +1678,32 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => { setSess(session); if (!session) setTenantLoad(false); });
+    supabase.auth.getSession().then(({ data: { session } }) => { setSess(session); setTenantLoad(!!session); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSess(s);
-      if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); setTenantLoad(true); }
+      if (s) { setTenantLoad(true); }
+      else { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); setTenant(null); setTenantLoad(false); }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!session) { setLoad(false); setTenantLoad(false); return; }
+    if (!session) { setLoad(false); return; }
 
     // Fase 1: carica il tenant se non ancora presente
     if (!tenant) {
-      setTenantLoad(true);
+      const timeout = setTimeout(() => setTenantLoad(false), 5000); // fallback 5s
       supabase
         .from("tenant_users")
         .select("tenant_id, tenants(*)")
         .eq("user_id", session.user.id)
         .single()
         .then(({ data: tu }) => {
+          clearTimeout(timeout);
           if (tu?.tenants) setTenant(tu.tenants);
-          setTenantLoad(false); // sappiamo ora se ha un tenant o no
+          setTenantLoad(false);
         })
-        .catch(() => setTenantLoad(false));
+        .catch(() => { clearTimeout(timeout); setTenantLoad(false); });
       return;
     }
 
@@ -1883,11 +1885,6 @@ export default function App() {
   const logout     = () => supabase.auth.signOut();
 
   // Non sappiamo ancora lo stato — mostra spinner neutro
-  if (!session && tenantLoading) return (
-    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg,#0D1B2A)"}}>
-      <div style={{color:"var(--accent,#F59E0B)",fontSize:32,animation:"spin 1s linear infinite"}}>⚙</div>
-    </div>
-  );
   if (!session) return <Auth />;
   if (tenantLoading) return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:"var(--bg,#0D1B2A)"}}>
