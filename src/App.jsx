@@ -1694,7 +1694,7 @@ export default function App() {
     if (!tenant) {
       const timeout = setTimeout(() => setTenantLoad(false), 5000); // fallback 5s
       supabase
-        .from("tenant_users")
+        .from("utenti_tenant")
         .select("tenant_id, tenants(*)")
         .eq("user_id", session.user.id)
         .single()

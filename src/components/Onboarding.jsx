@@ -14,14 +14,14 @@ export function Onboarding({ session, onTenantReady }) {
     try {
       // 1. Crea tenant
       const { data: tenant, error: e1 } = await supabase
-        .from("tenants").insert({ nome: nome.trim() }).select().single();
+        .from("inquilini").insert({ nome: nome.trim() }).select().single();
       if (e1) throw e1;
       // 2. Associa utente
-      const { error: e2 } = await supabase.from("tenant_users")
+      const { error: e2 } = await supabase.from("utenti_tenant")
         .insert({ user_id: session.user.id, tenant_id: tenant.id, ruolo: "admin" });
       if (e2) throw e2;
       // 3. Genera codice invito
-      await supabase.from("tenant_inviti").insert({ tenant_id: tenant.id });
+      await supabase.from("inquilino_invito").insert({ tenant_id: tenant.id });
       onTenantReady(tenant);
     } catch (e) {
       setErrore(e.message || "Errore durante la creazione");
@@ -35,18 +35,18 @@ export function Onboarding({ session, onTenantReady }) {
     try {
       // 1. Cerca invito valido
       const { data: inv, error: e1 } = await supabase
-        .from("tenant_inviti")
+        .from("inquilino_invito")
         .select("*, tenants(*)")
         .eq("codice", codice.trim().toUpperCase())
         .eq("usato", false)
         .single();
       if (e1 || !inv) { setErrore("Codice invito non valido o già usato"); setLoading(false); return; }
       // 2. Associa utente al tenant
-      const { error: e2 } = await supabase.from("tenant_users")
+      const { error: e2 } = await supabase.from("utenti_tenant")
         .insert({ user_id: session.user.id, tenant_id: inv.tenant_id, ruolo: "membro" });
       if (e2 && !e2.message.includes("duplicate")) throw e2;
       // 3. Marca invito come usato
-      await supabase.from("tenant_inviti").update({ usato: true }).eq("id", inv.id);
+      await supabase.from("inquilino_invito").update({ usato: true }).eq("id", inv.id);
       onTenantReady(inv.tenants);
     } catch (e) {
       setErrore(e.message || "Errore durante l'accesso");
