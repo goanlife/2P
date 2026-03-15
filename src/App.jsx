@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
+import { DashboardFornitore } from "./components/DashboardFornitore";
+import { ChiudiIntervento } from "./components/ChiudiIntervento";
+import { CampanellaNotifiche, useNotifiche } from "./components/Notifiche";
+import { RicercaGlobale } from "./components/RicercaGlobale";
+import { Statistiche } from "./components/Statistiche";
+import { KanbanView } from "./components/KanbanView";
+import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -37,10 +44,12 @@ const TABS = [
   {id:"utenti",      l:"Utenti",       icon:"👥"},
   {id:"gruppi",      l:"Gruppi",       icon:"🗂"},
   {id:"clienti",     l:"Clienti",      icon:"🏢"},
+  {id:"statistiche", l:"Statistiche",  icon:"📊"},
+  {id:"kanban",      l:"Kanban",        icon:"🗂"},
 ];
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"" });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
@@ -433,7 +442,7 @@ function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }) {
 }
 
 // ─── Lista manutenzioni ───────────────────────────────────────────────────
-function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters }) {
+function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters, onChiudi, onVerbale }) {
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
   const [fC,sfC]=useState("tutti");
@@ -449,6 +458,10 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, in
         <select value={fC} onChange={e=>sfC(e.target.value)}><option value="tutti">Tutti i clienti</option>{clienti.map(c=><option key={c.id} value={c.id}>{c.rs}</option>)}</select>
         <select value={fPri} onChange={e=>sfPri(e.target.value)}><option value="tutti">Tutte le priorità</option><option value="urgente">⚡ Urgente</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
         <span style={{fontSize:12,color:"var(--text-3)",alignSelf:"center",whiteSpace:"nowrap"}}>{filtrate.length} risultati</span>
+        <button onClick={()=>exportCSV(man,clienti,assets,operatori,filtrate)}
+          style={{fontSize:12,padding:"6px 12px",background:"#ECFDF5",color:"#065F46",borderColor:"#A7F3D0",fontWeight:600,whiteSpace:"nowrap"}}>
+          ⬇ CSV
+        </button>
       </div>
       <div style={{display:"grid",gap:8}}>
         {filtrate.map(m=>{
@@ -477,7 +490,7 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, in
               </div>
               <div style={{display:"flex",gap:5,flexShrink:0,alignItems:"center"}}>
                 {m.stato==="pianificata"&&<button className="btn-sm" onClick={()=>onStato(m.id,"inCorso")}>Avvia ▶</button>}
-                {m.stato==="inCorso"&&<button className="btn-sm btn-success" onClick={()=>onStato(m.id,"completata")}>✓ Completa</button>}
+                {m.stato==="inCorso"&&<button className="btn-sm btn-success" onClick={()=>onChiudi?onChiudi(m):onStato(m.id,"completata")}>✓ Chiudi</button>}
                 <button className="btn-sm btn-icon" onClick={()=>onMod(m)}>✏</button>
                 <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(m.id)}>✕</button>
               </div>
@@ -595,7 +608,7 @@ function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {
   );
 }
 
-function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) {
+function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel, onQR }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
@@ -614,7 +627,7 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel }) 
             <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:14}}>
               <div style={{width:44,height:44,borderRadius:"var(--radius)",background:"var(--blue-bg)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:"1px solid var(--blue-bd)"}}>⚙</div>
               <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.nome}</div><div style={{fontSize:11.5,color:"var(--text-3)",marginTop:2}}>{a.tipo}</div></div>
-              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(a);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(a.id)}>✕</button></div>
+              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(a);ssM(true);}}>✏</button><button className="btn-sm btn-icon" onClick={()=>onQR&&onQR(a)} title="QR Code" style={{fontSize:12}}>QR</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(a.id)}>✕</button></div>
             </div>
             <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
               {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
@@ -1569,10 +1582,12 @@ const PRIMARY_TABS = [
   {id:"clienti",      l:"Clienti",    icon:"🏢"},
 ];
 const DRAWER_TABS = [
-  {id:"piani",     l:"Piani",     icon:"🔄"},
-  {id:"assets",    l:"Asset",     icon:"⚙"},
-  {id:"utenti",    l:"Utenti",    icon:"👥"},
-  {id:"gruppi",    l:"Gruppi",    icon:"🗂"},
+  {id:"piani",       l:"Piani",       icon:"🔄"},
+  {id:"assets",      l:"Asset",       icon:"⚙"},
+  {id:"utenti",      l:"Utenti",      icon:"👥"},
+  {id:"gruppi",      l:"Gruppi",      icon:"🗂"},
+  {id:"statistiche", l:"Statistiche", icon:"📊"},
+  {id:"kanban",      l:"Kanban",      icon:"🗂"},
 ];
 
 function MobileNav({ vista, sV }) {
@@ -1636,11 +1651,28 @@ export default function App() {
   const [dataDef, sDD] = useState("");
   const [temaModal, setTemaModal] = useState(false);
   const [temaCorrente, setTemaCorrente] = useState("navy");
+  const [chiudiModal, setChiudiModal] = useState(null); // manutenzione da chiudere
+  const [ricercaAperta, setRicercaAperta] = useState(false);
+  const [qrAsset, setQrAsset] = useState(null);
+  const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
 
   // Apply default theme on mount
   useEffect(() => { applyTheme("navy"); }, []);
+
+  // Keyboard shortcut: Ctrl+K / Cmd+K per ricerca globale
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setRicercaAperta(v => !v);
+      }
+      if (e.key === "Escape") setRicercaAperta(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
@@ -1675,6 +1707,9 @@ export default function App() {
       }
       const mappedOps = ops.map(mapOp);
       sOp(mappedOps);
+      // Applica tema dell'utente loggato se presente
+      const meOp = mappedOps.find(o => o.email === session?.user?.email);
+      if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
       sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
@@ -1786,6 +1821,25 @@ export default function App() {
   const attivaDisattiva = async (id,attivo) => { await supabase.from("piani").update({attivo}).eq("id",id); sPi(p=>p.map(pi=>pi.id===id?{...pi,attivo}:pi)); };
 
   const apriConData = d => { sDD(d); siMM(null); sMM(true); };
+
+  // Chiudi intervento con firma
+  const salvaChiusura = async (dati) => {
+    const { id, stato, note_chiusura, ore_effettive, parti_usate, firma_svg, chiuso_at } = dati;
+    const { error } = await supabase.from("manutenzioni").update({
+      stato, note_chiusura, ore_effettive, parti_usate, firma_svg, chiuso_at,
+    }).eq("id", id);
+    if (!error) {
+      sMan(p => p.map(m => m.id === id ? {
+        ...m, stato, noteChiusura: note_chiusura,
+        oreEffettive: ore_effettive, partiUsate: parti_usate,
+        firmaSvg: firma_svg, chiusoAt: chiuso_at,
+      } : m));
+      // Log
+      const meOp = operatori.find(o => o.email === session?.user?.email);
+      await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOp?.nome || "", uid());
+      notify("Intervento chiuso con successo ✅", "success");
+    }
+  };
   const navigateTo = (tab, filters={}) => {
     setFiltroMan(filters);
     sV(tab);
@@ -1817,6 +1871,21 @@ export default function App() {
   );
 
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
+  const meOperatore = operatori.find(o => o.email === session?.user?.email);
+  const ruolo = meOperatore?.tipo || "admin"; // admin = non trovato in operatori
+  const useNotifiche_val = useMemo(() => {
+    const oggi_ = isoDate(new Date());
+    const domani = isoDate(new Date(Date.now() + 86400000));
+    const notifiche = [];
+    const mieM = ruolo === "fornitore" ? man.filter(m => m.operatoreId === meOperatore?.id) : man;
+    mieM.filter(m => m.stato !== "completata").forEach(m => {
+      if (m.data < oggi_) notifiche.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
+      else if (m.data === oggi_) notifiche.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
+      if (m.priorita === "urgente") notifiche.push({ id:`ur_${m.id}`, tipo:"urgente", titolo:"⚡ Urgente", testo:m.titolo, data:m.data, manId:m.id, icon:"⚡" });
+    });
+    const seen = new Set();
+    return notifiche.filter(n => { if(seen.has(n.manId)) return false; seen.add(n.manId); return true; }).slice(0, 20);
+  }, [man, meOperatore, ruolo]);
 
   return (
     <div className="app-shell">
@@ -1833,6 +1902,13 @@ export default function App() {
           ))}
         </div>
         <div className="topbar-actions">
+          {/* Ricerca globale */}
+          <button className="btn-logout" onClick={()=>setRicercaAperta(true)} title="Ricerca" style={{fontSize:15}}>🔍</button>
+          {/* Notifiche */}
+          <CampanellaNotifiche
+            notifiche={useNotifiche_val}
+            onNavigate={navigateTo}
+          />
           <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
           <button className="btn-logout" onClick={()=>setTemaModal(true)} title="Cambia tema" style={{fontSize:15}}>🎨</button>
           {/* Utente loggato */}
@@ -1861,17 +1937,43 @@ export default function App() {
       </nav>
 
       <main className="page-content">
-        {vista==="dashboard"    && <Dashboard    man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} onNavigate={navigateTo} />}
-        {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={delM} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)} />}
+        {vista==="dashboard"    && (
+          ruolo === "fornitore" && meOperatore
+            ? <DashboardFornitore me={meOperatore} man={man} clienti={clienti} assets={assets} onStato={statoM} onApriChiudi={m=>setChiudiModal(m)} />
+            : <Dashboard man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} onNavigate={navigateTo} />
+        )}
+        {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={delM} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
+          onChiudi={m=>setChiudiModal(m)}
+          onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
+        />}
         {vista==="piani"        && <GestionePiani piani={piani} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAttivaDisattiva={attivaDisattiva} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
-        {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} />}
+        {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} onQR={a=>setQrAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={delGruppo} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
+        {vista==="statistiche"  && <Statistiche man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
+        {vista==="kanban"       && <KanbanView man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onMod={apriModM} />}
       </main>
 
       <MobileNav vista={vista} sV={sV} />
+      {chiudiModal && (
+        <ChiudiIntervento
+          manutenzione={chiudiModal}
+          cliente={clienti.find(c=>c.id===chiudiModal.clienteId)}
+          asset={assets.find(a=>a.id===chiudiModal.assetId)}
+          onClose={()=>setChiudiModal(null)}
+          onSalva={salvaChiusura}
+        />
+      )}
+      {ricercaAperta && (
+        <RicercaGlobale
+          man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori}
+          onNavigate={navigateTo}
+          onClose={()=>setRicercaAperta(false)}
+        />
+      )}
+      {qrAsset && <QRCodeAsset asset={qrAsset} onClose={()=>setQrAsset(null)} />}
       {temaModal&&(
         <Overlay>
           <div className="modal-box" style={{width:"min(420px,94vw)"}}>
