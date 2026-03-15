@@ -1636,7 +1636,7 @@ export default function App() {
   const [session,  setSess] = useState(null);
   const [tenant,   setTenant] = useState(null);
   const [tenantLoading, setTenantLoad] = useState(false);
-  const [loading,  setLoad] = useState(true);
+  const [loading,  setLoad] = useState(false);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
   const [clienti,  sCl]   = useState([]);
@@ -1874,8 +1874,7 @@ export default function App() {
       </div>
     </div>
   );
-  if (!tenant) return <Onboarding session={session} onTenantReady={t=>{setTenant(t);setTenantLoad(false);}} />;
-
+  if (!tenant) return <Onboarding session={session} onTenantReady={t=>{setTenant(t);}} />;
   if (loading) return (
     <div className="loading-screen">
       <div className="loading-logo">🔧</div>
