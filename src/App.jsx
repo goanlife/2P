@@ -1921,56 +1921,61 @@ export default function App() {
     <div className="app-shell">
       {sidebarOpen && <div className="sidebar-overlay" onClick={()=>setSidebar(false)} />}
       <aside className={"sidebar"+(sidebarOpen?" open":"")}>
-        <div className="sidebar-header">
-          <button className="sidebar-close-btn" onClick={()=>setSidebar(false)}>✕</button>
+
+        {/* ── Logo ── */}
+        <div className="sb-logo">
+          <div className="sb-logo-icon">🔧</div>
+          <div className="sb-logo-text">
+            <span className="sb-brand">ManuMan</span>
+            {tenant?.nome && <span className="sb-tenant">{tenant.nome}</span>}
+          </div>
+          {tenant?.logo_url && <img src={tenant.logo_url} className="sb-company-logo" alt="" />}
+          <button className="sb-close" onClick={()=>setSidebar(false)}>✕</button>
         </div>
-        <div className="sidebar-logo">
-          <div className="topbar-logo-icon">🔧</div>
-          <div><div className="topbar-logo-text">ManuMan</div><div className="topbar-logo-sub">Gestione Manutenzioni</div></div>{tenant?.logo_url&&<img src={tenant.logo_url} alt="logo" style={{height:26,maxWidth:72,objectFit:"contain",marginLeft:8,borderRadius:4,opacity:.9}}/>}{tenant?.nome&&<span style={{fontSize:11,fontWeight:600,color:"var(--amber)",marginLeft:6,maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tenant.nome}</span>}
+
+        {/* ── Nuova attività ── */}
+        <div className="sb-new-wrap">
+          <button className="sb-new-btn" onClick={()=>{siMM(null);sDD("");sMM(true);setSidebar(false);}}>
+            <span>＋</span> Nuova attività
+          </button>
         </div>
-        <nav className="sidebar-nav">
+
+        {/* ── Nav ── */}
+        <nav className="sb-nav">
           {TABS.map(t=>(
-            <button key={t.id} className={"sidebar-item"+(vista===t.id?" active":"")} 
+            <button key={t.id} className={"sb-item"+(vista===t.id?" active":"")}
               onClick={()=>{ sV(t.id); setSidebar(false); }}>
-              <span className="sidebar-icon">{t.icon}</span>
-              <span className="sidebar-label">{t.l}</span>
+              <span className="sb-icon">{t.icon}</span>
+              <span className="sb-label">{t.l}</span>
             </button>
           ))}
         </nav>
-        <div className="sidebar-spacer" />
-        <div className="sidebar-actions">
-          {/* Ricerca globale */}
-          <button className="btn-logout" onClick={()=>setRicercaAperta(true)} title="Ricerca" style={{fontSize:15}}>🔍</button>
-          {/* Notifiche */}
-          <CampanellaNotifiche
-            notifiche={notifiche}
-            onNavigate={navigateTo}
-          />
-          <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
-          <button className="btn-logout" onClick={()=>setTemaModal(true)} title="Cambia tema" style={{fontSize:15}}>🎨</button>
-          {/* Utente loggato */}
+
+        {/* ── Footer ── */}
+        <div className="sb-footer">
           {(() => {
-            const me = operatori.find(o=>o.email===session?.user?.email) || null;
+            const me = operatori.find(o=>o.email===session?.user?.email);
             const email = session?.user?.email || "";
-            const initials = me
-              ? me.nome.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase()
-              : email.slice(0,2).toUpperCase();
+            const initials = me ? me.nome.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase() : email.slice(0,2).toUpperCase();
             const col = me?.col || "#8BA3B8";
-            const nome = me?.nome || email;
             return (
-              <div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 10px",borderRadius:"var(--radius-sm)",background:"var(--navy-3)",border:"1px solid var(--navy-4)",cursor:"default",flexShrink:0}}>
-                <div style={{width:28,height:28,borderRadius:"50%",background:col+"30",border:`1.5px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:col,flexShrink:0}}>{initials}</div>
-                <div style={{display:"flex",flexDirection:"column",lineHeight:1.2}}>
-                  <span style={{fontSize:12,fontWeight:600,color:"var(--white)",whiteSpace:"nowrap",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis"}}>{me?.nome || email.split("@")[0]}</span>
-                  {me&&<span style={{fontSize:10,color:"var(--slate)",whiteSpace:"nowrap"}}>{me.tipo==="fornitore"?"Fornitore":me.tipo==="cliente"?"Cliente":"Interno"}</span>}
+              <div className="sb-user">
+                <div className="sb-avatar" style={{background:col+"25",border:`1.5px solid ${col}`,color:col}}>{initials}</div>
+                <div className="sb-user-info">
+                  <span className="sb-user-name">{me?.nome || email.split("@")[0]}</span>
+                  <span className="sb-user-role">{me?.tipo==="fornitore"?"Fornitore":me?.tipo==="cliente"?"Cliente":"Admin"}</span>
                 </div>
               </div>
             );
           })()}
-          <button className="btn-logout" onClick={logout} title="Esci" style={{fontSize:13,padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
-            <span>↩</span><span style={{fontSize:11,fontWeight:600,color:"var(--slate)"}}>Esci</span>
-          </button>
+          <div className="sb-footer-actions">
+            <button className="sb-action" onClick={()=>setRicercaAperta(true)} title="Ricerca">🔍</button>
+            <CampanellaNotifiche notifiche={notifiche} onNavigate={navigateTo} />
+            <button className="sb-action" onClick={()=>setTemaModal(true)} title="Tema">🎨</button>
+            <button className="sb-action sb-logout" onClick={logout} title="Esci">↩</button>
+          </div>
         </div>
+
       </aside>
 
       <div className="sidebar-body">

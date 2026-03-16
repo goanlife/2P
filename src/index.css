@@ -1315,3 +1315,159 @@ input::placeholder { color: var(--text-3); }
 .sidebar-body .page-content {
   background: #F7F8FA;
 }
+
+/* ═══════════════════════════════════════════════════════
+   SIDEBAR COMPATTA v2
+═══════════════════════════════════════════════════════ */
+
+/* ── Logo header ── */
+.sb-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+.sb-logo-icon {
+  width: 30px; height: 30px;
+  background: var(--amber);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.sb-logo-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.sb-brand {
+  font-family: var(--font-head);
+  font-size: 15px; font-weight: 700;
+  color: var(--white);
+  letter-spacing: .01em;
+}
+.sb-tenant {
+  font-size: 10px; font-weight: 600;
+  color: var(--amber); opacity: .8;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 110px; letter-spacing: .03em;
+}
+.sb-company-logo {
+  height: 22px; max-width: 56px;
+  object-fit: contain; border-radius: 3px; opacity: .9;
+  flex-shrink: 0;
+}
+.sb-close {
+  display: none;
+  background: none; border: none;
+  color: var(--slate); cursor: pointer;
+  font-size: 14px; padding: 3px 6px;
+  border-radius: 5px; flex-shrink: 0;
+}
+.sb-close:hover { color: var(--white); background: var(--navy-3); }
+
+/* ── Nuova attività ── */
+.sb-new-wrap { padding: 10px 12px 6px; flex-shrink: 0; }
+.sb-new-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--amber);
+  color: #0D1B2A;
+  border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center;
+  gap: 6px; justify-content: center;
+  transition: all .15s;
+}
+.sb-new-btn:hover { background: var(--amber-glow); transform: translateY(-1px); }
+
+/* ── Nav ── */
+.sb-nav {
+  flex: 1;
+  padding: 4px 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  scrollbar-width: none;
+}
+.sb-nav::-webkit-scrollbar { display: none; }
+
+.sb-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px;
+  border: none; background: transparent;
+  color: #8899BB;
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  cursor: pointer; border-radius: 7px;
+  transition: all .13s; text-align: left; width: 100%;
+  position: relative;
+}
+.sb-item:hover { color: var(--white); background: rgba(255,255,255,.06); }
+.sb-item.active {
+  color: var(--white);
+  background: rgba(245,158,11,.15);
+  font-weight: 600;
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: var(--amber);
+  border-radius: 0 3px 3px 0;
+}
+.sb-icon { font-size: 14px; opacity: .9; flex-shrink: 0; width: 18px; text-align: center; }
+.sb-label { flex: 1; }
+
+/* ── Footer ── */
+.sb-footer {
+  border-top: 1px solid rgba(255,255,255,.07);
+  padding: 10px 12px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sb-user {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.05);
+}
+.sb-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.sb-user-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; line-height: 1.3;
+}
+.sb-user-name {
+  font-size: 12px; font-weight: 600; color: var(--white);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-user-role { font-size: 10px; color: var(--slate); }
+
+.sb-footer-actions {
+  display: flex; align-items: center; gap: 4px;
+}
+.sb-action {
+  width: 32px; height: 32px;
+  background: none; border: none;
+  color: var(--slate); cursor: pointer;
+  font-size: 15px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .13s; flex-shrink: 0;
+}
+.sb-action:hover { color: var(--white); background: rgba(255,255,255,.08); }
+.sb-logout { margin-left: auto; }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .sb-close { display: flex; }
+}
