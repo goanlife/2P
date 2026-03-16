@@ -1664,6 +1664,7 @@ export default function App() {
   const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
+  const [sidebarOpen, setSidebar] = useState(false);
 
   // Apply default theme on mount
   useEffect(() => { applyTheme("navy"); }, []);
@@ -1918,19 +1919,26 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <nav className="topbar">
-        <div className="topbar-logo">
+      {sidebarOpen && <div className="sidebar-overlay" onClick={()=>setSidebar(false)} />}
+      <aside className={"sidebar"+(sidebarOpen?" open":"")}>
+        <div className="sidebar-header">
+          <button className="sidebar-close-btn" onClick={()=>setSidebar(false)}>✕</button>
+        </div>
+        <div className="sidebar-logo">
           <div className="topbar-logo-icon">🔧</div>
           <div><div className="topbar-logo-text">ManuMan</div><div className="topbar-logo-sub">Gestione Manutenzioni</div></div>{tenant?.logo_url&&<img src={tenant.logo_url} alt="logo" style={{height:26,maxWidth:72,objectFit:"contain",marginLeft:8,borderRadius:4,opacity:.9}}/>}{tenant?.nome&&<span style={{fontSize:11,fontWeight:600,color:"var(--amber)",marginLeft:6,maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tenant.nome}</span>}
         </div>
-        <div className="topbar-nav">
+        <nav className="sidebar-nav">
           {TABS.map(t=>(
-            <button key={t.id} className={"nav-btn"+(vista===t.id?" active":"")} onClick={()=>sV(t.id)}>
-              <span className="nav-icon">{t.icon}</span>{t.l}
+            <button key={t.id} className={"sidebar-item"+(vista===t.id?" active":"")} 
+              onClick={()=>{ sV(t.id); setSidebar(false); }}>
+              <span className="sidebar-icon">{t.icon}</span>
+              <span className="sidebar-label">{t.l}</span>
             </button>
           ))}
-        </div>
-        <div className="topbar-actions">
+        </nav>
+        <div className="sidebar-spacer" />
+        <div className="sidebar-actions">
           {/* Ricerca globale */}
           <button className="btn-logout" onClick={()=>setRicercaAperta(true)} title="Ricerca" style={{fontSize:15}}>🔍</button>
           {/* Notifiche */}
@@ -1963,9 +1971,23 @@ export default function App() {
             <span>↩</span><span style={{fontSize:11,fontWeight:600,color:"var(--slate)"}}>Esci</span>
           </button>
         </div>
-      </nav>
+      </aside>
 
-      <main className="page-content">
+      <div className="sidebar-body">
+        <header className="mini-topbar">
+          <button className="hamburger-btn" onClick={()=>setSidebar(v=>!v)}>
+            <span>☰</span>
+          </button>
+          <div className="mini-topbar-center">
+            {tenant?.logo_url && <img src={tenant.logo_url} alt="" style={{height:24,maxWidth:64,objectFit:"contain",borderRadius:3,opacity:.9}} />}
+            <span className="mini-topbar-title">{TABS.find(t=>t.id===vista)?.icon} {TABS.find(t=>t.id===vista)?.l}</span>
+          </div>
+          <div className="mini-topbar-right">
+            <CampanellaNotifiche notifiche={notifiche} onNavigate={navigateTo} />
+            <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova</button>
+          </div>
+        </header>
+        <main className="page-content">
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
             ? <DashboardFornitore me={meOperatore} man={man} clienti={clienti} assets={assets} onStato={statoM} onApriChiudi={m=>setChiudiModal(m)} />
@@ -1986,7 +2008,6 @@ export default function App() {
         {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} onTenantUpdate={aggiornaTenant} />}
       </main>
 
-      <MobileNav vista={vista} sV={sV} />
       {chiudiModal && (
         <ChiudiIntervento
           manutenzione={chiudiModal}
@@ -2042,6 +2063,7 @@ export default function App() {
         onClose={()=>{sMM(false);siMM(null);}}
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}
       />}
+      </div>{/* sidebar-body */}
     </div>
   );
 }
