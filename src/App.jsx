@@ -109,6 +109,31 @@ function Av({ nome, col, size=36 }) {
 function Field({ label, children }) {
   return <div className="field"><label>{label}</label>{children}</div>;
 }
+
+function Toast({ msg, type="error", onDismiss }) {
+  const bg = type==="success"?"#ECFDF5":type==="warning"?"#FFFBEB":"#FEF2F2";
+  const border = type==="success"?"#A7F3D0":type==="warning"?"#FDE68A":"#FECACA";
+  const color = type==="success"?"#065F46":type==="warning"?"#92400E":"#991B1B";
+  const icon = type==="success"?"✅":type==="warning"?"⚠":"❌";
+  return (
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:bg,border:`1px solid ${border}`,borderRadius:"var(--radius-sm)",padding:"12px 16px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 4px 20px rgba(0,0,0,.15)",maxWidth:360}}>
+      <span style={{fontSize:16}}>{icon}</span>
+      <span style={{flex:1,fontSize:13,fontWeight:500,color}}>{msg}</span>
+      <button onClick={onDismiss} style={{background:"none",border:"none",cursor:"pointer",color,fontSize:16,padding:"0 4px"}}>✕</button>
+    </div>
+  );
+}
+
+function ConflictiBanner({ conf }) {
+  if (!conf?.length) return null;
+  return (
+    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:13,color:"#92400E"}}>
+      <strong>⚠ Attenzione:</strong> {conf.length} attività già pianificata/e in questa data:
+      <ul style={{margin:"6px 0 0",paddingLeft:18}}>{conf.map(m=><li key={m.id}>{m.titolo} ({m.durata} min)</li>)}</ul>
+    </div>
+  );
+}
+
 function Overlay({ children, zIndex=1000 }) {
   return <div className="overlay" style={{zIndex}}>{children}</div>;
 }
