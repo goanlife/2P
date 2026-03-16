@@ -1849,6 +1849,21 @@ export default function App() {
   const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
+  // Notifiche - calcolate prima delle guard (Rules of Hooks)
+  const notifiche = useMemo(() => {
+    if (!session || !man.length) return [];
+    const oggi_ = isoDate(new Date());
+    const result = [];
+    const mieM = (meOperatore?.tipo === "fornitore") ? man.filter(m => m.operatoreId === meOperatore?.id) : man;
+    mieM.filter(m => m.stato !== "completata").forEach(m => {
+      if (m.data < oggi_) result.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
+      else if (m.data === oggi_) result.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
+      if (m.priorita === "urgente") result.push({ id:`ur_${m.id}`, tipo:"urgente", titolo:"⚡ Urgente", testo:m.titolo, data:m.data, manId:m.id, icon:"⚡" });
+    });
+    const seen = new Set();
+    return result.filter(n => { if(seen.has(n.manId)) return false; seen.add(n.manId); return true; }).slice(0, 20);
+  }, [man, meOperatore, session]);
+
   if (!session) return <Auth />;
 
   if (loading) return (
@@ -1874,19 +1889,6 @@ export default function App() {
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
   const meOperatore = operatori.find(o => o.email === session?.user?.email);
   const ruolo = meOperatore?.tipo || "admin"; // admin = non trovato in operatori
-  const useNotifiche_val = useMemo(() => {
-    const oggi_ = isoDate(new Date());
-    const domani = isoDate(new Date(Date.now() + 86400000));
-    const notifiche = [];
-    const mieM = ruolo === "fornitore" ? man.filter(m => m.operatoreId === meOperatore?.id) : man;
-    mieM.filter(m => m.stato !== "completata").forEach(m => {
-      if (m.data < oggi_) notifiche.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
-      else if (m.data === oggi_) notifiche.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
-      if (m.priorita === "urgente") notifiche.push({ id:`ur_${m.id}`, tipo:"urgente", titolo:"⚡ Urgente", testo:m.titolo, data:m.data, manId:m.id, icon:"⚡" });
-    });
-    const seen = new Set();
-    return notifiche.filter(n => { if(seen.has(n.manId)) return false; seen.add(n.manId); return true; }).slice(0, 20);
-  }, [man, meOperatore, ruolo]);
 
   return (
     <div className="app-shell">
@@ -1907,7 +1909,7 @@ export default function App() {
           <button className="btn-logout" onClick={()=>setRicercaAperta(true)} title="Ricerca" style={{fontSize:15}}>🔍</button>
           {/* Notifiche */}
           <CampanellaNotifiche
-            notifiche={useNotifiche_val}
+            notifiche={notifiche}
             onNavigate={navigateTo}
           />
           <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova attività</button>
