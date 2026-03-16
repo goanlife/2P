@@ -1760,6 +1760,7 @@ export default function App() {
   const [assets,   sAs]   = useState([]);
   const [piani,    sPi]   = useState([]);
   const [operatori,sOp]   = useState([]);
+  const [assegnazioni, sAss] = useState([]);
   const [siti,     sSiti] = useState([]);
   const [gruppi,   sGruppi]= useState([]);
   const [gOps,     sGOps]  = useState([]);
