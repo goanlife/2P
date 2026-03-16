@@ -2,14 +2,29 @@ import { useState, useEffect } from "react";
 import { supabase } from "../supabase";
 
 // ─── Editor checklist (nel form del piano) ────────────────────────────────
-export function ChecklistEditor({ pianoId, readOnly = false }) {
+export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false }) {
   const [steps, setSteps] = useState([]);
+  const [stepsEreditati, setStepsEreditati] = useState([]);
   const [nuovoTesto, setNuovoTesto] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (pianoId) carica();
   }, [pianoId]);
+
+  useEffect(() => {
+    if (pianoPadreId) caricaEreditati();
+    else setStepsEreditati([]);
+  }, [pianoPadreId]);
+
+  const caricaEreditati = async () => {
+    const { data } = await supabase
+      .from("piano_checklist")
+      .select("*")
+      .eq("piano_id", pianoPadreId)
+      .order("ordine");
+    setStepsEreditati(data || []);
+  };
 
   const carica = async () => {
     const { data } = await supabase
@@ -70,6 +85,21 @@ export function ChecklistEditor({ pianoId, readOnly = false }) {
   return (
     <div style={st.wrap}>
       <div style={st.head}>✅ Checklist intervento ({steps.length} step)</div>
+      {stepsEreditati.length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: ".04em", marginBottom: 6 }}>
+            📥 Ereditati dal piano padre ({stepsEreditati.length})
+          </div>
+          {stepsEreditati.map((s, i) => (
+            <div key={s.id} style={{ ...st.step, opacity: 0.6, background: "var(--surface)", borderStyle: "dashed" }}>
+              <div style={{ ...st.num, background: "var(--border)" }}>{i + 1}</div>
+              <span style={{ ...st.txt, color: "var(--text-3)" }}>{s.testo}</span>
+              {s.obbligatorio && <span style={{ fontSize: 10, color: "var(--text-3)" }}>obbl.</span>}
+            </div>
+          ))}
+          {steps.length > 0 && <div style={{ fontSize: 10, color: "var(--text-3)", marginTop: 4, marginBottom: 4 }}>+ Step aggiuntivi di questo livello:</div>}
+        </div>
+      )}
       {steps.map((s, i) => (
         <div key={s.id} style={st.step}>
           <div style={st.num}>{i + 1}</div>
@@ -112,6 +142,15 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
     if (manutenzione?.pianoId) carica();
     else setLoading(false);
   }, [manutenzione?.id]);
+
+  const caricaEreditati = async () => {
+    const { data } = await supabase
+      .from("piano_checklist")
+      .select("*")
+      .eq("piano_id", pianoPadreId)
+      .order("ordine");
+    setStepsEreditati(data || []);
+  };
 
   const carica = async () => {
     setLoading(true);

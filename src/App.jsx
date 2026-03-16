@@ -56,7 +56,7 @@ const TABS = [
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
-const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
+const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"", livello:r.livello||"standard", pianoPadreId:r.piano_padre_id||null });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy" });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
@@ -67,7 +67,7 @@ const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mi
 const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
 const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
 const toDbA  = (f,uid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid });
-const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
+const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, livello:f.livello||"standard", piano_padre_id:f.pianoPadreId||null });
 const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
 const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
 
@@ -77,6 +77,12 @@ const isoDate  = d => { const dt=new Date(d); return `${dt.getFullYear()}-${Stri
 const addDays  = (iso,n) => { const d=new Date(iso); d.setDate(d.getDate()+n); return isoDate(d); };
 const addMonths= (iso,n) => { const d=new Date(iso); d.setMonth(d.getMonth()+n); return isoDate(d); };
 
+const LIVELLI_PIANO = [
+  { v:"standard", l:"Standard",    col:"#378ADD", desc:"Piano normale senza livello" },
+  { v:"L1",       l:"L1 — Base",   col:"#059669", desc:"Controllo rapido (es. settimanale)" },
+  { v:"L2",       l:"L2 — Medio",  col:"#F59E0B", desc:"Controllo completo (es. mensile)" },
+  { v:"L3",       l:"L3 — Completo", col:"#EF4444", desc:"Revisione totale (es. annuale)" },
+];
 function generaOccorrenze(piano, dataInizio, mesi=12) {
   if (!dataInizio) return [];
   const freq = FREQUENZE.find(f=>f.v===piano.frequenza); if (!freq) return [];
@@ -655,10 +661,10 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel, on
 }
 
 // ─── Piani ────────────────────────────────────────────────────────────────
-function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva, userId }) {
+function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, piani, onClose, onSalva, userId }) {
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp=fornitori[0]?.id?String(fornitori[0].id):"";
-  const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true};
+  const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true,livello:"standard",pianoPadreId:null};
   const normalize=obj=>obj?{...obj,operatoreId:String(obj.operatoreId||defOp),clienteId:obj.clienteId?String(obj.clienteId):"",assetId:obj.assetId?String(obj.assetId):""}:null;
   const [f,sf]=useState(normalize(ini)||vuoto);const s=(k,v)=>sf(p=>({...p,[k]:v}));const ok=f.nome.trim()&&f.dataInizio&&f.frequenza;
   const assetsCliente=useMemo(()=>f.clienteId?assets.filter(a=>String(a.clienteId)===f.clienteId):assets,[f.clienteId,assets]);
@@ -688,9 +694,34 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
         <Field label="Data inizio *"><input type="date" value={f.dataInizio} onChange={e=>s("dataInizio",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Data fine (opzionale)"><input type="date" value={f.dataFine} onChange={e=>s("dataFine",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
+      <Field label="Livello manutenzione">
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+          {LIVELLI_PIANO.map(lv=>(
+            <label key={lv.v} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:"var(--radius-sm)",border:`1.5px solid ${f.livello===lv.v?lv.col:"var(--border)"}`,background:f.livello===lv.v?lv.col+"15":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
+              <input type="radio" name="livello" value={lv.v} checked={f.livello===lv.v} onChange={()=>s("livello",lv.v)} style={{display:"none"}} />
+              <span style={{width:10,height:10,borderRadius:"50%",background:lv.col,flexShrink:0,display:"inline-block"}} />
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:f.livello===lv.v?lv.col:"var(--text-1)"}}>{lv.l}</div>
+                <div style={{fontSize:10,color:"var(--text-3)"}}>{lv.desc}</div>
+              </div>
+            </label>
+          ))}
+        </div>
+      </Field>
+      {f.livello!=="standard"&&f.livello!=="L1"&&(
+        <Field label={`Piano padre (eredita checklist ${f.livello==="L2"?"da L1":"da L2"})`}>
+          <select value={f.pianoPadreId||""} onChange={e=>s("pianoPadreId",e.target.value?Number(e.target.value):null)} style={{width:"100%"}}>
+            <option value="">— Nessun piano padre —</option>
+            {piani.filter(p=>p.livello===(f.livello==="L2"?"L1":"L2")&&p.assetId===Number(f.assetId)&&p.clienteId===Number(f.clienteId)).map(p=>(
+              <option key={p.id} value={p.id}>{p.nome} ({FREQUENZE.find(fr=>fr.v===p.frequenza)?.l})</option>
+            ))}
+          </select>
+          <div style={{fontSize:11,color:"var(--text-3)",marginTop:4}}>ℹ Gli step del piano padre verranno inclusi automaticamente nella checklist</div>
+        </Field>
+      )}
       {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
       {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={userId||""} />}
-      {ini?.id&&<ChecklistEditor pianoId={ini.id} />}
+      {ini?.id&&<ChecklistEditor pianoId={ini.id} pianoPadreId={f.pianoPadreId} />}
     </Modal>
   );
 }
