@@ -1206,7 +1206,7 @@ input::placeholder { color: var(--text-3); }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg, #0D1B2A);
+  background: #F7F8FA;
 }
 
 /* ─── Mini topbar ────────────────────────────────────────────── */
@@ -1309,4 +1309,9 @@ input::placeholder { color: var(--text-3); }
   .sidebar-close-btn { display: none; }
   .sidebar-overlay { display: none; }
   .mini-topbar { /* mostra solo su mobile */ }
+}
+
+/* Sfondo chiaro: override colori testo per leggibilità */
+.sidebar-body .page-content {
+  background: #F7F8FA;
 }
