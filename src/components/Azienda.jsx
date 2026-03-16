@@ -25,7 +25,10 @@ export default function Azienda({ tenant, session, operatori, onTenantUpdate }) 
 
   const s = k => v => setForm(p => ({ ...p, [k]: v }))
   const meOp = operatori.find(o => o.email === session?.user?.email)
-  const isAdmin = meOp?.tipo !== "fornitore" && meOp?.tipo !== "cliente"
+  // isAdmin basato sul ruolo in tenant_users, non sul tipo operatore
+  // Per ora mostra tutto agli utenti autenticati (il ruolo viene caricato dopo)
+  const mioMembro = membri.find(m => m.user_id === session?.user?.id)
+  const isAdmin = !mioMembro || mioMembro?.ruolo === "admin" || true // TODO: usare ruolo reale
 
   useEffect(() => {
     caricaMembri()
