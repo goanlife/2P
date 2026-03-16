@@ -667,6 +667,15 @@ function PopupGiorno({ data, attivita, clienti, assets, operatori, onClose, onSt
                 {m.stato==="scaduta" && <button className="btn-sm btn-danger" onClick={()=>onRipianifica(m)}>↻ Ripianifica</button>}
                 <button className="btn-sm btn-icon" onClick={()=>onMod(m)} title="Modifica">✏</button>
               </div>
+              {/* Checklist */}
+              {m.pianoId && m.stato!=="completata" && (
+                <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--border)"}}>
+                  <ChecklistIntervento
+                    manutenzione={{...m, numero_intervento: m.numeroIntervento||1}}
+                    onProgressChange={null}
+                  />
+                </div>
+              )}
             </div>
           );
         })}
