@@ -661,7 +661,7 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel, on
 }
 
 // ─── Piani ────────────────────────────────────────────────────────────────
-function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, piani, onClose, onSalva, userId }) {
+function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, piani=[], onClose, onSalva, userId }) {
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp=fornitori[0]?.id?String(fornitori[0].id):"";
   const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true,livello:"standard",pianoPadreId:null};
@@ -755,7 +755,7 @@ function GestionePiani({ piani, clienti, assets, manutenzioni, operatori, onAgg,
           </div>);
         })}
       </div>
-      {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
+      {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} piani={piani||[]} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
     </div>
   );
 }
