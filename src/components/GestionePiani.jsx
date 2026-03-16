@@ -86,7 +86,7 @@ export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manu
   return (
     <Modal title={ini?"Modifica assegnazione":"Nuova assegnazione"} onClose={onClose}
       onSave={()=>onSalva({...f,pianoId:Number(piano?.id||f.pianoId),operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})}
-      saveOk={!!f.dataInizio} saveColor="#059669"
+      saveOk={!!f.dataInizio && !!f.assetId} saveColor="#059669"
       saveLabel={ini?"Aggiorna":"Assegna e genera attività"}>
       {piano && (
         <div style={{background:"var(--surface-2)",border:"1px solid var(--amber)",borderRadius:"var(--radius-sm)",padding:"10px 14px",marginBottom:4}}>
@@ -108,11 +108,12 @@ export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manu
         </select>
       </Field>
       <Field label="Operatore di default">
-        <select value={f.operatoreId} onChange={e=>s("operatoreId",e.target.value)} style={{width:"100%"}}>
-          <option value="">— Nessun operatore —</option>
+        <select value={f.operatoreId} onChange={e=>s("operatoreId",e.target.value)} style={{width:"100%",borderColor:!f.operatoreId?"#F59E0B":""}}>
+          <option value="">— Nessun operatore (consigliato) —</option>
           {fornitori.map(o=><option key={o.id} value={String(o.id)}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}
         </select>
         <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>Può essere cambiato su ogni singola attività</div>
+        {!f.operatoreId && <div style={{fontSize:11,color:"#B45309",marginTop:3,fontWeight:600}}>⚠ Senza operatore le attività non saranno assegnate a nessuno</div>}
       </Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="Data inizio *"><input type="date" value={f.dataInizio} onChange={e=>s("dataInizio",e.target.value)} style={{width:"100%"}} /></Field>
@@ -131,7 +132,7 @@ export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manu
   );
 }
 
-export function GestionePiani({ piani, assegnazioni=[], clienti, assets, manutenzioni, operatori, onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva }) {
+export function GestionePiani({ piani, assegnazioni=[], clienti, assets, manutenzioni, operatori, onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova }) {
   const [showM, ssM] = useState(false);
   const [inMod, siM] = useState(null);
   const [showAss, setShowAss] = useState(false);
@@ -200,7 +201,10 @@ export function GestionePiani({ piani, assegnazioni=[], clienti, assets, manuten
                           {prossima && <span> · Prossima: {fmtData(prossima.data)}</span>}
                         </div>
                       </div>
-                      <div style={{display:"flex",gap:4,flexShrink:0}}>
+                      <div style={{display:"flex",gap:4,flexShrink:0,flexWrap:"wrap"}}>
+                        {a.dataFine && new Date(a.dataFine) <= new Date(Date.now()+30*24*60*60*1000) && onRinnova && (
+                          <button className="btn-sm btn-green-outline" style={{fontWeight:700}} onClick={()=>onRinnova(a.id)}>↻ Rinnova</button>
+                        )}
                         <button className={"btn-sm"+(a.attivo?"":" btn-green-outline")} onClick={()=>onAttivaDisattiva(a.id,!a.attivo)}>{a.attivo?"Sospendi":"▶ Riattiva"}</button>
                         <button className="btn-sm btn-icon" onClick={()=>{siMA(a);setPianoDiAss(p);setShowAss(true);}}>✏</button>
                         <button className="btn-sm btn-icon btn-danger" onClick={()=>onDelAss(a.id)}>✕</button>

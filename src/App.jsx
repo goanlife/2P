@@ -334,6 +334,31 @@ export default function App() {
     let saved=[];
     for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,na,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
     if(saved.length){sMan(p=>[...p,...saved]);notify(`${saved.length} attività generate!`,"success");}
+    // Avviso rinnovo: se dataFine entro 30 giorni
+    if(na.dataFine) {
+      const daysLeft = Math.ceil((new Date(na.dataFine)-new Date())/(1000*60*60*24));
+      if(daysLeft <= 30 && daysLeft > 0) notify(`⏰ Assegnazione in scadenza tra ${daysLeft} giorni — ricordati di rinnovarla!`,"warning");
+    }
+  };
+
+  const rinnovaAssegnazione = async (assId) => {
+    const a = assegnazioni.find(x=>x.id===assId);
+    if(!a) return;
+    const piano = piani.find(p=>p.id===a.pianoId);
+    if(!piano) return;
+    // Nuova data inizio = giorno dopo la data fine attuale (o oggi)
+    const nuovaInizio = a.dataFine || isoDate(new Date());
+    const nuovaFine = addMonths(nuovaInizio, 12);
+    const {data:assRow,error} = await supabase.from("piano_assegnazioni")
+      .update({data_inizio:nuovaInizio, data_fine:nuovaFine, attivo:true}).eq("id",assId).select().single();
+    if(error){notify("Errore rinnovo: "+error.message);return;}
+    const na = mapAss(assRow); sAss(p=>p.map(x=>x.id===assId?na:x));
+    const occ = generaOccorrenze(piano, nuovaInizio, 12);
+    if(!occ.length) return;
+    const completati = man.filter(m=>m.assegnazioneId===assId&&m.stato==="completata").length;
+    let saved=[];
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,na,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
+    if(saved.length){sMan(p=>[...p,...saved]);notify(`Piano rinnovato — ${saved.length} nuove attività generate!`,"success");}
   };
 
   // Modifica assegnazione
@@ -530,7 +555,7 @@ export default function App() {
           onChiudi={m=>setChiudiModal(m)}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
-        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} />}
+        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
