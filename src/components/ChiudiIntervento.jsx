@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { ChecklistIntervento } from "./PianoChecklist";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalva }) {
@@ -7,7 +8,8 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
   const [parti,   setParti]   = useState(manutenzione.partiUsate || "");
   const [loading, setLoading] = useState(false);
   const [hasFirma, setHasFirma] = useState(false);
-  const [tab,     setTab]     = useState("dati"); // dati | firma
+  const [tab,     setTab]     = useState("dati"); // dati | firma | checklist
+  const [checklistProgress, setChecklistProgress] = useState(null);
 
   const canvasRef = useRef();
   const isDrawing = useRef(false);
@@ -134,7 +136,7 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
 
         {/* Tab switcher */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-          {[{ id: "dati", l: "📝 Dati intervento" }, { id: "firma", l: "✍ Firma" }].map(t => (
+          {[{ id: "dati", l: "📝 Dati intervento" }, ...(manutenzione.pianoId ? [{ id: "checklist", l: "✅ Checklist" }] : []), { id: "firma", l: "✍ Firma" }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex: 1, padding: "12px 16px", border: "none",
               borderBottom: tab === t.id ? "2px solid #059669" : "2px solid transparent",
@@ -262,7 +264,7 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
           <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 13 }}>
             Annulla
           </button>
-          <button onClick={salva} disabled={loading} style={{
+          <button onClick={salva} disabled={loading || (checklistProgress && !checklistProgress.obbligatoriOk)} style={{
             padding: "10px 24px", borderRadius: "var(--radius-sm)",
             background: loading ? "#9CA3AF" : "#059669", color: "white",
             border: "none", cursor: loading ? "not-allowed" : "pointer",

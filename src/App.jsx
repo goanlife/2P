@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";
 import { ChiudiIntervento } from "./components/ChiudiIntervento";
+import { ChecklistEditor } from "./components/PianoChecklist";
 import { CampanellaNotifiche, useNotifiche } from "./components/Notifiche";
 import { RicercaGlobale } from "./components/RicercaGlobale";
 import { Statistiche } from "./components/Statistiche";
@@ -689,6 +690,7 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       </div>
       {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
       {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={userId||""} />}
+      {ini?.id&&<ChecklistEditor pianoId={ini.id} />}
     </Modal>
   );
 }
