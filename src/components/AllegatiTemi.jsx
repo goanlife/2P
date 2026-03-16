@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
 import { Field, Modal, Overlay } from "./ui/Atoms";
 
+const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+
 // ─── Temi ─────────────────────────────────────────────────────────────────
 export const TEMI = [
   { id:"navy",   nome:"Navy",   top:"#0D1B2A", bot:"#F59E0B", desc:"Industrial scuro" },

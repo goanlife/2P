@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { Field, Modal } from "./ui/Atoms";
 
+const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+
 // ─── Asset ────────────────────────────────────────────────────────────────
 export function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {
   const [f,sf]=useState(ini||{nome:"",tipo:"",clienteId:"",ubicazione:"",matricola:"",marca:"",modello:"",dataInst:"",stato:"attivo",note:""});

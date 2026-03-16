@@ -3,6 +3,19 @@ import { supabase } from "../supabase";
 import { SelettoreTema } from "./AllegatiTemi";
 import { Av, Overlay, Modal, Field } from "./ui/Atoms";
 
+const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+
+const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+
+const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
+
+const TIPO_OP = {
+  fornitore: { label:"Fornitore", cls:"badge", style:{background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #BFDBFE"} },
+  cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
+  interno:   { label:"Interno",   cls:"badge", style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
+};
+const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
+
 // ─── Modal Siti Cliente ───────────────────────────────────────────────────
 export function ModalSitiCliente({ operatore, clienti, siti, onClose, onSave }) {
   // siti = array di {operatoreId, clienteId} già salvati per questo operatore

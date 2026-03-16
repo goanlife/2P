@@ -4,6 +4,12 @@ import { PannelloAllegati } from "./AllegatiTemi";
 import { Av, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
 
+const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+
+const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+
+const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
+
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
 export function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva, userId }) {
   // Solo i fornitori sono assegnabili
