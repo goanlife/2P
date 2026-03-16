@@ -1830,14 +1830,13 @@ export default function App() {
       supabase.from("clienti").select("*").order("created_at"),
       supabase.from("assets").select("*").order("created_at"),
       supabase.from("piani").select("*").order("created_at"),
-      supabase.from("piano_assegnazioni").select("*").order("created_at"),
       supabase.from("manutenzioni").select("*").order("data"),
       supabase.from("operatore_siti").select("*").order("created_at"),
       supabase.from("gruppi").select("*").order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
       supabase.from("gruppo_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rass, rm, rs, rg, rgo, rgs]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error||rass.error) {
+    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs]) => {
+      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
         setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
         setLoad(false); return;
       }
@@ -1846,7 +1845,10 @@ export default function App() {
       // Applica tema dell'utente loggato se presente
       const meOp = mappedOps.find(o => o.email === session?.user?.email);
       if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
-      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sAss((rass.data||[]).map(mapAss)); sMan((rm.data||[]).map(mapM));
+      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
+      // Carica assegnazioni separatamente (tabella nuova - non blocca se fallisce)
+      supabase.from("piano_assegnazioni").select("*").order("created_at")
+        .then(({data,error}) => { if(!error && data) sAss(data.map(mapAss)); });
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
