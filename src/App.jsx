@@ -496,12 +496,16 @@ function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
     ]).then(([{data:steps},{data:stato}]) => {
       if (!steps?.length) return;
       const n = numeroIntervento || 1;
-      const attivi = steps.filter(s => (s.ogni_n_interventi||1) === 1 || n % (s.ogni_n_interventii||1) === 0);
-      const tot = attivi.length || steps.length;
-      const done = (stato||[]).filter(x => x.completato).length;
-      setProg({ tot, done, perc: Math.round(done/tot*100) });
+      // Solo step attivi per questo intervento — stessa logica di ChecklistIntervento
+      const attivi = steps.filter(s => {
+        const ogni = s.ogni_n_interventi || 1;
+        return ogni === 1 || n % ogni === 0;
+      });
+      if (!attivi.length) return;
+      const done = (stato||[]).filter(x => attivi.some(a => a.id === x.step_id) && x.completato).length;
+      setProg({ tot: attivi.length, done, perc: Math.round(done/attivi.length*100) });
     });
-  }, [manutenzioneId, pianoId]);
+  }, [manutenzioneId, pianoId, numeroIntervento]);
   if (!prog) return null;
   const color = prog.perc === 100 ? "#059669" : prog.done > 0 ? "#F59E0B" : "var(--text-3)";
   return (

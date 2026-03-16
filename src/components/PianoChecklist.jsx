@@ -187,11 +187,11 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
       .select("*")
       .eq("manutenzione_id", manutenzione.id);
 
-    // Mostra TUTTI gli step, ma segna quelli non attivi per questo intervento
+    // Mostra solo step attivi per questo intervento (cadenza)
     const nIntervento = manutenzione.numero_intervento || 1;
-    const stepsArr = (stepsData || []).map(s => {
+    const stepsArr = (stepsData || []).filter(s => {
       const n = s.ogni_n_interventi || 1;
-      return { ...s, _attivoPer: n === 1 || nIntervento % n === 0 };
+      return n === 1 || nIntervento % n === 0;
     });
     setSteps(stepsArr);
 
@@ -208,14 +208,12 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
 
   const aggiornaProgresso = (stepsArr, statoMap) => {
     if (!onProgressChange || !stepsArr) return;
-    // Solo gli step attivi per questo intervento contano per blocco/progresso
-    const attivi = stepsArr.filter(s => s._attivoPer !== false);
-    const obbligatori = attivi.filter(s => s.obbligatorio);
+    const obbligatori = stepsArr.filter(s => s.obbligatorio);
     const completatiObbligatori = obbligatori.filter(s => statoMap[s.id]?.completato);
     const tuttiObbligatoriOk = obbligatori.length === 0 || completatiObbligatori.length === obbligatori.length;
-    const totCompletati = attivi.filter(s => statoMap[s.id]?.completato).length;
+    const totCompletati = stepsArr.filter(s => statoMap[s.id]?.completato).length;
     onProgressChange({
-      totale: attivi.length,
+      totale: stepsArr.length,
       completati: totCompletati,
       obbligatoriOk: tuttiObbligatoriOk,
       obbligatoriTot: obbligatori.length,
@@ -243,10 +241,9 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
   if (loading) return <div style={{ fontSize: 13, color: "var(--text-3)", padding: "8px 0" }}>Caricamento checklist...</div>;
   if (steps.length === 0) return null;
 
-  const stepsAttivi = steps.filter(s => s._attivoPer !== false);
-  const completati = stepsAttivi.filter(s => stato[s.id]?.completato).length;
-  const obbligatoriMancanti = stepsAttivi.filter(s => s.obbligatorio && !stato[s.id]?.completato);
-  const perc = stepsAttivi.length ? Math.round(completati / stepsAttivi.length * 100) : 0;
+  const completati = steps.filter(s => stato[s.id]?.completato).length;
+  const obbligatoriMancanti = steps.filter(s => s.obbligatorio && !stato[s.id]?.completato);
+  const perc = steps.length ? Math.round(completati / steps.length * 100) : 0;
 
   const st = {
     wrap: { marginBottom: 16 },
@@ -254,18 +251,15 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
     title: { fontSize: 13, fontWeight: 700, color: "var(--text-1)" },
     bar: { height: 6, background: "var(--border)", borderRadius: 99, overflow: "hidden", marginBottom: 10 },
     fill: { height: "100%", background: perc === 100 ? "#059669" : "var(--amber)", borderRadius: 99, transition: "width .3s", width: perc + "%" },
-    step: (completato, attivo=true) => ({
+    step: (completato) => ({
       display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
       background: completato ? "#ECFDF5" : "var(--surface-2)",
       border: `1px solid ${completato ? "#A7F3D0" : "var(--border)"}`,
-      borderRadius: 8, marginBottom: 6,
-      cursor: attivo ? "pointer" : "default",
-      opacity: attivo ? 1 : 0.45,
-      transition: "all .15s",
+      borderRadius: 8, marginBottom: 6, cursor: "pointer", transition: "all .15s",
     }),
-    check: (completato, attivo=true) => ({
+    check: (completato) => ({
       width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-      border: `2px solid ${completato ? "#059669" : attivo ? "var(--border-dim)" : "var(--border)"}`,
+      border: `2px solid ${completato ? "#059669" : "var(--border-dim)"}`,
       background: completato ? "#059669" : "transparent",
       display: "flex", alignItems: "center", justifyContent: "center",
       color: "white", fontSize: 12, transition: "all .15s",
@@ -276,7 +270,7 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
   return (
     <div style={st.wrap}>
       <div style={st.head}>
-        <span style={st.title}>✅ Checklist — {completati}/{stepsAttivi.length} completati{stepsAttivi.length < steps.length ? ` (${steps.length} totali)` : ""}</span>
+        <span style={st.title}>✅ Checklist — {completati}/{steps.length} completati</span>
         <span style={{ fontSize: 12, fontWeight: 700, color: perc === 100 ? "#059669" : "var(--amber)" }}>{perc}%</span>
       </div>
       <div style={st.bar}><div style={st.fill} /></div>
@@ -287,10 +281,9 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
       )}
       {steps.map((s, i) => {
         const comp = stato[s.id]?.completato;
-        const attivo = s._attivoPer !== false;
         return (
-          <div key={s.id} style={st.step(comp, attivo)} onClick={() => attivo && toggleStep(s)}>
-            <div style={st.check(comp, attivo)}>{comp && "✓"}</div>
+          <div key={s.id} style={st.step(comp)} onClick={() => toggleStep(s)}>
+            <div style={st.check(comp)}>{comp && "✓"}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: comp ? 500 : 400, color: comp ? "#065F46" : "var(--text-1)", textDecoration: comp ? "line-through" : "none", opacity: comp ? 0.8 : 1 }}>
                 {i + 1}. {s.testo}
