@@ -1874,15 +1874,13 @@ export default function App() {
   const logout     = () => supabase.auth.signOut();
 
   // Dichiarate prima delle guard per poterle usare nel useMemo (Rules of Hooks)
-  const meOperatore = operatori.find(o => o.email === session?.user?.email);
-  const ruolo = meOperatore?.tipo || "admin";
-
-  // Notifiche - useMemo DEVE stare prima di qualsiasi return condizionale
+  // Notifiche - useMemo PRIMA di tutti i return condizionali (Rules of Hooks)
   const notifiche = useMemo(() => {
     if (!session || !man.length) return [];
     const oggi_ = isoDate(new Date());
     const result = [];
-    const mieM = (meOperatore?.tipo === "fornitore") ? man.filter(m => m.operatoreId === meOperatore?.id) : man;
+    const meOp = operatori.find(o => o.email === session?.user?.email);
+    const mieM = meOp?.tipo === "fornitore" ? man.filter(m => m.operatoreId === meOp.id) : man;
     mieM.filter(m => m.stato !== "completata").forEach(m => {
       if (m.data < oggi_) result.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
       else if (m.data === oggi_) result.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
@@ -1890,7 +1888,7 @@ export default function App() {
     });
     const seen = new Set();
     return result.filter(n => { if(seen.has(n.manId)) return false; seen.add(n.manId); return true; }).slice(0, 20);
-  }, [man, meOperatore, session]);
+  }, [man, operatori, session]);
 
   if (!session) return <Auth />;
   if (!tenant && !loading) return <Onboarding session={session} onTenantReady={t => { setTenant(t); }} />;
@@ -1916,6 +1914,8 @@ export default function App() {
   );
 
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
+  const meOperatore = operatori.find(o => o.email === session?.user?.email);
+  const ruolo = meOperatore?.tipo || "admin";
 
   return (
     <div className="app-shell">
