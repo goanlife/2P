@@ -733,7 +733,7 @@ function GestionePiani({ piani, clienti, assets, manutenzioni, operatori, onAgg,
       <div style={{display:"flex",justifyContent:"flex-end"}}><button className="btn-green-outline" style={{fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo piano</button></div>
       {!piani.length&&<div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun piano. Crea il primo per generare attività automaticamente.</div></div>}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:12}}>
-        {piani.map(p=>{const cl=clienti.find(c=>c.id===p.clienteId);const as=assets.find(a=>a.id===p.assetId);const op=operatori.find(o=>o.id===p.operatoreId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);const manP=manutenzioni.filter(m=>m.pianoId===p.id);const prossima=manP.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data))[0];
+        {piani.map(p=>{const cl=clienti.find(c=>c.id===p.clienteId);const as=assets.find(a=>a.id===p.assetId);const op=operatori.find(o=>o.id===p.operatoreId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);const manP=(manutenzioni||[]).filter(m=>m.pianoId===p.id);const prossima=manP.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data))[0];
           return(<div key={p.id} className={"piano-card"+(p.attivo?" active":"")}>
             <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}}>
               <div style={{width:44,height:44,borderRadius:"var(--radius)",background:p.attivo?"#ECFDF5":"var(--surface-2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:`1px solid ${p.attivo?"#A7F3D0":"var(--border)"}`}}>🔄</div>
@@ -1861,7 +1861,7 @@ export default function App() {
     if(!np.dataInizio)return;
     const occ=generaOccorrenze(np,np.dataInizio,12); if(!occ.length)return;
     let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(np,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(np,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
     if(saved.length)sMan(p=>[...p,...saved]);
   };
   const modPiano = async f => {
@@ -1876,7 +1876,7 @@ export default function App() {
     // Calcola offset: quanti interventi già completati per questo piano
     const completati=man.filter(m=>m.pianoId===upd.id&&m.stato==="completata").length;
     let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
     if(saved.length)sMan(p=>[...p,...saved]);
   };
   const delPiano = async id => { await supabase.from("manutenzioni").delete().eq("piano_id",id); await supabase.from("piani").delete().eq("id",id); sPi(p=>p.filter(pi=>pi.id!==id)); sMan(p=>p.filter(m=>m.pianoId!==id)); };

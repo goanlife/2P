@@ -207,7 +207,7 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
   };
 
   const aggiornaProgresso = (stepsArr, statoMap) => {
-    if (!onProgressChange) return;
+    if (!onProgressChange || !stepsArr) return;
     const obbligatori = stepsArr.filter(s => s.obbligatorio);
     const completatiObbligatori = obbligatori.filter(s => statoMap[s.id]?.completato);
     const tuttiObbligatoriOk = obbligatori.length === 0 || completatiObbligatori.length === obbligatori.length;
@@ -227,7 +227,7 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
 
     const nuovoStato = { ...stato, [step.id]: { ...corrente, completato: nuovoValore } };
     setStato(nuovoStato);
-    aggiornaProgresso(steps, nuovoStato);
+    if (steps && steps.length) aggiornaProgresso(steps, nuovoStato);
 
     // Upsert nel DB
     await supabase.from("manutenzione_checklist").upsert({
