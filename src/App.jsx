@@ -187,12 +187,12 @@ function ModalSitiCliente({ operatore, clienti, siti, onClose, onSave }) {
 }
 
 // ─── Vista Cliente ────────────────────────────────────────────────────────
-function VistaCliente({ operatore, clienti, assets, manutenzioni, piani, siti, onClose }) {
-  const clientiIds = useMemo(()=>siti.filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
-  const myClienti  = useMemo(()=>clienti.filter(c=>clientiIds.includes(c.id)),[clienti,clientiIds]);
-  const myAssets   = useMemo(()=>assets.filter(a=>clientiIds.includes(a.clienteId)),[assets,clientiIds]);
-  const myMan      = useMemo(()=>manutenzioni.filter(m=>clientiIds.includes(m.clienteId)),[manutenzioni,clientiIds]);
-  const myPiani    = useMemo(()=>piani.filter(p=>clientiIds.includes(p.clienteId)),[piani,clientiIds]);
+function VistaCliente({ operatore, clienti=[], assets=[], manutenzioni=[], piani=[], siti=[], onClose }) {
+  const clientiIds = useMemo(()=>(siti||[]).filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
+  const myClienti  = useMemo(()=>(clienti||[]).filter(c=>clientiIds.includes(c.id)),[clienti,clientiIds]);
+  const myAssets   = useMemo(()=>(assets||[]).filter(a=>clientiIds.includes(a.clienteId)),[assets,clientiIds]);
+  const myMan      = useMemo(()=>(manutenzioni||[]).filter(m=>clientiIds.includes(m.clienteId)),[manutenzioni,clientiIds]);
+  const myPiani    = useMemo(()=>(piani||[]).filter(p=>clientiIds.includes(p.clienteId)),[piani,clientiIds]);
   const [tab,setTab] = useState("manutenzioni");
 
   return (
