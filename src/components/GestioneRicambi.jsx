@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { ImportaRicambi } from "./ImportaRicambi";
 import { supabase } from "../supabase";
 
 const fmtEuro = v => v ? `€${Number(v).toFixed(2)}` : "—";
@@ -120,9 +121,10 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
 // ─── Catalogo ricambi (sezione Azienda o standalone) ─────────────────────
 export function CatalogoRicambi({ tenantId }) {
   const [ricambi, setRicambi] = useState([]);
-  const [form, setForm]       = useState({ nome: "", codice: "", unita: "pz", prezzo: "", note: "" });
+  const [form, setForm]       = useState({ nome: "", codice: "", unita: "pz", prezzo: "", categoria: "", note: "" });
   const [loading, setLoading]  = useState(true);
   const [mostraForm, setMostraForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const s = k => v => setForm(p => ({ ...p, [k]: v }));
 
   useEffect(() => { carica(); }, []);
@@ -138,9 +140,9 @@ export function CatalogoRicambi({ tenantId }) {
     const { data } = await supabase.from("ricambi").insert({
       nome: form.nome.trim(), codice: form.codice || null,
       unita: form.unita || "pz", prezzo: form.prezzo ? Number(form.prezzo) : null,
-      note: form.note || null, tenant_id: tenantId,
+      categoria: form.categoria || null, note: form.note || null, tenant_id: tenantId,
     }).select().single();
-    if (data) { setRicambi(p => [...p, data]); setForm({ nome: "", codice: "", unita: "pz", prezzo: "", note: "" }); setMostraForm(false); }
+    if (data) { setRicambi(p => [...p, data]); setForm({ nome: "", codice: "", unita: "pz", prezzo: "", categoria: "", note: "" }); setMostraForm(false); }
   };
 
   const elimina = async (id) => {
@@ -150,7 +152,7 @@ export function CatalogoRicambi({ tenantId }) {
 
   const UNITA = ["pz", "m", "m²", "kg", "l", "h", "conf."];
   const st = {
-    row: { display: "grid", gridTemplateColumns: "1fr 80px 70px 80px auto", gap: 8, alignItems: "center", padding: "8px 12px", borderBottom: "1px solid var(--border)", fontSize: 13 },
+    row: { display: "grid", gridTemplateColumns: "1fr 80px 60px 80px 100px auto", gap: 8, alignItems: "center", padding: "8px 12px", borderBottom: "1px solid var(--border)", fontSize: 13 },
     inp: { padding: "7px 10px", border: "1px solid var(--border-dim)", borderRadius: 6, fontSize: 13, background: "var(--surface)", color: "var(--text-1)", width: "100%" },
   };
 
@@ -158,11 +160,21 @@ export function CatalogoRicambi({ tenantId }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>🔩 Catalogo ricambi ({ricambi.length})</div>
-        <button onClick={() => setMostraForm(p => !p)} style={{ padding: "7px 14px", background: "var(--amber)", color: "#0D1B2A", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-          {mostraForm ? "✕ Annulla" : "+ Nuovo ricambio"}
-        </button>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={() => {setShowImport(p=>!p);setMostraForm(false);}} style={{ padding: "7px 14px", background:"var(--surface)", color:"var(--text-1)", border:"1px solid var(--border)", borderRadius: 6, fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+            {showImport ? "✕ Chiudi import" : "📥 Importa CSV/Excel"}
+          </button>
+          <button onClick={() => {setMostraForm(p => !p);setShowImport(false);}} style={{ padding: "7px 14px", background: "var(--amber)", color: "#0D1B2A", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            {mostraForm ? "✕ Annulla" : "+ Nuovo ricambio"}
+          </button>
+        </div>
       </div>
 
+      {showImport && (
+        <div style={{border:"1px solid var(--border)",borderRadius:10,marginBottom:16,overflow:"hidden"}}>
+          <ImportaRicambi tenantId={tenantId} onDone={()=>{setShowImport(false);carica();}} />
+        </div>
+      )}
       {mostraForm && (
         <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, padding: 16, marginBottom: 16, display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -177,6 +189,7 @@ export function CatalogoRicambi({ tenantId }) {
               </select>
             </div>
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", display: "block", marginBottom: 4 }}>Prezzo unitario (€)</label><input type="number" value={form.prezzo} onChange={e => s("prezzo")(e.target.value)} style={st.inp} placeholder="0.00" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", display: "block", marginBottom: 4 }}>Categoria</label><input value={form.categoria||""} onChange={e => s("categoria")(e.target.value)} style={st.inp} placeholder="Es. Filtri, Cinghie..." /></div>
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", display: "block", marginBottom: 4 }}>Note</label><input value={form.note} onChange={e => s("note")(e.target.value)} style={st.inp} placeholder="Fornitore, riferimento..." /></div>
           </div>
           <button onClick={salva} disabled={!form.nome.trim()} style={{ padding: "8px 20px", background: "var(--amber)", color: "#0D1B2A", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: "pointer", justifySelf: "start" }}>Salva ricambio</button>
