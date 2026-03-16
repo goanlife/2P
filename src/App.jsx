@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";
 import { ChiudiIntervento } from "./components/ChiudiIntervento";
-import { ChecklistEditor } from "./components/PianoChecklist";
+import { ChecklistEditor, ChecklistIntervento } from "./components/PianoChecklist";
 import { CampanellaNotifiche, useNotifiche } from "./components/Notifiche";
 import { RicercaGlobale } from "./components/RicercaGlobale";
 import { Statistiche } from "./components/Statistiche";
@@ -406,6 +406,11 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       </Field>
       <AvvisoConflitto conflitti={conf} />
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
+      {ini?.id&&ini?.pianoId&&(
+        <div style={{borderTop:"1px solid var(--border)",paddingTop:16,marginTop:4}}>
+          <ChecklistIntervento manutenzione={{...ini,numero_intervento:ini.numeroIntervento||1}} />
+        </div>
+      )}
       {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
@@ -480,6 +485,32 @@ function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }) {
 }
 
 // ─── Lista manutenzioni ───────────────────────────────────────────────────
+// Mini badge checklist per la card manutenzione
+function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
+  const [prog, setProg] = React.useState(null);
+  React.useEffect(() => {
+    if (!pianoId || !manutenzioneId) return;
+    Promise.all([
+      supabase.from("piano_checklist").select("id,obbligatorio,ogni_n_interventi").eq("piano_id", pianoId),
+      supabase.from("manutenzione_checklist").select("step_id,completato").eq("manutenzione_id", manutenzioneId)
+    ]).then(([{data:steps},{data:stato}]) => {
+      if (!steps?.length) return;
+      const n = numeroIntervento || 1;
+      const attivi = steps.filter(s => (s.ogni_n_interventi||1) === 1 || n % (s.ogni_n_interventii||1) === 0);
+      const tot = attivi.length || steps.length;
+      const done = (stato||[]).filter(x => x.completato).length;
+      setProg({ tot, done, perc: Math.round(done/tot*100) });
+    });
+  }, [manutenzioneId, pianoId]);
+  if (!prog) return null;
+  const color = prog.perc === 100 ? "#059669" : prog.done > 0 ? "#F59E0B" : "var(--text-3)";
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:10,fontWeight:700,color,background:prog.perc===100?"#ECFDF5":prog.done>0?"#FFFBEB":"var(--surface-2)",padding:"2px 7px",borderRadius:4,border:`1px solid ${prog.perc===100?"#A7F3D0":prog.done>0?"#FDE68A":"var(--border)"}`}}>
+      ✅ {prog.done}/{prog.tot}
+    </span>
+  );
+}
+
 function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters, onChiudi, onVerbale }) {
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
@@ -517,6 +548,7 @@ function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, in
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
                   {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡ Urgente</span>}
                   {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
+                  {m.pianoId&&m.stato!=="completata"&&<ChecklistBadge manutenzioneId={m.id} pianoId={m.pianoId} numeroIntervento={m.numeroIntervento} />}
                 </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:12,color:"var(--text-3)"}}>
                   {cl&&<span style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</span>}
