@@ -1677,7 +1677,8 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSess(s); if (!s) { sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      if (s) { setLoad(true); setSess(s); }
+      else { setSess(null); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
