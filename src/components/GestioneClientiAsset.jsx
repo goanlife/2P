@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
+import { PannelloAllegati } from "./AllegatiTemi";
+import { Field, Modal } from "./ui/Atoms";
 
 // ─── Asset ────────────────────────────────────────────────────────────────
 export function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {

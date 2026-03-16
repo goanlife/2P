@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Av } from "./ui/Atoms";
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };

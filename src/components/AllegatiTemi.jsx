@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
+import { Field, Modal, Overlay } from "./ui/Atoms";
 
 // ─── Temi ─────────────────────────────────────────────────────────────────
 export const TEMI = [

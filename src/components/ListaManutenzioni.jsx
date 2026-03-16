@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
+import { PannelloAllegati } from "./AllegatiTemi";
+import { Av, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
 
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
