@@ -9,6 +9,7 @@ import { Statistiche } from "./components/Statistiche";
 import { KanbanView } from "./components/KanbanView";
 import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
 import Onboarding from "./components/Onboarding";
+import Azienda from "./components/Azienda";
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -47,6 +48,7 @@ const TABS = [
   {id:"clienti",     l:"Clienti",      icon:"🏢"},
   {id:"statistiche", l:"Statistiche",  icon:"📊"},
   {id:"kanban",      l:"Kanban",        icon:"🗂"},
+  {id:"azienda",     l:"Azienda",       icon:"🏛"},
 ];
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
@@ -1590,6 +1592,7 @@ const DRAWER_TABS = [
   {id:"gruppi",      l:"Gruppi",      icon:"🗂"},
   {id:"statistiche", l:"Statistiche", icon:"📊"},
   {id:"kanban",      l:"Kanban",      icon:"🗂"},
+  {id:"azienda",     l:"Azienda",     icon:"🏛"},
 ];
 
 function MobileNav({ vista, sV }) {
@@ -1636,6 +1639,7 @@ function MobileNav({ vista, sV }) {
 export default function App() {
   const [session,  setSess] = useState(null);
   const [tenant,   setTenant] = useState(null); // azienda corrente
+  const aggiornaTenant = t => setTenant(prev => ({...prev, ...t}));
   const [loading,  setLoad] = useState(true);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
@@ -1917,7 +1921,7 @@ export default function App() {
       <nav className="topbar">
         <div className="topbar-logo">
           <div className="topbar-logo-icon">🔧</div>
-          <div><div className="topbar-logo-text">ManuMan</div><div className="topbar-logo-sub">Gestione Manutenzioni</div></div>
+          <div><div className="topbar-logo-text">ManuMan</div><div className="topbar-logo-sub">Gestione Manutenzioni</div></div>{tenant?.logo_url&&<img src={tenant.logo_url} alt="logo" style={{height:26,maxWidth:72,objectFit:"contain",marginLeft:8,borderRadius:4,opacity:.9}}/>}{tenant?.nome&&<span style={{fontSize:11,fontWeight:600,color:"var(--amber)",marginLeft:6,maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{tenant.nome}</span>}
         </div>
         <div className="topbar-nav">
           {TABS.map(t=>(
@@ -1979,6 +1983,7 @@ export default function App() {
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
         {vista==="statistiche"  && <Statistiche man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onMod={apriModM} />}
+        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} onTenantUpdate={aggiornaTenant} />}
       </main>
 
       <MobileNav vista={vista} sV={sV} />
