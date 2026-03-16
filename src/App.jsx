@@ -1849,7 +1849,11 @@ export default function App() {
   const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
-  // Notifiche - calcolate prima delle guard (Rules of Hooks)
+  // Dichiarate prima delle guard per poterle usare nel useMemo (Rules of Hooks)
+  const meOperatore = operatori.find(o => o.email === session?.user?.email);
+  const ruolo = meOperatore?.tipo || "admin";
+
+  // Notifiche - useMemo DEVE stare prima di qualsiasi return condizionale
   const notifiche = useMemo(() => {
     if (!session || !man.length) return [];
     const oggi_ = isoDate(new Date());
@@ -1887,8 +1891,6 @@ export default function App() {
   );
 
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
-  const meOperatore = operatori.find(o => o.email === session?.user?.email);
-  const ruolo = meOperatore?.tipo || "admin"; // admin = non trovato in operatori
 
   return (
     <div className="app-shell">
