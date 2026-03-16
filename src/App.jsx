@@ -1926,12 +1926,14 @@ export default function App() {
 
         {/* ── Logo ── */}
         <div className="sb-logo">
-          <div className="sb-logo-icon">🔧</div>
+          {tenant?.logo_url
+            ? <img src={tenant.logo_url} className="sb-logo-img" alt={tenant.nome} />
+            : <div className="sb-logo-icon">🔧</div>
+          }
           <div className="sb-logo-text">
-            <span className="sb-brand">ManuMan</span>
-            {tenant?.nome && <span className="sb-tenant">{tenant.nome}</span>}
+            <span className="sb-brand">{tenant?.nome || "ManuMan"}</span>
+            {tenant?.nome && <span className="sb-tenant">Gestione Manutenzioni</span>}
           </div>
-          {tenant?.logo_url && <img src={tenant.logo_url} className="sb-company-logo" alt="" />}
           <button className="sb-close" onClick={()=>setSidebar(false)}>✕</button>
         </div>
 

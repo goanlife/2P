@@ -1471,3 +1471,14 @@ input::placeholder { color: var(--text-3); }
 @media (max-width: 768px) {
   .sb-close { display: flex; }
 }
+
+/* Logo aziendale in sidebar */
+.sb-logo-img {
+  height: 34px;
+  max-width: 34px;
+  object-fit: contain;
+  border-radius: 7px;
+  flex-shrink: 0;
+  background: white;
+  padding: 2px;
+}
