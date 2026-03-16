@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
 
-export default function Azienda({ tenant, session, operatori, onTenantUpdate }) {
+export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate }) {
   const [tab, setTab] = useState("info")
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -25,10 +25,8 @@ export default function Azienda({ tenant, session, operatori, onTenantUpdate }) 
 
   const s = k => v => setForm(p => ({ ...p, [k]: v }))
   const meOp = operatori.find(o => o.email === session?.user?.email)
-  // isAdmin basato sul ruolo in tenant_users, non sul tipo operatore
-  // Per ora mostra tutto agli utenti autenticati (il ruolo viene caricato dopo)
-  const mioMembro = membri.find(m => m.user_id === session?.user?.id)
-  const isAdmin = !mioMembro || mioMembro?.ruolo === "admin" || true // TODO: usare ruolo reale
+  // isAdmin basato sul ruolo reale in tenant_users
+  const isAdmin = ruoloTenant === "admin"
 
   useEffect(() => {
     caricaMembri()
@@ -113,8 +111,15 @@ export default function Azienda({ tenant, session, operatori, onTenantUpdate }) 
     caricaMembri()
   }
 
-  const cambiaRuolo = async (userId, ruolo) => {
-    await supabase.from("tenant_users").update({ ruolo }).eq("tenant_id", tenant.id).eq("user_id", userId)
+  const cambiaRuolo = async (userId, nuovoRuolo) => {
+    // Non permettere di rimuovere l'ultimo admin
+    if (nuovoRuolo === "membro") {
+      const admins = membri.filter(m => m.ruolo === "admin")
+      if (admins.length <= 1 && admins[0]?.user_id === userId) {
+        setErrore("Non puoi rimuovere l'ultimo amministratore"); return
+      }
+    }
+    await supabase.from("tenant_users").update({ ruolo: nuovoRuolo }).eq("tenant_id", tenant.id).eq("user_id", userId)
     caricaMembri()
   }
 
@@ -139,7 +144,7 @@ export default function Azienda({ tenant, session, operatori, onTenantUpdate }) 
         }
         <div>
           <div style={{ fontFamily:"var(--font-head)", fontWeight:800, fontSize:22 }}>{tenant?.nome}</div>
-          <div style={{ fontSize:13, color:"var(--text-3)", marginTop:2 }}>{membri.length} membri · {isAdmin ? "Amministratore" : "Membro"}</div>
+          <div style={{ fontSize:13, color:"var(--text-3)", marginTop:2 }}>{membri.length} {membri.length === 1 ? "membro" : "membri"} · {isAdmin ? "👑 Amministratore" : "Membro"}</div>
         </div>
       </div>
 

@@ -1638,7 +1638,8 @@ function MobileNav({ vista, sV }) {
 // ─── App root ─────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSess] = useState(null);
-  const [tenant,   setTenant] = useState(null); // azienda corrente
+  const [tenant,      setTenant]      = useState(null); // azienda corrente
+  const [ruoloTenant, setRuoloTenant] = useState("membro"); // ruolo utente nel tenant
   const aggiornaTenant = t => setTenant(prev => ({...prev, ...t}));
   const [loading,  setLoad] = useState(true);
   const [dbErr,    setDbErr] = useState(null);
@@ -1686,7 +1687,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s) { setLoad(true); setSess(s); }
-      else { setSess(null); setTenant(null); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      else { setSess(null); setTenant(null); setRuoloTenant("membro"); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -1697,13 +1698,14 @@ export default function App() {
     if (!tenant) {
       setLoad(true);
       supabase.from("tenant_users")
-        .select("tenant_id, tenants(id, nome)")
+        .select("tenant_id, ruolo, tenants(id, nome, logo_url, piva, indirizzo, citta, cap, tel, email, sito)")
         .eq("user_id", session.user.id)
         .maybeSingle()
         .then(({ data, error }) => {
           if (error) { console.error("Errore tenant:", error); setLoad(false); return; }
           if (data?.tenants) {
-            setTenant(data.tenants); // triggera re-render → carica dati
+            setTenant(data.tenants);
+            setRuoloTenant(data.ruolo || "membro");
           } else {
             setLoad(false); // nessun tenant → mostra onboarding
           }
@@ -2010,7 +2012,7 @@ export default function App() {
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={delC} />}
         {vista==="statistiche"  && <Statistiche man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onMod={apriModM} />}
-        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} onTenantUpdate={aggiornaTenant} />}
+        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} />}
       </main>
 
       {chiudiModal && (
