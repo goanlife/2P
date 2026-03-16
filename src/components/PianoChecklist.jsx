@@ -302,8 +302,8 @@ export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=f
                   <span style={{ fontSize: 10, color: "#B45309", fontWeight: 600, background: "#FEF3C7", padding: "1px 5px", borderRadius: 3 }}>OBBLIGATORIO</span>
                 )}
                 {(s.ogni_n_interventi || 1) > 1 && (
-                  <span style={{ fontSize: 10, color: attivo ? "var(--text-3)" : "#B45309", background: attivo ? "var(--surface-3)" : "#FEF3C7", padding: "1px 5px", borderRadius: 3 }}>
-                    {attivo ? `ogni ${s.ogni_n_interventi} interventi` : `non previsto (ogni ${s.ogni_n_interventi})`}
+                  <span style={{ fontSize: 10, color: "var(--text-3)", background: "var(--surface-3)", padding: "1px 5px", borderRadius: 3 }}>
+                    ogni {s.ogni_n_interventi} interventi
                   </span>
                 )}
               </div>
