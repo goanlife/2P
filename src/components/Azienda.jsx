@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
+import { CatalogoRicambi } from "./GestioneRicambi"
 
 export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate }) {
   const [tab, setTab] = useState("info")
@@ -150,7 +151,7 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
 
       {/* Tabs */}
       <div style={st.tabs}>
-        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"]].map(([id, label]) =>
+        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"]].map(([id, label]) =>
           <button key={id} style={st.tab(tab===id)} onClick={() => setTab(id)}>{label}</button>
         )}
       </div>
@@ -264,6 +265,13 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
           ) : (
             <div style={{ textAlign:"center", padding:24, color:"var(--text-3)" }}>Nessun invito disponibile</div>
           )}
+        </div>
+      )}
+
+      {/* Tab Ricambi */}
+      {tab === "ricambi" && (
+        <div style={st.card}>
+          <CatalogoRicambi tenantId={tenant?.id} />
         </div>
       )}
 

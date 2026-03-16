@@ -131,6 +131,8 @@ export default function App() {
   const [gSiti,    sGSiti] = useState([]);
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
+  const [manTotale, setManTotale] = useState(null); // null = non sappiamo ancora
+  const [manCaricaTutto, setManCaricaTutto] = useState(false);
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
@@ -208,7 +210,10 @@ export default function App() {
       supabase.from("clienti").select("*").order("created_at"),
       supabase.from("assets").select("*").order("created_at"),
       supabase.from("piani").select("*").order("created_at"),
-      supabase.from("manutenzioni").select("*").order("data"),
+      supabase.from("manutenzioni").select("*")
+        .gte("data", new Date(Date.now()-180*24*60*60*1000).toISOString().split("T")[0])
+        .order("data", {ascending:false})
+        .limit(500),
       supabase.from("operatore_siti").select("*").order("created_at"),
       supabase.from("gruppi").select("*").order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
@@ -240,6 +245,11 @@ export default function App() {
   }, [session, tenant]);
 
   const uid = () => session?.user?.id;
+  const caricaTutteLeManut = async () => {
+    setManCaricaTutto(true);
+    const {data} = await supabase.from("manutenzioni").select("*").order("data",{ascending:false});
+    if(data) sMan(data.map(mapM));
+  };
   const UID = session?.user?.id || "";
   const BATCH = 50;
   const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento });
@@ -550,6 +560,12 @@ export default function App() {
           ruolo === "fornitore" && meOperatore
             ? <DashboardFornitore me={meOperatore} man={man} clienti={clienti} assets={assets} onStato={statoM} onApriChiudi={m=>setChiudiModal(m)} />
             : <Dashboard man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} onNavigate={navigateTo} />
+        )}
+        {manTotale && man.length < manTotale && !manCaricaTutto && (
+          <div style={{background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+            <span style={{fontSize:13,color:"#1D4ED8",flex:1}}>📊 Stai vedendo {man.length} manutenzioni (ultimi 6 mesi). Totale nel DB: {manTotale}.</span>
+            <button onClick={caricaTutteLeManut} style={{padding:"6px 14px",background:"#1D4ED8",color:"white",border:"none",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Carica tutto</button>
+          </div>
         )}
         {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
           onChiudi={m=>setChiudiModal(m)}

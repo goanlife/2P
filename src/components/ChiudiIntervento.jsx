@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { ChecklistIntervento } from "./PianoChecklist";
+import { InterventoRicambi } from "./GestioneRicambi";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalva }) {
@@ -136,7 +137,7 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
 
         {/* Tab switcher */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-          {[{ id: "dati", l: "📝 Dati intervento" }, ...(manutenzione.pianoId ? [{ id: "checklist", l: "✅ Checklist" }] : []), { id: "firma", l: "✍ Firma" }].map(t => (
+          {[{ id: "dati", l: "📝 Dati intervento" }, ...(manutenzione.pianoId ? [{ id: "checklist", l: "✅ Checklist" }] : []), { id: "ricambi", l: "🔩 Ricambi" }, { id: "firma", l: "✍ Firma" }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex: 1, padding: "12px 16px", border: "none",
               borderBottom: tab === t.id ? "2px solid #059669" : "2px solid transparent",

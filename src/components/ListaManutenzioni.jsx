@@ -3,6 +3,7 @@ import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { Av, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
+import { InterventoRicambi } from "./GestioneRicambi";
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
