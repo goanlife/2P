@@ -8,6 +8,7 @@ import { RicercaGlobale } from "./components/RicercaGlobale";
 import { Statistiche } from "./components/Statistiche";
 import { KanbanView } from "./components/KanbanView";
 import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
+import Onboarding from "./components/Onboarding";
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -1634,6 +1635,7 @@ function MobileNav({ vista, sV }) {
 // ─── App root ─────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSess] = useState(null);
+  const [tenant,   setTenant] = useState(null); // azienda corrente
   const [loading,  setLoad] = useState(true);
   const [dbErr,    setDbErr] = useState(null);
   const [man,      sMan]  = useState([]);
@@ -1679,13 +1681,30 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s) { setLoad(true); setSess(s); }
-      else { setSess(null); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      else { setSess(null); setTenant(null); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!session) { setLoad(false); return; }
+    // Se non abbiamo ancora il tenant, cercalo prima di caricare i dati
+    if (!tenant) {
+      setLoad(true);
+      supabase.from("tenant_users")
+        .select("tenant_id, tenants(id, nome)")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error) { console.error("Errore tenant:", error); setLoad(false); return; }
+          if (data?.tenants) {
+            setTenant(data.tenants); // triggera re-render → carica dati
+          } else {
+            setLoad(false); // nessun tenant → mostra onboarding
+          }
+        });
+      return; // aspetta che setTenant scatti il prossimo useEffect
+    }
     setLoad(true);
     Promise.all([
       supabase.from("operatori").select("*").order("created_at"),
@@ -1723,7 +1742,7 @@ export default function App() {
       setDbErr('Errore di rete. Controlla la connessione e ricarica.');
       setLoad(false);
     });
-  }, [session]);
+  }, [session, tenant]);
 
   const uid = () => session?.user?.id;
   const UID = session?.user?.id || "";
@@ -1874,6 +1893,7 @@ export default function App() {
   }, [man, meOperatore, session]);
 
   if (!session) return <Auth />;
+  if (!tenant && !loading) return <Onboarding session={session} onTenantReady={t => { setTenant(t); }} />;
 
   if (loading) return (
     <div className="loading-screen">
