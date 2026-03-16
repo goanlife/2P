@@ -1717,6 +1717,10 @@ export default function App() {
       sGOps((rgo.data||[]).map(mapGOp));
       sGSiti((rgs.data||[]).map(mapGSito));
       setLoad(false);
+    }).catch(err => {
+      console.error('Errore caricamento dati:', err);
+      setDbErr('Errore di rete. Controlla la connessione e ricarica.');
+      setLoad(false);
     });
   }, [session]);
 
