@@ -59,6 +59,11 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
     setSteps(p => p.map(s => s.id === id ? { ...s, obbligatorio: val } : s));
   };
 
+  const aggiornaOgniN = async (id, n) => {
+    await supabase.from("piano_checklist").update({ ogni_n_interventi: n }).eq("id", id);
+    setSteps(p => p.map(s => s.id === id ? { ...s, ogni_n_interventi: n } : s));
+  };
+
   const sposta = async (idx, dir) => {
     const newSteps = [...steps];
     const target = idx + dir;
@@ -108,6 +113,21 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
             <input type="checkbox" checked={s.obbligatorio} onChange={e => toggleObbligatorio(s.id, e.target.checked)} />
             obbl.
           </label>
+          <select
+            value={s.ogni_n_interventi || 1}
+            onChange={e => aggiornaOgniN(s.id, Number(e.target.value))}
+            title="Ogni quanti interventi appare questo step"
+            style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4, border: "1px solid var(--border-dim)", background: "var(--surface)", color: "var(--text-2)", cursor: "pointer" }}>
+            <option value={1}>ogni volta</option>
+            <option value={2}>ogni 2</option>
+            <option value={3}>ogni 3</option>
+            <option value={4}>ogni 4</option>
+            <option value={6}>ogni 6</option>
+            <option value={8}>ogni 8</option>
+            <option value={12}>ogni 12</option>
+            <option value={26}>ogni 26</option>
+            <option value={52}>ogni 52</option>
+          </select>
           {!readOnly && <>
             <button style={st.btn} onClick={() => sposta(i, -1)} disabled={i === 0} title="Su">↑</button>
             <button style={st.btn} onClick={() => sposta(i, 1)} disabled={i === steps.length - 1} title="Giù">↓</button>
@@ -167,7 +187,12 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
       .select("*")
       .eq("manutenzione_id", manutenzione.id);
 
-    const stepsArr = stepsData || [];
+    // Filtra step in base alla cadenza e al numero intervento
+    const nIntervento = manutenzione.numero_intervento || 1;
+    const stepsArr = (stepsData || []).filter(s => {
+      const n = s.ogni_n_interventi || 1;
+      return n === 1 || nIntervento % n === 0;
+    });
     setSteps(stepsArr);
 
     const statoMap = {};
@@ -263,9 +288,16 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
               <div style={{ fontSize: 13, fontWeight: comp ? 500 : 400, color: comp ? "#065F46" : "var(--text-1)", textDecoration: comp ? "line-through" : "none", opacity: comp ? 0.8 : 1 }}>
                 {i + 1}. {s.testo}
               </div>
-              {s.obbligatorio && !comp && (
-                <span style={{ fontSize: 10, color: "#B45309", fontWeight: 600, background: "#FEF3C7", padding: "1px 5px", borderRadius: 3 }}>OBBLIGATORIO</span>
-              )}
+              <div style={{ display: "flex", gap: 4, marginTop: 3, flexWrap: "wrap" }}>
+                {s.obbligatorio && !comp && (
+                  <span style={{ fontSize: 10, color: "#B45309", fontWeight: 600, background: "#FEF3C7", padding: "1px 5px", borderRadius: 3 }}>OBBLIGATORIO</span>
+                )}
+                {(s.ogni_n_interventi || 1) > 1 && (
+                  <span style={{ fontSize: 10, color: "var(--text-3)", background: "var(--surface-3)", padding: "1px 5px", borderRadius: 3 }}>
+                    ogni {s.ogni_n_interventi} interventi
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );

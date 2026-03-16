@@ -53,7 +53,7 @@ const TABS = [
 ];
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"", livello:r.livello||"standard", pianoPadreId:r.piano_padre_id||null });
@@ -1782,7 +1782,7 @@ export default function App() {
   const uid = () => session?.user?.id;
   const UID = session?.user?.id || "";
   const BATCH = 50;
-  const buildRowM = (piano, data) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid() });
+  const buildRowM = (piano, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento });
 
   const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid())).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid())).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
@@ -1861,7 +1861,7 @@ export default function App() {
     if(!np.dataInizio)return;
     const occ=generaOccorrenze(np,np.dataInizio,12); if(!occ.length)return;
     let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map(d=>buildRowM(np,d))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(np,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
     if(saved.length)sMan(p=>[...p,...saved]);
   };
   const modPiano = async f => {
@@ -1873,8 +1873,10 @@ export default function App() {
     sMan(prev=>prev.filter(m=>m.pianoId!==upd.id||m.stato==="completata"||m.stato==="inCorso"));
     if(!upd.dataInizio)return;
     const dp=upd.dataInizio>oggi?upd.dataInizio:oggi; const occ=generaOccorrenze(upd,dp,12); if(!occ.length)return;
+    // Calcola offset: quanti interventi già completati per questo piano
+    const completati=man.filter(m=>m.pianoId===upd.id&&m.stato==="completata").length;
     let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map(d=>buildRowM(upd,d))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...chunk.map(mapM)];}
     if(saved.length)sMan(p=>[...p,...saved]);
   };
   const delPiano = async id => { await supabase.from("manutenzioni").delete().eq("piano_id",id); await supabase.from("piani").delete().eq("id",id); sPi(p=>p.filter(pi=>pi.id!==id)); sMan(p=>p.filter(m=>m.pianoId!==id)); };
