@@ -409,7 +409,7 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       {ini?.id&&ini?.pianoId&&(
         <div style={{borderTop:"1px solid var(--border)",paddingTop:16,marginTop:4}}>
           {ini.stato!=="inCorso"&&<div style={{fontSize:11,color:"var(--text-3)",marginBottom:6,fontStyle:"italic"}}>🔒 Avvia l'attività per compilare la checklist</div>}
-          <ChecklistIntervento manutenzione={{...ini,numero_intervento:ini.numeroIntervento||1}} readOnly={ini.stato!=="inCorso"} />
+          <ChecklistIntervento manutenzione={{...ini,numero_intervento:ini.numeroIntervento||1}} stato={ini.stato} />
         </div>
       )}
       {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={userId||""} />}

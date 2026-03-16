@@ -242,6 +242,8 @@ export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=f
   if (loading) return <div style={{ fontSize: 13, color: "var(--text-3)", padding: "8px 0" }}>Caricamento checklist...</div>;
   if (steps.length === 0) return null;
 
+  const bloccata = stato === "pianificata";
+
   const completati = steps.filter(s => stato[s.id]?.completato).length;
   const obbligatoriMancanti = steps.filter(s => s.obbligatorio && !stato[s.id]?.completato);
   const perc = steps.length ? Math.round(completati / steps.length * 100) : 0;
@@ -275,9 +277,15 @@ export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=f
         <span style={{ fontSize: 12, fontWeight: 700, color: perc === 100 ? "#059669" : "var(--amber)" }}>{perc}%</span>
       </div>
       <div style={st.bar}><div style={st.fill} /></div>
-      {obbligatoriMancanti.length > 0 && (
+      {bloccata && (
+        <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:8,padding:"10px 12px",fontSize:12,color:"var(--text-3)",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:16}}>🔒</span>
+          <span>Avvia l'intervento per compilare la checklist</span>
+        </div>
+      )}
+      {!bloccata && obbligatoriMancanti.length > 0 && (
         <div style={st.warn}>
-          ⚠ {obbligatoriMancanti.length} step obbligatori{obbligatoriMancanti.length > 1 ? "" : ""} ancora da completare
+          ⚠ {obbligatoriMancanti.length} step obbligatori ancora da completare
         </div>
       )}
       {steps.map((s, i) => {
