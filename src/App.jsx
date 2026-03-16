@@ -18,6 +18,8 @@ import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./com
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
+import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
+import { Dashboard } from "./components/DashboardMain";
 
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
