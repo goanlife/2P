@@ -1721,12 +1721,7 @@ export default function App() {
         setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
         setLoad(false); return;
       }
-      let ops = ro.data||[];
-      if (ops.length === 0) {
-        const { data: seeded } = await supabase.from("operatori").insert(OP_DEFAULT.map(o=>({...o,user_id:session.user.id}))).select();
-        ops = seeded || [];
-      }
-      const mappedOps = ops.map(mapOp);
+      const mappedOps = (ro.data||[]).map(mapOp);
       sOp(mappedOps);
       // Applica tema dell'utente loggato se presente
       const meOp = mappedOps.find(o => o.email === session?.user?.email);
