@@ -3,6 +3,15 @@ import { supabase } from "../supabase";
 import { SelettoreTema } from "./AllegatiTemi";
 import { Av, Overlay, Modal, Field } from "./ui/Atoms";
 
+const FREQUENZE = [
+  { v:"settimanale", l:"Settimanale", giorni:7   },
+  { v:"mensile",     l:"Mensile",     giorni:30  },
+  { v:"bimestrale",  l:"Bimestrale",  giorni:60  },
+  { v:"trimestrale", l:"Trimestrale", giorni:90  },
+  { v:"semestrale",  l:"Semestrale",  giorni:180 },
+  { v:"annuale",     l:"Annuale",     giorni:365 },
+];
+
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };

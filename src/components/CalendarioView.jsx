@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { Overlay, Modal, Field, AvvisoConflitto } from "./ui/Atoms";
 
+const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+
 const GIORNI = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 
