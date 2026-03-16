@@ -53,10 +53,11 @@ const TABS = [
 ];
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
-const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"", livello:r.livello||"standard", pianoPadreId:r.piano_padre_id||null });
+const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"" });
+const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy" });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
@@ -67,7 +68,8 @@ const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mi
 const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
 const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
 const toDbA  = (f,uid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid });
-const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
+const toDbP  = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid });
+const toDbAss = (f,uid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
 const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
 const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
 
@@ -661,21 +663,18 @@ function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel, on
 }
 
 // ─── Piani ────────────────────────────────────────────────────────────────
-function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, piani=[], onClose, onSalva, userId }) {
-  const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
-  const defOp=fornitori[0]?.id?String(fornitori[0].id):"";
-  const vuoto={nome:"",descrizione:"",assetId:"",clienteId:"",operatoreId:defOp,tipo:"ordinaria",frequenza:"mensile",durata:60,priorita:"media",dataInizio:"",dataFine:"",attivo:true,livello:"standard",pianoPadreId:null};
-  const normalize=obj=>obj?{...obj,operatoreId:String(obj.operatoreId||defOp),clienteId:obj.clienteId?String(obj.clienteId):"",assetId:obj.assetId?String(obj.assetId):""}:null;
-  const [f,sf]=useState(normalize(ini)||vuoto);const s=(k,v)=>sf(p=>({...p,[k]:v}));const ok=f.nome.trim()&&f.dataInizio&&f.frequenza;
-  const assetsCliente=useMemo(()=>f.clienteId?assets.filter(a=>String(a.clienteId)===f.clienteId):assets,[f.clienteId,assets]);
-  const preview=useMemo(()=>{if(!ok)return[];return generaOccorrenze(f,f.dataInizio,6).slice(0,8);},[f,ok]);
-  const previewConf=useMemo(()=>preview.filter(data=>f.operatoreId&&conflitti(manutenzioni,Number(f.operatoreId),data).length>0),[preview,f.operatoreId,manutenzioni]);
+
+// Modal Piano Template (solo nome/frequenza/tipo - senza asset/cliente/operatore)
+function ModalPiano({ ini, onClose, onSalva, userId }) {
+  const vuoto = { nome:"", descrizione:"", tipo:"ordinaria", frequenza:"mensile", durata:60, priorita:"media", attivo:true };
+  const [f, sf] = useState(ini || vuoto);
+  const s = (k,v) => sf(p=>({...p,[k]:v}));
   return (
-    <Modal title={ini?"Modifica piano":"Nuovo piano"} onClose={onClose} onSave={()=>onSalva({...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})} saveOk={!!ok} saveColor="#059669" saveLabel={ini?"Aggiorna piano":"Crea piano e genera attività"}>
-      <Field label="Nome piano *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} style={{width:"100%"}} /></Field>
+    <Modal title={ini?"Modifica piano":"Nuovo piano template"} onClose={onClose}
+      onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveColor="#059669"
+      saveLabel={ini?"Aggiorna":"Crea template"}>
+      <Field label="Nome piano *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} style={{width:"100%"}} placeholder="Es. Revisione mensile compressori" /></Field>
       <Field label="Descrizione"><textarea value={f.descrizione} onChange={e=>s("descrizione",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
-      <Field label="Cliente"><select value={f.clienteId} onChange={e=>{s("clienteId",e.target.value);s("assetId","");}} style={{width:"100%"}}><option value="">— Nessun cliente —</option>{clienti.map(c=><option key={c.id} value={String(c.id)}>{c.rs}</option>)}</select></Field>
-      <Field label="Asset"><select value={f.assetId} onChange={e=>s("assetId",e.target.value)} style={{width:"100%"}}><option value="">— Nessun asset —</option>{assetsCliente.map(a=><option key={a.id} value={String(a.id)}>{a.nome}</option>)}</select></Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="Tipo"><select value={f.tipo} onChange={e=>s("tipo",e.target.value)} style={{width:"100%"}}><option value="ordinaria">Ordinaria</option><option value="straordinaria">Straordinaria</option></select></Field>
         <Field label="Priorità"><select value={f.priorita} onChange={e=>s("priorita",e.target.value)} style={{width:"100%"}}><option value="bassa">Bassa</option><option value="media">Media</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></Field>
@@ -684,78 +683,158 @@ function ModalPiano({ ini, clienti, assets, manutenzioni, operatori, piani=[], o
         <Field label="Frequenza"><select value={f.frequenza} onChange={e=>s("frequenza",e.target.value)} style={{width:"100%"}}>{FREQUENZE.map(fr=><option key={fr.v} value={fr.v}>{fr.l}</option>)}</select></Field>
         <Field label="Durata (min)"><input type="number" value={f.durata} onChange={e=>s("durata",Number(e.target.value))} min={15} step={15} style={{width:"100%"}} /></Field>
       </div>
-      <Field label="Fornitore assegnato">
+      <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:12,color:"var(--text-2)"}}>
+        ℹ Dopo aver creato il template, aggiungi le <strong>assegnazioni</strong> per collegarlo agli asset e generare le attività.
+      </div>
+      {ini?.id && <ChecklistEditor pianoId={ini.id} />}
+      {ini?.id && <PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={userId||""} />}
+    </Modal>
+  );
+}
+
+// Modal Assegnazione (piano → asset + operatore + date)
+function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manutenzioni, onClose, onSalva }) {
+  const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
+  const defOp = fornitori[0]?.id ? String(fornitori[0].id) : "";
+  const vuoto = { pianoId:piano?.id||"", assetId:"", clienteId:"", operatoreId:defOp, dataInizio:isoDate(new Date()), dataFine:"", attivo:true };
+  const [f, sf] = useState(ini ? {...ini, operatoreId:String(ini.operatoreId||defOp), assetId:String(ini.assetId||""), clienteId:String(ini.clienteId||"")} : vuoto);
+  const s = (k,v) => sf(p=>({...p,[k]:v}));
+  const assetsCliente = useMemo(()=>f.clienteId?assets.filter(a=>String(a.clienteId)===f.clienteId):assets,[f.clienteId,assets]);
+  const preview = useMemo(()=>{if(!piano||!f.dataInizio)return[];return generaOccorrenze(piano,f.dataInizio,3).slice(0,6);},[piano,f.dataInizio]);
+  const conf = useMemo(()=>f.operatoreId&&f.dataInizio?conflitti(manutenzioni,Number(f.operatoreId),f.dataInizio):[],[f.operatoreId,f.dataInizio,manutenzioni]);
+  return (
+    <Modal title={ini?"Modifica assegnazione":"Nuova assegnazione"} onClose={onClose}
+      onSave={()=>onSalva({...f,pianoId:Number(piano?.id||f.pianoId),operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})}
+      saveOk={!!f.dataInizio} saveColor="#059669"
+      saveLabel={ini?"Aggiorna":"Assegna e genera attività"}>
+      {piano && (
+        <div style={{background:"var(--surface-2)",border:"1px solid var(--amber)",borderRadius:"var(--radius-sm)",padding:"10px 14px",marginBottom:4}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--amber)",marginBottom:2}}>Piano template</div>
+          <div style={{fontSize:13,fontWeight:600}}>{piano.nome}</div>
+          <div style={{fontSize:11,color:"var(--text-3)",marginTop:2}}>{FREQUENZE.find(f=>f.v===piano.frequenza)?.l} · {piano.durata} min · {piano.tipo}</div>
+        </div>
+      )}
+      <Field label="Cliente">
+        <select value={f.clienteId} onChange={e=>{s("clienteId",e.target.value);s("assetId","");}} style={{width:"100%"}}>
+          <option value="">— Nessun cliente —</option>
+          {clienti.map(c=><option key={c.id} value={String(c.id)}>{c.rs}</option>)}
+        </select>
+      </Field>
+      <Field label="Asset *">
+        <select value={f.assetId} onChange={e=>s("assetId",e.target.value)} style={{width:"100%"}}>
+          <option value="">— Seleziona asset —</option>
+          {assetsCliente.map(a=><option key={a.id} value={String(a.id)}>{a.nome} {a.tipo?`(${a.tipo})`:""}</option>)}
+        </select>
+      </Field>
+      <Field label="Operatore di default">
         <select value={f.operatoreId} onChange={e=>s("operatoreId",e.target.value)} style={{width:"100%"}}>
-          <option value="">— Nessun fornitore —</option>
+          <option value="">— Nessun operatore —</option>
           {fornitori.map(o=><option key={o.id} value={String(o.id)}>{o.nome}{o.spec?` — ${o.spec}`:""}</option>)}
         </select>
+        <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>Può essere cambiato su ogni singola attività</div>
       </Field>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="Data inizio *"><input type="date" value={f.dataInizio} onChange={e=>s("dataInizio",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Data fine (opzionale)"><input type="date" value={f.dataFine} onChange={e=>s("dataFine",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
-      <Field label="Livello manutenzione">
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-          {LIVELLI_PIANO.map(lv=>(
-            <label key={lv.v} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:"var(--radius-sm)",border:`1.5px solid ${f.livello===lv.v?lv.col:"var(--border)"}`,background:f.livello===lv.v?lv.col+"15":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
-              <input type="radio" name="livello" value={lv.v} checked={f.livello===lv.v} onChange={()=>s("livello",lv.v)} style={{display:"none"}} />
-              <span style={{width:10,height:10,borderRadius:"50%",background:lv.col,flexShrink:0,display:"inline-block"}} />
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:f.livello===lv.v?lv.col:"var(--text-1)"}}>{lv.l}</div>
-                <div style={{fontSize:10,color:"var(--text-3)"}}>{lv.desc}</div>
-              </div>
-            </label>
-          ))}
+      {conf.length>0 && <ConflictiBanner conf={conf} />}
+      {preview.length>0 && (
+        <div className="preview-dates">
+          <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Prime {preview.length} occorrenze:</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+            {preview.map((data,i)=><span key={i} className="preview-tag ok">{fmtData(data)}</span>)}
+          </div>
         </div>
-      </Field>
-      {f.livello!=="standard"&&f.livello!=="L1"&&(
-        <Field label={`Piano padre (eredita checklist ${f.livello==="L2"?"da L1":"da L2"})`}>
-          <select value={f.pianoPadreId||""} onChange={e=>s("pianoPadreId",e.target.value?Number(e.target.value):null)} style={{width:"100%"}}>
-            <option value="">— Nessun piano padre —</option>
-            {piani.filter(p=>p.livello===(f.livello==="L2"?"L1":"L2")&&p.assetId===Number(f.assetId)&&p.clienteId===Number(f.clienteId)).map(p=>(
-              <option key={p.id} value={p.id}>{p.nome} ({FREQUENZE.find(fr=>fr.v===p.frequenza)?.l})</option>
-            ))}
-          </select>
-          <div style={{fontSize:11,color:"var(--text-3)",marginTop:4}}>ℹ Gli step del piano padre verranno inclusi automaticamente nella checklist</div>
-        </Field>
       )}
-      {preview.length>0&&(<div className="preview-dates"><div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Anteprima {preview.length} occorrenze:</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{preview.map((data,i)=>{const hC=previewConf.includes(data);return <span key={i} className={"preview-tag"+(hC?" warn":" ok")}>{hC?"⚠ ":""}{fmtData(data)}</span>;})}</div>{ini&&<div style={{fontSize:11,color:"var(--blue)",marginTop:8,fontWeight:500}}>ℹ Le modifiche si applicano alle attività future non completate.</div>}</div>)}
-      {ini?.id&&<PannelloAllegati entitaTipo="piano" entitaId={ini.id} userId={userId||""} />}
-      {ini?.id&&<ChecklistEditor pianoId={ini.id} pianoPadreId={f.pianoPadreId} />}
     </Modal>
   );
 }
 
-function GestionePiani({ piani, clienti, assets, manutenzioni, operatori, onAgg, onMod, onDel, onAttivaDisattiva }) {
-  const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
+function GestionePiani({ piani, assegnazioni=[], clienti, assets, manutenzioni, operatori, onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva }) {
+  const [showM, ssM] = useState(false);
+  const [inMod, siM] = useState(null);
+  const [showAss, setShowAss] = useState(false);
+  const [inModAss, siMA] = useState(null);
+  const [pianoDiAss, setPianoDiAss] = useState(null); // piano a cui stiamo aggiungendo assegnazione
+  const [expanded, setExpanded] = useState({}); // { pianoId: true/false }
+
+  const apriNuovaAss = (piano) => { setPianoDiAss(piano); siMA(null); setShowAss(true); };
+
   return (
     <div style={{display:"grid",gap:12}}>
-      <div style={{display:"flex",justifyContent:"flex-end"}}><button className="btn-green-outline" style={{fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo piano</button></div>
-      {!piani.length&&<div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun piano. Crea il primo per generare attività automaticamente.</div></div>}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:12}}>
-        {piani.map(p=>{const cl=clienti.find(c=>c.id===p.clienteId);const as=assets.find(a=>a.id===p.assetId);const op=operatori.find(o=>o.id===p.operatoreId);const freq=FREQUENZE.find(f=>f.v===p.frequenza);const manP=(manutenzioni||[]).filter(m=>m.pianoId===p.id);const prossima=manP.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data))[0];
-          return(<div key={p.id} className={"piano-card"+(p.attivo?" active":"")}>
-            <div style={{display:"flex",alignItems:"flex-start",gap:12,marginBottom:12}}>
-              <div style={{width:44,height:44,borderRadius:"var(--radius)",background:p.attivo?"#ECFDF5":"var(--surface-2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0,border:`1px solid ${p.attivo?"#A7F3D0":"var(--border)"}`}}>🔄</div>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.nome}</div><div style={{display:"flex",gap:6,marginTop:4,alignItems:"center"}}><span className={"badge"+(p.attivo?" badge-attivo":" badge-sospeso")}>{p.attivo?"Attivo":"Sospeso"}</span><span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{freq?.l}</span></div></div>
-              <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(p);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(p.id)}>✕</button></div>
-            </div>
-            {p.descrizione&&<div style={{fontSize:12.5,color:"var(--text-2)",marginBottom:10}}>{p.descrizione}</div>}
-            <div style={{display:"grid",gap:4,fontSize:12,color:"var(--text-2)",marginBottom:12}}>
-              {cl&&<div style={{color:"#7F77DD",fontWeight:600}}>🏢 {cl.rs}</div>}
-              {as&&<div>⚙ {as.nome}</div>}
-              {op&&<div style={{display:"flex",alignItems:"center",gap:5}}><span style={{width:8,height:8,borderRadius:"50%",background:op.col,display:"inline-block"}} />{op.nome}</div>}
-              <div style={{color:"var(--text-3)"}}>📅 Dal {fmtData(p.dataInizio)}{p.dataFine?` al ${fmtData(p.dataFine)}`:""} · ⏱ {p.durata} min</div>
-            </div>
-            <div style={{display:"flex",gap:8,alignItems:"center",borderTop:"1px solid var(--border)",paddingTop:10}}>
-              <span style={{fontSize:12,color:"var(--text-3)",fontWeight:500}}>{manP.length} generate · {prossima?`Prossima: ${fmtData(prossima.data)}`:"Nessuna pianificata"}</span>
-              <span style={{flex:1}} />
-              <button className={"btn-sm"+(p.attivo?"":" btn-green-outline")} onClick={()=>onAttivaDisattiva(p.id,!p.attivo)}>{p.attivo?"Sospendi":"▶ Riattiva"}</button>
-            </div>
-          </div>);
-        })}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{fontSize:13,color:"var(--text-3)"}}>I piani sono template riusabili. Ogni assegnazione collega un piano a un asset specifico.</div>
+        <button className="btn-green-outline" style={{fontWeight:600,flexShrink:0}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo piano</button>
       </div>
-      {showM&&<ModalPiano key={inMod?.id??'new'} ini={inMod} clienti={clienti} assets={assets} manutenzioni={manutenzioni} operatori={operatori} piani={piani||[]} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
+
+      {!piani.length && <div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun piano. Crea il primo template per iniziare.</div></div>}
+
+      {piani.map(p => {
+        const assP = assegnazioni.filter(a => a.pianoId === p.id);
+        const freq = FREQUENZE.find(f=>f.v===p.frequenza);
+        const isOpen = expanded[p.id];
+        return (
+          <div key={p.id} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius-xl)",overflow:"hidden"}}>
+            {/* Header piano */}
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 18px",borderBottom:assP.length&&isOpen?"1px solid var(--border)":"none",cursor:"pointer"}}
+              onClick={()=>setExpanded(e=>({...e,[p.id]:!e[p.id]}))}>
+              <div style={{width:38,height:38,borderRadius:"var(--radius)",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔄</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,fontSize:14}}>{p.nome}</div>
+                <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{freq?.l} · {p.durata} min · {p.tipo} · {assP.length} assegnazione{assP.length!==1?"i":""}</div>
+              </div>
+              {p.descrizione && <div style={{fontSize:12,color:"var(--text-2)",maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.descrizione}</div>}
+              <div style={{display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
+                <button className="btn-sm" style={{background:"#ECFDF5",color:"#059669",borderColor:"#A7F3D0",fontWeight:600}} onClick={()=>apriNuovaAss(p)}>+ Assegna</button>
+                <button className="btn-sm btn-icon" onClick={()=>{siM(p);ssM(true);}}>✏</button>
+                <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(p.id)}>✕</button>
+              </div>
+              <span style={{fontSize:12,color:"var(--text-3)",marginLeft:4}}>{isOpen?"▲":"▼"}</span>
+            </div>
+
+            {/* Assegnazioni */}
+            {isOpen && (
+              <div style={{padding:"8px 18px 14px"}}>
+                {assP.length === 0 && (
+                  <div style={{textAlign:"center",padding:"16px 0",color:"var(--text-3)",fontSize:13}}>
+                    Nessuna assegnazione. <button className="btn-sm" style={{marginLeft:8}} onClick={()=>apriNuovaAss(p)}>+ Aggiungi</button>
+                  </div>
+                )}
+                {assP.map(a => {
+                  const cl = clienti.find(c=>c.id===a.clienteId);
+                  const as = assets.find(x=>x.id===a.assetId);
+                  const op = operatori.find(o=>o.id===a.operatoreId);
+                  const manA = manutenzioni.filter(m=>m.assegnazioneId===a.id||m.pianoId===p.id&&m.assetId===a.assetId);
+                  const prossima = manA.filter(m=>m.stato==="pianificata").sort((x,y)=>x.data.localeCompare(y.data))[0];
+                  return (
+                    <div key={a.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"var(--surface-2)",borderRadius:"var(--radius-sm)",border:`1px solid ${a.attivo?"var(--border)":"var(--border-dim)"}`,marginBottom:6,opacity:a.attivo?1:0.6}}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                          {cl && <span style={{fontSize:13,fontWeight:600,color:"#7F77DD"}}>🏢 {cl.rs}</span>}
+                          {as && <span style={{fontSize:13,color:"var(--text-2)"}}>⚙ {as.nome}</span>}
+                          {op && <span style={{fontSize:12,color:"var(--text-3)",display:"flex",alignItems:"center",gap:4}}><span style={{width:8,height:8,borderRadius:"50%",background:op.col,display:"inline-block"}}/>{op.nome}</span>}
+                        </div>
+                        <div style={{fontSize:11,color:"var(--text-3)",marginTop:3}}>
+                          Dal {fmtData(a.dataInizio)}{a.dataFine?` al ${fmtData(a.dataFine)}`:""} · {manA.length} attività
+                          {prossima && <span> · Prossima: {fmtData(prossima.data)}</span>}
+                        </div>
+                      </div>
+                      <div style={{display:"flex",gap:4,flexShrink:0}}>
+                        <button className={"btn-sm"+(a.attivo?"":" btn-green-outline")} onClick={()=>onAttivaDisattiva(a.id,!a.attivo)}>{a.attivo?"Sospendi":"▶ Riattiva"}</button>
+                        <button className="btn-sm btn-icon" onClick={()=>{siMA(a);setPianoDiAss(p);setShowAss(true);}}>✏</button>
+                        <button className="btn-sm btn-icon btn-danger" onClick={()=>onDelAss(a.id)}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {showM && <ModalPiano key={inMod?.id??'new'} ini={inMod} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...f,id:inMod.id}):onAgg(f)} />}
+      {showAss && <ModalAssegnazione key={inModAss?.id??'new-ass'} ini={inModAss} piano={pianoDiAss} clienti={clienti} assets={assets} operatori={operatori} manutenzioni={manutenzioni} onClose={()=>{setShowAss(false);siMA(null);}} onSalva={f=>inModAss?onModAss({...f,id:inModAss.id}):onAggAss(f)} />}
     </div>
   );
 }
@@ -1720,7 +1799,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s) { setLoad(true); setSess(s); }
-      else { setSess(null); setTenant(null); setRuoloTenant("membro"); sMan([]); sCl([]); sAs([]); sPi([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      else { setSess(null); setTenant(null); setRuoloTenant("membro"); sMan([]); sCl([]); sAs([]); sPi([]); sAss([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -1751,13 +1830,14 @@ export default function App() {
       supabase.from("clienti").select("*").order("created_at"),
       supabase.from("assets").select("*").order("created_at"),
       supabase.from("piani").select("*").order("created_at"),
+      supabase.from("piano_assegnazioni").select("*").order("created_at"),
       supabase.from("manutenzioni").select("*").order("data"),
       supabase.from("operatore_siti").select("*").order("created_at"),
       supabase.from("gruppi").select("*").order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
       supabase.from("gruppo_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
+    ]).then(async ([ro, rc, ra, rp, rass, rm, rs, rg, rgo, rgs]) => {
+      if (ro.error||rc.error||ra.error||rp.error||rm.error||rass.error) {
         setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
         setLoad(false); return;
       }
@@ -1766,7 +1846,7 @@ export default function App() {
       // Applica tema dell'utente loggato se presente
       const meOp = mappedOps.find(o => o.email === session?.user?.email);
       if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
-      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
+      sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sAss((rass.data||[]).map(mapAss)); sMan((rm.data||[]).map(mapM));
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
@@ -1782,7 +1862,7 @@ export default function App() {
   const uid = () => session?.user?.id;
   const UID = session?.user?.id || "";
   const BATCH = 50;
-  const buildRowM = (piano, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:piano.operatoreId||null, cliente_id:piano.clienteId||null, asset_id:piano.assetId||null, piano_id:piano.id, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento });
+  const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento });
 
   const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid())).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid())).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
@@ -1853,34 +1933,63 @@ export default function App() {
     }
   };
 
+  // Crea piano template (senza asset/cliente/operatore)
   const aggPiano = async f => {
-    const piano={...f,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
-    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(piano,uid())).select().single();
-    if(pErr){console.error(pErr);return;}
+    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(f,uid())).select().single();
+    if(pErr){console.error(pErr);notify("Errore creazione piano: "+pErr.message);return;}
     const np=mapP(pianoRow); sPi(p=>[...p,np]);
-    if(!np.dataInizio)return;
-    const occ=generaOccorrenze(np,np.dataInizio,12); if(!occ.length)return;
+    notify("Piano creato. Ora aggiungi un'assegnazione per generare le attività.", "success");
+  };
+
+  // Crea assegnazione piano → asset e genera occorrenze
+  const aggAssegnazione = async f => {
+    const ass={...f,pianoId:Number(f.pianoId),assetId:f.assetId?Number(f.assetId):null,clienteId:f.clienteId?Number(f.clienteId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
+    const {data:assRow,error:aErr}=await supabase.from("piano_assegnazioni").insert(toDbAss(ass,uid())).select().single();
+    if(aErr){console.error(aErr);notify("Errore assegnazione: "+aErr.message);return;}
+    const na=mapAss(assRow); sAss(p=>[...p,na]);
+    // Genera occorrenze per questa assegnazione
+    const piano=piani.find(p=>p.id===na.pianoId);
+    if(!piano||!na.dataInizio)return;
+    const occ=generaOccorrenze(piano,na.dataInizio,12); if(!occ.length)return;
     let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(np,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,na,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
+    if(saved.length){sMan(p=>[...p,...saved]);notify(`${saved.length} attività generate!`,"success");}
+  };
+
+  // Modifica assegnazione
+  const modAssegnazione = async f => {
+    const upd={...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null};
+    const {error}=await supabase.from("piano_assegnazioni").update(toDbAss(upd,uid())).eq("id",upd.id);
+    if(error){console.error(error);return;}
+    sAss(p=>p.map(a=>a.id===upd.id?upd:a));
+    // Rigenera attività future
+    const piano=piani.find(p=>p.id===upd.pianoId);
+    if(!piano)return;
+    const oggi=isoDate(new Date());
+    await supabase.from("manutenzioni").delete().eq("assegnazione_id",upd.id).eq("stato","pianificata");
+    sMan(prev=>prev.filter(m=>m.assegnazioneId!==upd.id||m.stato==="completata"||m.stato==="inCorso"));
+    const dp=upd.dataInizio>oggi?upd.dataInizio:oggi;
+    const occ=generaOccorrenze(piano,dp,12); if(!occ.length)return;
+    const completati=man.filter(m=>m.assegnazioneId===upd.id&&m.stato==="completata").length;
+    let saved=[];
+    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
     if(saved.length)sMan(p=>[...p,...saved]);
+  };
+
+  // Elimina assegnazione
+  const delAssegnazione = async id => {
+    await supabase.from("manutenzioni").delete().eq("assegnazione_id",id).eq("stato","pianificata");
+    await supabase.from("piano_assegnazioni").delete().eq("id",id);
+    sAss(p=>p.filter(a=>a.id!==id));
+    sMan(p=>p.filter(m=>m.assegnazioneId!==id||m.stato==="completata"||m.stato==="inCorso"));
   };
   const modPiano = async f => {
-    const upd={...f,operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null};
-    const {error}=await supabase.from("piani").update(toDbP(upd,uid())).eq("id",upd.id); if(error){console.error(error);return;}
-    sPi(p=>p.map(pi=>pi.id===upd.id?upd:pi));
-    const oggi=isoDate(new Date());
-    await supabase.from("manutenzioni").delete().eq("piano_id",upd.id).eq("stato","pianificata");
-    sMan(prev=>prev.filter(m=>m.pianoId!==upd.id||m.stato==="completata"||m.stato==="inCorso"));
-    if(!upd.dataInizio)return;
-    const dp=upd.dataInizio>oggi?upd.dataInizio:oggi; const occ=generaOccorrenze(upd,dp,12); if(!occ.length)return;
-    // Calcola offset: quanti interventi già completati per questo piano
-    const completati=man.filter(m=>m.pianoId===upd.id&&m.stato==="completata").length;
-    let saved=[];
-    for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
-    if(saved.length)sMan(p=>[...p,...saved]);
+    const {error}=await supabase.from("piani").update(toDbP(f,uid())).eq("id",f.id);
+    if(error){console.error(error);return;}
+    sPi(p=>p.map(pi=>pi.id===f.id?{...pi,...f}:pi));
   };
-  const delPiano = async id => { await supabase.from("manutenzioni").delete().eq("piano_id",id); await supabase.from("piani").delete().eq("id",id); sPi(p=>p.filter(pi=>pi.id!==id)); sMan(p=>p.filter(m=>m.pianoId!==id)); };
-  const attivaDisattiva = async (id,attivo) => { await supabase.from("piani").update({attivo}).eq("id",id); sPi(p=>p.map(pi=>pi.id===id?{...pi,attivo}:pi)); };
+  const delPiano = async id => { await supabase.from("piano_assegnazioni").delete().eq("piano_id",id); await supabase.from("manutenzioni").delete().eq("piano_id",id); await supabase.from("piani").delete().eq("id",id); sPi(p=>p.filter(pi=>pi.id!==id)); sAss(p=>p.filter(a=>a.pianoId!==id)); sMan(p=>p.filter(m=>m.pianoId!==id)); };
+  const attivaDisattiva = async (id,attivo) => { await supabase.from("piano_assegnazioni").update({attivo}).eq("id",id); sAss(p=>p.map(a=>a.id===id?{...a,attivo}:a)); };
 
   const apriConData = d => { sDD(d); siMM(null); sMM(true); };
 
@@ -2041,7 +2150,7 @@ export default function App() {
           onChiudi={m=>setChiudiModal(m)}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
-        {vista==="piani"        && <GestionePiani piani={piani} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAttivaDisattiva={attivaDisattiva} />}
+        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={delPiano} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={delAssegnazione} onAttivaDisattiva={attivaDisattiva} />}
         {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} />}
         {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={delA} onQR={a=>setQrAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={delOp} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
