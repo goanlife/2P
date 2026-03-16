@@ -153,7 +153,7 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
 }
 
 // ─── Compilazione checklist durante intervento ────────────────────────────
-export function ChecklistIntervento({ manutenzione, onProgressChange }) {
+export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=false }) {
   const [steps, setSteps] = useState([]);
   const [stato, setStato] = useState({}); // { stepId: { completato, note } }
   const [loading, setLoading] = useState(true);
@@ -222,6 +222,7 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
   };
 
   const toggleStep = async (step) => {
+    if (readOnly) return;
     const corrente = stato[step.id] || { completato: false, note: "" };
     const nuovoValore = !corrente.completato;
 
@@ -282,7 +283,7 @@ export function ChecklistIntervento({ manutenzione, onProgressChange }) {
       {steps.map((s, i) => {
         const comp = stato[s.id]?.completato;
         return (
-          <div key={s.id} style={st.step(comp)} onClick={() => toggleStep(s)}>
+          <div key={s.id} style={{...st.step(comp), cursor: readOnly?"default":"pointer", opacity: readOnly ? 0.7 : 1}} onClick={() => !readOnly && toggleStep(s)}>
             <div style={st.check(comp)}>{comp && "✓"}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: comp ? 500 : 400, color: comp ? "#065F46" : "var(--text-1)", textDecoration: comp ? "line-through" : "none", opacity: comp ? 0.8 : 1 }}>

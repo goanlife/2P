@@ -408,7 +408,8 @@ function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, on
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
       {ini?.id&&ini?.pianoId&&(
         <div style={{borderTop:"1px solid var(--border)",paddingTop:16,marginTop:4}}>
-          <ChecklistIntervento manutenzione={{...ini,numero_intervento:ini.numeroIntervento||1}} />
+          {ini.stato!=="inCorso"&&<div style={{fontSize:11,color:"var(--text-3)",marginBottom:6,fontStyle:"italic"}}>🔒 Avvia l'attività per compilare la checklist</div>}
+          <ChecklistIntervento manutenzione={{...ini,numero_intervento:ini.numeroIntervento||1}} readOnly={ini.stato!=="inCorso"} />
         </div>
       )}
       {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={userId||""} />}
@@ -670,8 +671,14 @@ function PopupGiorno({ data, attivita, clienti, assets, operatori, onClose, onSt
               {/* Checklist */}
               {m.pianoId && m.stato!=="completata" && (
                 <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--border)"}}>
+                  {m.stato!=="inCorso" && (
+                    <div style={{fontSize:11,color:"var(--text-3)",marginBottom:6,fontStyle:"italic"}}>
+                      🔒 Avvia l'attività per compilare la checklist
+                    </div>
+                  )}
                   <ChecklistIntervento
                     manutenzione={{...m, numero_intervento: m.numeroIntervento||1}}
+                    readOnly={m.stato!=="inCorso"}
                     onProgressChange={null}
                   />
                 </div>
