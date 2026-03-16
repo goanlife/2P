@@ -16,7 +16,7 @@ import { ModalRipianifica, PopupGiorno, Calendario } from "./components/Calendar
 import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGruppo, ModalAssegnaGruppo, GestioneGruppi, ModalCreaAccesso } from "./components/GestioneUtenti";
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
-import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati } from "./components/AllegatiTemi";
+import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
 import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
 import { Dashboard } from "./components/DashboardMain";

@@ -5,6 +5,10 @@ import { Av, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { InterventoRicambi } from "./GestioneRicambi";
 
+function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
+  return (manutenzioni||[]).filter(m=>m.operatoreId===Number(operatoreId)&&m.data===data&&m.stato!=="completata"&&m.id!==escludiId);
+}
+
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
