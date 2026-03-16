@@ -58,6 +58,7 @@ const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.clien
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
 const mapGOp    = r => ({ id:r.id, gruppoId:r.gruppo_id, operatoreId:r.operatore_id });
 const mapGSito  = r => ({ id:r.id, gruppoId:r.gruppo_id, clienteId:r.cliente_id });
+const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mimeType:r.mime_type||"", dimensione:r.dimensione||0, createdAt:r.created_at||"" });
 
 const toDbM  = (f,uid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato||"pianificata", priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid });
 const toDbC  = (f,uid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid });
