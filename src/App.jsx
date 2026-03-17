@@ -166,6 +166,13 @@ export default function App() {
       });
   }, [tenant?.id, gOps.length]);
 
+  // Se la vista corrente non è più nei tab visibili, torna alla dashboard
+  useEffect(() => {
+    if (tabsVisibili.length && !tabsVisibili.find(t => t.id === vista)) {
+      sV(tabsVisibili[0].id);
+    }
+  }, [tabsVisibili.length]);
+
   // Calcola i tab visibili per l'utente corrente
   const tabsVisibili = (() => {
     // Admin vede sempre tutto
