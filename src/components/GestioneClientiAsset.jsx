@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { ImportaClienti } from "./ImportaClienti";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { Field, Modal } from "./ui/Atoms";
@@ -97,16 +98,24 @@ export function ModalCliente({ ini, onClose, onSalva, userId }) {
   );
 }
 
-export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel }) {
-  const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");
+export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel, tenantId, onImportDone }) {
+  const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [showImport,setShowImport]=useState(false);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
   const BG=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];const TX=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca cliente o contatto..." style={{flex:1}} />
+        <button onClick={()=>setShowImport(p=>!p)} style={{padding:"7px 14px",background:"var(--surface)",color:"var(--text-1)",border:"1px solid var(--border)",borderRadius:6,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+          {showImport?"✕ Chiudi":"📥 Importa"}
+        </button>
         <button style={{color:"#7F77DD",borderColor:"#C4B5FD",background:"#EEEDFE",fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo cliente</button>
       </div>
+      {showImport&&(
+        <div style={{border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",marginBottom:4}}>
+          <ImportaClienti tenantId={tenantId} onDone={()=>{setShowImport(false);onImportDone&&onImportDone();}} />
+        </div>
+      )}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
         {filtrati.map((c,idx)=>{const nAtt=manutenzioni.filter(m=>m.clienteId===c.id&&m.stato!=="completata").length;const nAs=assets.filter(a=>a.clienteId===c.id).length;const ur=manutenzioni.filter(m=>m.clienteId===c.id&&m.priorita==="urgente"&&m.stato!=="completata").length;const ini=c.rs.split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase();
           return(<div key={c.id} className="client-card">
