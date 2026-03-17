@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
     paths:
-      - 'supabase/migrations/**'   # si attiva solo se cambiano i file SQL
-  workflow_dispatch:               # esecuzione manuale da GitHub Actions
+      - 'supabase/migrations/**'
+  workflow_dispatch:
 
 jobs:
   migrate:
@@ -16,23 +16,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Install Supabase CLI
+        run: |
+          wget -qO /tmp/supabase.deb \
+            https://github.com/supabase/cli/releases/download/v1.142.2/supabase_1.142.2_linux_amd64.deb
+          sudo dpkg -i /tmp/supabase.deb
 
-      - name: Run migrations
+      - name: Apply migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          supabase db push \
-            --project-ref nnsylkjahuhttwajuxls \
-            --password "${{ secrets.SUPABASE_DB_PASSWORD }}"
-
-      - name: Notify success
-        if: success()
-        run: echo "✅ Migrations applied successfully"
-
-      - name: Notify failure  
-        if: failure()
-        run: echo "❌ Migration failed — check logs above"
+          supabase link --project-ref nnsylkjahuhttwajuxls
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
