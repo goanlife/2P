@@ -1,41 +1,29 @@
 import React, { useState } from "react";
 
-// ─── Mobile Bottom Navigation ─────────────────────────────────────────────
-const PRIMARY_TABS = [
-  {id:"dashboard",    l:"Dashboard",  icon:"◈"},
-  {id:"manutenzioni", l:"Attività",   icon:"⚡"},
-  {id:"calendario",   l:"Calendario", icon:"📅"},
-  {id:"clienti",      l:"Clienti",    icon:"🏢"},
-];
-const DRAWER_TABS = [
-  {id:"piani",       l:"Piani",       icon:"🔄"},
-  {id:"assets",      l:"Asset",       icon:"⚙"},
-  {id:"utenti",      l:"Utenti",      icon:"👥"},
-  {id:"gruppi",      l:"Gruppi",      icon:"🗂"},
-  {id:"statistiche", l:"Statistiche", icon:"📊"},
-  {id:"kanban",      l:"Kanban",      icon:"🗂"},
-  {id:"azienda",     l:"Azienda",     icon:"🏛"},
-];
-
-export function MobileNav({ vista, sV }) {
+export function MobileNav({ vista, sV, tabs=[] }) {
   const [drawer, setDrawer] = useState(false);
-  const inDrawer = DRAWER_TABS.some(t=>t.id===vista);
+  // Prime 4 tab vanno nel bottom bar, le altre nel drawer
+  const primary = tabs.slice(0, 4);
+  const drawer_tabs = tabs.slice(4);
+  const inDrawer = drawer_tabs.some(t=>t.id===vista);
 
   return (
     <>
       <nav className="bottom-nav">
-        {PRIMARY_TABS.map(t=>(
+        {primary.map(t=>(
           <button key={t.id} className={"bottom-nav-btn"+(vista===t.id?" active":"")}
             onClick={()=>{ sV(t.id); setDrawer(false); }}>
             <span className="bottom-nav-icon">{t.icon}</span>
             <span className="bottom-nav-label">{t.l}</span>
           </button>
         ))}
-        <button className={"bottom-nav-btn"+(inDrawer||drawer?" active":"")}
-          onClick={()=>setDrawer(d=>!d)}>
-          <span className="bottom-nav-icon">{inDrawer?"✓":"≡"}</span>
-          <span className="bottom-nav-label">{inDrawer?DRAWER_TABS.find(t=>t.id===vista)?.l:"Altro"}</span>
-        </button>
+        {drawer_tabs.length > 0 && (
+          <button className={"bottom-nav-btn"+(inDrawer||drawer?" active":"")}
+            onClick={()=>setDrawer(d=>!d)}>
+            <span className="bottom-nav-icon">{inDrawer?"✓":"≡"}</span>
+            <span className="bottom-nav-label">{inDrawer?drawer_tabs.find(t=>t.id===vista)?.l:"Altro"}</span>
+          </button>
+        )}
       </nav>
 
       {drawer&&(
@@ -43,7 +31,7 @@ export function MobileNav({ vista, sV }) {
           <div className="mobile-drawer-overlay" onClick={()=>setDrawer(false)} />
           <div className="mobile-drawer">
             <div className="mobile-drawer-handle" />
-            {DRAWER_TABS.map(t=>(
+            {drawer_tabs.map(t=>(
               <button key={t.id} className={"mobile-drawer-item"+(vista===t.id?" active":"")}
                 onClick={()=>{ sV(t.id); setDrawer(false); }}>
                 <span className="mobile-drawer-icon">{t.icon}</span>
@@ -56,4 +44,3 @@ export function MobileNav({ vista, sV }) {
     </>
   );
 }
-

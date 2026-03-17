@@ -664,6 +664,7 @@ export default function App() {
       )}
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
+      <MobileNav vista={vista} sV={sV} tabs={tabsVisibili} />
       {modalM && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori}
