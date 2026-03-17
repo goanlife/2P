@@ -18,6 +18,7 @@ import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./com
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
+import { ALL_TABS } from "./components/ConfigurazioneMenu";
 import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
 import { Dashboard } from "./components/DashboardMain";
 
@@ -48,19 +49,7 @@ const TIPO_OP = {
 };
 const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
 
-const TABS = [
-  {id:"dashboard",   l:"Dashboard",    icon:"◈"},
-  {id:"manutenzioni",l:"Manutenzioni", icon:"⚡"},
-  {id:"piani",       l:"Piani",        icon:"🔄"},
-  {id:"calendario",  l:"Calendario",   icon:"📅"},
-  {id:"assets",      l:"Asset",        icon:"⚙"},
-  {id:"utenti",      l:"Utenti",       icon:"👥"},
-  {id:"gruppi",      l:"Gruppi",       icon:"🗂"},
-  {id:"clienti",     l:"Clienti",      icon:"🏢"},
-  {id:"statistiche", l:"Statistiche",  icon:"📊"},
-  {id:"kanban",      l:"Kanban",        icon:"🗂"},
-  {id:"azienda",     l:"Azienda",       icon:"🏛"},
-];
+// TABS ora provengono da ConfigurazioneMenu.ALL_TABS
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
@@ -145,6 +134,7 @@ export default function App() {
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
   const [sidebarOpen, setSidebar] = useState(false);
+  const [menuConfig, setMenuConfig] = useState({}); // gruppoId → Set<tabId>
   const [confirmDlg, setConfirmDlg] = useState(null); // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
@@ -161,6 +151,38 @@ export default function App() {
 
   // Apply default theme on mount
   useEffect(() => { applyTheme("navy"); }, []);
+
+  // Carica configurazione menu quando cambiano i gruppi dell'utente
+  useEffect(() => {
+    if (!tenant?.id) return;
+    supabase.from("menu_config").select("*").eq("tenant_id", tenant.id)
+      .then(({ data }) => {
+        const mmap = {};
+        (data || []).forEach(r => {
+          if (!mmap[r.gruppo_id]) mmap[r.gruppo_id] = new Set();
+          if (r.visibile) mmap[r.gruppo_id].add(r.tab_id);
+        });
+        setMenuConfig(mmap);
+      });
+  }, [tenant?.id, gOps.length]);
+
+  // Calcola i tab visibili per l'utente corrente
+  const tabsVisibili = (() => {
+    // Admin vede sempre tutto
+    if (ruoloTenant === "admin") return ALL_TABS;
+    // Nessun gruppo configurato → tutto visibile
+    if (!gOps.length || !Object.keys(menuConfig).length) return ALL_TABS;
+    // Unione dei tab visibili in tutti i gruppi dell'utente
+    const mieGruppi = gOps.filter(go => go.operatoreId === Number(operatori.find(o => o.userId === uid())?.id));
+    if (!mieGruppi.length) return ALL_TABS;
+    const visibili = new Set();
+    mieGruppi.forEach(go => {
+      const cfg = menuConfig[go.gruppoId];
+      if (!cfg) { ALL_TABS.forEach(t => visibili.add(t.id)); }
+      else cfg.forEach(id => visibili.add(id));
+    });
+    return ALL_TABS.filter(t => visibili.has(t.id));
+  })();
 
   // Keyboard shortcut: Ctrl+K / Cmd+K per ricerca globale
   useEffect(() => {
@@ -505,7 +527,7 @@ export default function App() {
 
         {/* ── Nav ── */}
         <nav className="sb-nav">
-          {TABS.map(t=>(
+          {tabsVisibili.map(t=>(
             <button key={t.id} className={"sb-item"+(vista===t.id?" active":"")}
               onClick={()=>{ sV(t.id); setSidebar(false); }}>
               <span className="sb-icon">{t.icon}</span>
@@ -579,7 +601,7 @@ export default function App() {
         {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}
         {vista==="statistiche"  && <Statistiche man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onMod={apriModM} />}
-        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} />}
+        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
       </main>
 
       {chiudiModal && (

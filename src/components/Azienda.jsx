@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
 import { CatalogoRicambi } from "./GestioneRicambi"
+import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
-export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate }) {
+export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate, gruppi=[] }) {
   const [tab, setTab] = useState("info")
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -151,7 +152,7 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
 
       {/* Tabs */}
       <div style={st.tabs}>
-        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"]].map(([id, label]) =>
+        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"], ["menu","🎛 Menu"]].map(([id, label]) =>
           <button key={id} style={st.tab(tab===id)} onClick={() => setTab(id)}>{label}</button>
         )}
       </div>
@@ -272,6 +273,13 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
       {tab === "ricambi" && (
         <div style={st.card}>
           <CatalogoRicambi tenantId={tenant?.id} />
+        </div>
+      )}
+
+      {/* Tab Menu */}
+      {tab === "menu" && (
+        <div style={st.card}>
+          <ConfigurazioneMenu gruppi={gruppi} tenantId={tenant?.id} />
         </div>
       )}
 
