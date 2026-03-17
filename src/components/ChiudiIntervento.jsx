@@ -208,6 +208,22 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
             </div>
           )}
 
+          {tab === "checklist" && (
+            <div style={{ padding: "4px 0" }}>
+              <ChecklistIntervento
+                manutenzione={{...manutenzione, numero_intervento: manutenzione.numeroIntervento||1}}
+                stato={manutenzione.stato}
+                onProgressChange={setChecklistProgress}
+              />
+            </div>
+          )}
+
+          {tab === "ricambi" && (
+            <div style={{ padding: "4px 0" }}>
+              <InterventoRicambi manutenzioneId={manutenzione.id} readOnly={false} />
+            </div>
+          )}
+
           {tab === "firma" && (
             <div style={{ display: "grid", gap: 12 }}>
               <div style={{ fontSize: 13, color: "var(--text-2)", fontWeight: 500 }}>
