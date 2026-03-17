@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { ChecklistIntervento } from "./PianoChecklist";
-import { Av, AvvisoConflitto, Field, Modal, Overlay } from "./ui/Atoms";
+import { AvvisoConflitto, Field, Modal, Overlay } from "./ui/Atoms";
 
 function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
   return (manutenzioni||[]).filter(m=>m.operatoreId===Number(operatoreId)&&m.data===data&&m.stato!=="completata"&&m.id!==escludiId);

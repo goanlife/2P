@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
-import { Av, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
+import { AvatarComp, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { InterventoRicambi } from "./GestioneRicambi";
 
@@ -119,7 +119,7 @@ export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, on
           return (
             <div key={m.id} className={"maint-row"+(haConf?" conflict":"")}>
               <div className="maint-pri-bar" style={{background:PRI_COLOR[m.priorita]||"#ccc"}} />
-              {op&&<Av nome={op.nome} col={op.col} size={36} />}
+              {op&&<AvatarComp nome={op.nome} col={op.col} size={36} />}
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
                   {haConf&&<span style={{fontSize:12}}>⚠️</span>}

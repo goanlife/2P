@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { SelettoreTema, TEMI} from "./AllegatiTemi";
-import { Av, Overlay, Modal, Field } from "./ui/Atoms";
+import { AvatarComp, Overlay, Modal, Field } from "./ui/Atoms";
 
 const FREQUENZE = [
   { v:"settimanale", l:"Settimanale", giorni:7   },
@@ -379,7 +379,7 @@ export function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, on
             <div key={op.id} className="op-card">
               <div className="op-card-accent" style={{background:op.col}} />
               <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14,marginTop:4}}>
-                <Av nome={op.nome} col={op.col} size={44} />
+                <AvatarComp nome={op.nome} col={op.col} size={44} />
                 <div style={{flex:1}}>
                   <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:14}}>{op.nome}</div>
                   <div style={{display:"flex",gap:6,alignItems:"center",marginTop:3}}>
@@ -526,7 +526,7 @@ export function ModalAssegnaGruppo({ gruppo, operatori, clienti, gOps, gSiti, on
             return (
               <label key={o.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",borderRadius:"var(--radius-sm)",border:`1px solid ${checked?gruppo.col:"var(--border)"}`,background:checked?gruppo.col+"10":"var(--surface)",cursor:"pointer",transition:"all .15s"}}>
                 <input type="checkbox" checked={checked} onChange={()=>toggleOp(o.id)} style={{width:15,height:15,cursor:"pointer"}} />
-                <Av nome={o.nome} col={o.col} size={28} />
+                <AvatarComp nome={o.nome} col={o.col} size={28} />
                 <div style={{flex:1}}><div style={{fontWeight:600,fontSize:13}}>{o.nome}</div><div style={{fontSize:11,color:"var(--text-3)"}}>{o.spec}</div></div>
                 <span className="badge" style={cfg.style}>{cfg.label}</span>
               </label>

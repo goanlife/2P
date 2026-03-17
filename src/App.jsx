@@ -11,7 +11,7 @@ import { KanbanView } from "./components/KanbanView";
 import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
 import Onboarding from "./components/Onboarding";
 import Azienda from "./components/Azienda";
-import { Av, Field, Toast, ConflictiBanner, ConfirmDialog, Overlay, Modal, AvvisoConflitto } from "./components/ui/Atoms";
+import { Field, Toast, ConflictiBanner, ConfirmDialog, Overlay, Modal, AvvisoConflitto } from "./components/ui/Atoms";
 import { ModalRipianifica, PopupGiorno, Calendario } from "./components/CalendarioView";
 import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGruppo, ModalAssegnaGruppo, GestioneGruppi, ModalCreaAccesso } from "./components/GestioneUtenti";
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
@@ -49,7 +49,6 @@ const TIPO_OP = {
 };
 const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
 
-// TABS ora provengono da ConfigurazioneMenu.ALL_TABS
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
@@ -582,7 +581,7 @@ export default function App() {
           </button>
           <div className="mini-topbar-center">
             {tenant?.logo_url && <img src={tenant.logo_url} alt="" style={{height:24,maxWidth:64,objectFit:"contain",borderRadius:3,opacity:.9}} />}
-            <span className="mini-topbar-title">{TABS.find(t=>t.id===vista)?.icon} {TABS.find(t=>t.id===vista)?.l}</span>
+            <span className="mini-topbar-title">{tabsVisibili.find(t=>t.id===vista)?.icon} {tabsVisibili.find(t=>t.id===vista)?.l}</span>
           </div>
           <div className="mini-topbar-right">
             <CampanellaNotifiche notifiche={notifiche} onNavigate={navigateTo} />

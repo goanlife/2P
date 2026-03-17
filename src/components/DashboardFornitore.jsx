@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 const isoDate = d => { const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; };
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-function Av({ nome, col, size=36 }) {
+function AvatarComp({ nome, col, size=36 }) {
   return <div style={{width:size,height:size,borderRadius:"50%",background:(col||"#888")+"22",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:Math.round(size*.34),color:col||"#888",flexShrink:0}}>{(nome||"?").split(" ").map(p=>p[0]).join("").slice(0,2)}</div>;
 }
 
@@ -126,7 +126,7 @@ export function DashboardFornitore({ me, man, clienti, assets, onStato, onApriCh
         padding: "20px 24px",
         display: "flex", alignItems: "center", gap: 16,
       }}>
-        <Av nome={me.nome} col={me.col} size={52} />
+        <AvatarComp nome={me.nome} col={me.col} size={52} />
         <div>
           <div style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 20 }}>
             Ciao, {me.nome.split(" ")[0]} 👋

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 
 // ─── Atoms ───────────────────────────────────────────────────────────────
-export function Av({ nome, col, size=36 }) {
+export function AvatarComp({ nome, col, size=36 }) {
   const initials = (nome||"?").split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase();
   return <div className="av" style={{width:size,height:size,background:(col||"#888")+"22",color:col||"#888",fontSize:Math.round(size*.34)}}>{initials}</div>;
 }

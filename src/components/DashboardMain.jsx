@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Av } from "./ui/Atoms";
+import { AvatarComp } from "./ui/Atoms";
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
@@ -50,7 +50,7 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
               style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",borderBottom:"1px solid var(--border)",cursor:"pointer",transition:"background .12s",borderRadius:4}}
               onMouseEnter={e=>e.currentTarget.style.background="var(--surface-2)"}
               onMouseLeave={e=>e.currentTarget.style.background=""}>
-              <Av nome={op?.nome||"?"} col={op?.col||"#888"} size={32} />
+              <AvatarComp nome={op?.nome||"?"} col={op?.col||"#888"} size={32} />
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.titolo||"(senza titolo)"}</div>
                 <div style={{fontSize:11,color:"var(--text-3)",marginTop:1}}>{fmtData(m.data)} · {m.durata}min{cl?` · ${cl.rs}`:""}</div>
@@ -63,7 +63,7 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
         </div>
         <div className="card">
           <div className="section-head"><span className="section-title">🔧 Carico fornitori</span></div>
-          {carichi.map(op=>(<div key={op.id} style={{marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><div style={{display:"flex",alignItems:"center",gap:8}}><Av nome={op.nome} col={op.col} size={28} /><span style={{fontSize:13,fontWeight:600}}>{op.nome}</span></div><span style={{fontSize:11,color:"var(--text-3)",fontWeight:500}}>{op.att} att · {op.ore}h</span></div><div className="progress-track"><div className="progress-fill" style={{width:`${(op.ore/maxOre)*100}%`,background:op.col}} /></div></div>))}
+          {carichi.map(op=>(<div key={op.id} style={{marginBottom:16}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><div style={{display:"flex",alignItems:"center",gap:8}}><AvatarComp nome={op.nome} col={op.col} size={28} /><span style={{fontSize:13,fontWeight:600}}>{op.nome}</span></div><span style={{fontSize:11,color:"var(--text-3)",fontWeight:500}}>{op.att} att · {op.ore}h</span></div><div className="progress-track"><div className="progress-fill" style={{width:`${(op.ore/maxOre)*100}%`,background:op.col}} /></div></div>))}
           {carichi.length===0&&<div style={{fontSize:13,color:"var(--text-3)",textAlign:"center",padding:"12px 0"}}>Nessun fornitore attivo</div>}
         </div>
         <div className="card">
