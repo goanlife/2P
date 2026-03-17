@@ -41,7 +41,7 @@ function parseRow(row, colMap) {
   };
 }
 
-export function ImportaClienti({ tenantId, onDone }) {
+export function ImportaClienti({ tenantId, userId, onDone }) {
   const [step, setStep]       = useState("upload");
   const [rows, setRows]       = useState([]);
   const [errors, setErrors]   = useState([]);
@@ -109,8 +109,9 @@ export function ImportaClienti({ tenantId, onDone }) {
     const BATCH = 100;
     let imported = 0;
     for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i + BATCH).map(r => ({ ...r, tenant_id: tenantId }));
-      await supabase.from("clienti").insert(batch);
+      const batch = rows.slice(i, i + BATCH).map(r => ({ ...r, tenant_id: tenantId, user_id: userId }));
+      const { error } = await supabase.from("clienti").insert(batch);
+      if (error) { setErrors([`Errore import: ${error.message}`]); setStep("upload"); setImporting(false); return; }
       imported += batch.length;
       setProgress(Math.round(imported / rows.length * 100));
     }

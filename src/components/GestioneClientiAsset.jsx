@@ -98,7 +98,7 @@ export function ModalCliente({ ini, onClose, onSalva, userId }) {
   );
 }
 
-export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel, tenantId, onImportDone }) {
+export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel, tenantId, userId, onImportDone }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [showImport,setShowImport]=useState(false);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
   const BG=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];const TX=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
@@ -113,7 +113,7 @@ export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, o
       </div>
       {showImport&&(
         <div style={{border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",marginBottom:4}}>
-          <ImportaClienti tenantId={tenantId} onDone={()=>{setShowImport(false);onImportDone&&onImportDone();}} />
+          <ImportaClienti tenantId={tenantId} userId={userId} onDone={()=>{setShowImport(false);onImportDone&&onImportDone();}} />
         </div>
       )}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
