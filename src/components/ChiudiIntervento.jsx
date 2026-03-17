@@ -79,7 +79,8 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
 
   const salva = async () => {
     setLoading(true);
-    let firmaSvg = manutenzione.firmaSvg || "";
+    try {
+        let firmaSvg = manutenzione.firmaSvg || "";
     if (hasFirma && canvasRef.current) {
       firmaSvg = canvasRef.current.toDataURL("image/png");
     }
@@ -92,7 +93,9 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
       firma_svg:     firmaSvg,
       chiuso_at:     new Date().toISOString(),
     });
+        } finally {
     setLoading(false);
+    }
     onClose();
   };
 
@@ -157,7 +160,7 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
                     Ore effettive *
                   </label>
                   <input type="number" value={ore} onChange={e => setOre(e.target.value)}
-                    step=".5" min="0" style={{
+                    step=".5" min="0" style={{borderColor: !ore ? "#F59E0B" : undefined,
                       width: "100%", boxSizing: "border-box", padding: "10px 12px",
                       border: "1px solid var(--border-dim)", borderRadius: "var(--radius-sm)",
                       fontSize: 14, fontFamily: "var(--font-head)", fontWeight: 700,
@@ -167,6 +170,7 @@ export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalv
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: ".04em", display: "block", marginBottom: 5 }}>
                     Durata pianificata
                   </label>
+                  {!ore && <div style={{fontSize:11,color:"#B45309",marginTop:3,fontWeight:600}}>⚠ Inserisci le ore per statistiche accurate</div>}
                   <div style={{ padding: "10px 12px", background: "var(--surface-2)", borderRadius: "var(--radius-sm)", fontSize: 14, color: "var(--text-3)", border: "1px solid var(--border)" }}>
                     {Math.round((manutenzione.durata || 60) / 60 * 10) / 10} ore
                   </div>

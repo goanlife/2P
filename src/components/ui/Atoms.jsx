@@ -54,6 +54,11 @@ export function ConfirmDialog({ msg, onConfirm, onCancel }) {
 }
 
 export function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, saveOk=true, children }) {
+  React.useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
   return (
     <Overlay>
       <div className="modal-box">

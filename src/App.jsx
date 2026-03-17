@@ -67,7 +67,7 @@ const toDbM  = (f,uid,tid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stat
 const toDbC  = (f,uid,tid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
-const toDbAss = (f,uid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid });
+const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", user_id:uid });
 const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
 
@@ -83,13 +83,14 @@ const LIVELLI_PIANO = [
   { v:"L2",       l:"L2 — Medio",  col:"#F59E0B", desc:"Controllo completo (es. mensile)" },
   { v:"L3",       l:"L3 — Completo", col:"#EF4444", desc:"Revisione totale (es. annuale)" },
 ];
-function generaOccorrenze(piano, dataInizio, mesi=12) {
+function generaOccorrenze(piano, dataInizio, mesi=12, skipPassate=false) {
   if (!dataInizio) return [];
   const freq = FREQUENZE.find(f=>f.v===piano.frequenza); if (!freq) return [];
   const fine = (piano.dataFine&&piano.dataFine>dataInizio) ? piano.dataFine : addMonths(dataInizio, mesi);
   const occ=[]; let cur=dataInizio;
+  const oggi = new Date().toISOString().split("T")[0];
   while (cur<=fine && occ.length<200) {
-    occ.push(cur);
+    if (!skipPassate || cur >= oggi) occ.push(cur);
     const mult={mensile:1,bimestrale:2,trimestrale:3,semestrale:6,annuale:12}[piano.frequenza];
     cur = mult ? addMonths(cur,mult) : addDays(cur,freq.giorni);
   }
@@ -150,6 +151,24 @@ export default function App() {
 
   // Apply default theme on mount
   useEffect(() => { applyTheme("navy"); }, []);
+
+  // Aggiorna automaticamente stato → scaduta per attività passate non completate
+  useEffect(() => {
+    if (!tenant?.id || !man.length) return;
+    const oggi = new Date().toISOString().split("T")[0];
+    const daAggiornare = man.filter(m => m.stato === "pianificata" && m.data < oggi);
+    if (!daAggiornare.length) return;
+    // Aggiorna in batch nel DB
+    supabase.from("manutenzioni")
+      .update({ stato: "scaduta" })
+      .eq("stato", "pianificata")
+      .lt("data", oggi)
+      .then(() => {
+        sMan(prev => prev.map(m =>
+          m.stato === "pianificata" && m.data < oggi ? { ...m, stato: "scaduta" } : m
+        ));
+      });
+  }, [tenant?.id, man.length]);
 
   // Carica configurazione menu quando cambiano i gruppi dell'utente
   useEffect(() => {
@@ -285,7 +304,7 @@ export default function App() {
   };
   const UID = session?.user?.id || "";
   const BATCH = 50;
-  const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento });
+  const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento, ...(tenant?.id&&{tenant_id:tenant.id}) });
 
   const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };

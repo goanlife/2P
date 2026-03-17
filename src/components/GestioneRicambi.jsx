@@ -15,13 +15,16 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
 
   const carica = async () => {
     setLoading(true);
-    const [{ data: r }, { data: c }] = await Promise.all([
+    try {
+        const [{ data: r }, { data: c }] = await Promise.all([
       supabase.from("intervento_ricambi").select("*, ricambi(nome,codice,unita)").eq("manutenzione_id", manutenzioneId).order("created_at"),
       supabase.from("ricambi").select("*").order("nome"),
     ]);
     setRighe(r || []);
     setCatalogo(c || []);
+        } finally {
     setLoading(false);
+    }
   };
 
   const aggiungi = async () => {

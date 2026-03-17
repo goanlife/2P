@@ -97,10 +97,33 @@ export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, on
   const [fC,sfC]=useState("tutti");
   const [cerca,sCerca]=useState("");
   const [fPri,sfPri]=useState(initialFilters?.priorita||"tutti");
-  const filtrate=useMemo(()=>man.filter(m=>{if(fT!=="tutti"&&m.tipo!==fT)return false;if(fS!=="tutti"&&m.stato!==fS)return false;if(fC!=="tutti"&&String(m.clienteId)!==fC)return false;if(fPri!=="tutti"&&m.priorita!==fPri)return false;if(cerca&&!m.titolo.toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[man,fT,fS,fC,fPri,cerca]);
+  const [ordinamento, setOrd] = useState("data");
+  const PRIOR = { urgente:0, alta:1, media:2, bassa:3 };
+  const STATO_ORD = { scaduta:0, inCorso:1, pianificata:2, completata:3 };
+  const filtrate=useMemo(()=>{
+    const r = man.filter(m=>{
+      if(fT!=="tutti"&&m.tipo!==fT)return false;
+      if(fS!=="tutti"&&m.stato!==fS)return false;
+      if(fC!=="tutti"&&String(m.clienteId)!==fC)return false;
+      if(fPri!=="tutti"&&m.priorita!==fPri)return false;
+      if(cerca&&!m.titolo.toLowerCase().includes(cerca.toLowerCase()))return false;
+      return true;
+    });
+    return [...r].sort((a,b)=>{
+      if(ordinamento==="data") return (a.data||"")>(b.data||"")?1:-1;
+      if(ordinamento==="priorita") return (PRIOR[a.priorita]??2)-(PRIOR[b.priorita]??2);
+      if(ordinamento==="stato") return (STATO_ORD[a.stato]??2)-(STATO_ORD[b.stato]??2);
+      return 0;
+    });
+  },[man,fT,fS,fC,fPri,cerca,ordinamento]);
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
+        <select value={ordinamento} onChange={e=>setOrd(e.target.value)} style={{padding:"6px 8px",border:"1px solid var(--border-dim)",borderRadius:6,fontSize:12,background:"var(--surface)"}}>
+          <option value="data">📅 Data</option>
+          <option value="stato">🚦 Stato</option>
+          <option value="priorita">⚡ Priorità</option>
+        </select>
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca manutenzione..." style={{flex:1,minWidth:140}} />
         <select value={fT} onChange={e=>sfT(e.target.value)}><option value="tutti">Tutti i tipi</option><option value="ordinaria">Ordinaria</option><option value="straordinaria">Straordinaria</option></select>
         <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
