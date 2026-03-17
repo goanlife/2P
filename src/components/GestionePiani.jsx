@@ -86,7 +86,7 @@ export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manu
   return (
     <Modal title={ini?"Modifica assegnazione":"Nuova assegnazione"} onClose={onClose}
       onSave={()=>onSalva({...f,pianoId:Number(piano?.id||f.pianoId),operatoreId:f.operatoreId?Number(f.operatoreId):null,clienteId:f.clienteId?Number(f.clienteId):null,assetId:f.assetId?Number(f.assetId):null})}
-      saveOk={!!f.dataInizio && !!f.assetId} saveColor="#059669"
+      saveOk={!!f.dataInizio && !!f.assetId && (!f.dataFine || f.dataFine > f.dataInizio)} saveColor="#059669"
       saveLabel={ini?"Aggiorna":"Assegna e genera attività"}>
       {piano && (
         <div style={{background:"var(--surface-2)",border:"1px solid var(--amber)",borderRadius:"var(--radius-sm)",padding:"10px 14px",marginBottom:4}}>

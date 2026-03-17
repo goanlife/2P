@@ -71,9 +71,13 @@ export function ConfigurazioneMenu({ gruppi, tenantId }) {
       tab_id:    t.id,
       visibile:  (configs[selGruppo] ?? new Set(ALL_TABS.map(t => t.id))).has(t.id),
     }));
-    await supabase.from("menu_config").insert(rows);
+    const { error } = await supabase.from("menu_config").insert(rows);
 
     setSaving(false);
+    if (error) {
+      alert("Errore salvataggio: " + error.message);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

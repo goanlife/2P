@@ -146,7 +146,7 @@ export function Calendario({ man, clienti, assets, operatori, onRipianifica, onN
     <div style={{display:"grid",gap:12}}>
       <div className="cal-header">
         <button className="btn-sm" onClick={()=>{if(mese===0){sM(11);sA(a=>a-1);}else sM(m=>m-1);}}>←</button>
-        <span className="cal-month">{MESI[mese]} {anno}</span>
+        <span className="cal-month" style={{fontWeight:800,fontSize:18,minWidth:180,textAlign:"center"}}>{MESI[mese]} {anno}</span>
         <button className="btn-sm" onClick={()=>{if(mese===11){sM(0);sA(a=>a+1);}else sM(m=>m+1);}}>→</button>
         <button className="btn-sm" onClick={()=>{sM(oggi.getMonth());sA(oggi.getFullYear());}}>Oggi</button>
         <div style={{flex:1}} />

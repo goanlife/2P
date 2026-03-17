@@ -72,8 +72,12 @@ const toDbOp    = (f,uid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378AD
 const toDbGruppo = (f,uid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid });
 
 // ─── Utils ────────────────────────────────────────────────────────────────
-const fmtData  = d => d ? new Date(d).toLocaleDateString("it-IT") : "—";
-const isoDate  = d => { const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; };
+const fmtData  = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+const isoDate  = d => {
+  if (typeof d === "string" && d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
+  const dt = new Date(d); 
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+};
 const addDays  = (iso,n) => { const d=new Date(iso); d.setDate(d.getDate()+n); return isoDate(d); };
 const addMonths= (iso,n) => { const d=new Date(iso); d.setMonth(d.getMonth()+n); return isoDate(d); };
 
@@ -149,8 +153,12 @@ export default function App() {
     }
   };
 
-  // Apply default theme on mount
-  useEffect(() => { applyTheme("navy"); }, []);
+  // Apply default theme on mount - legge da localStorage per evitare flickering
+  useEffect(() => {
+    const saved = localStorage.getItem("manumanTema") || "navy";
+    applyTheme(saved);
+    setTemaCorrente(saved);
+  }, []);
 
   // Aggiorna automaticamente stato → scaduta per attività passate non completate
   useEffect(() => {
@@ -299,6 +307,7 @@ export default function App() {
   const uid = () => session?.user?.id;
   const caricaTutteLeManut = async () => {
     setManCaricaTutto(true);
+    setManTotale(null); // nascondi banner
     const {data} = await supabase.from("manutenzioni").select("*").order("data",{ascending:false});
     if(data) sMan(data.map(mapM));
   };
@@ -306,8 +315,8 @@ export default function App() {
   const BATCH = 50;
   const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento, ...(tenant?.id&&{tenant_id:tenant.id}) });
 
-  const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single(); if(!error)sMan(p=>[...p,mapM(data)]); };
-  const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(!error)sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
+  const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single(); if(error){notify("Errore creazione: "+error.message);return;} sMan(p=>[...p,mapM(data)]); };
+  const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(error){notify("Errore modifica: "+error.message);return;} sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
   const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
   const statoM = async (id,stato) => { await supabase.from("manutenzioni").update({stato}).eq("id",id); sMan(p=>p.map(m=>m.id===id?{...m,stato}:m)); };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
@@ -466,17 +475,18 @@ export default function App() {
     const { error } = await supabase.from("manutenzioni").update({
       stato, note_chiusura, ore_effettive, parti_usate, firma_svg, chiuso_at,
     }).eq("id", id);
-    if (!error) {
-      sMan(p => p.map(m => m.id === id ? {
-        ...m, stato, noteChiusura: note_chiusura,
-        oreEffettive: ore_effettive, partiUsate: parti_usate,
-        firmaSvg: firma_svg, chiusoAt: chiuso_at,
-      } : m));
-      // Log
-      const meOp = operatori.find(o => o.email === session?.user?.email);
-      await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOp?.nome || "", uid());
-      notify("Intervento chiuso con successo ✅", "success");
+    if (error) {
+      notify("Errore salvataggio: " + error.message, "error");
+      return;
     }
+    sMan(p => p.map(m => m.id === id ? {
+      ...m, stato, noteChiusura: note_chiusura,
+      oreEffettive: ore_effettive, partiUsate: parti_usate,
+      firmaSvg: firma_svg, chiusoAt: chiuso_at,
+    } : m));
+    const meOp = operatori.find(o => o.email === session?.user?.email);
+    await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOp?.nome || "", uid());
+    notify("Intervento chiuso con successo ✅", "success");
   };
   const navigateTo = (tab, filters={}) => {
     setFiltroMan(filters);
@@ -659,10 +669,22 @@ export default function App() {
               <button className="modal-close" onClick={()=>setTemaModal(false)}>✕</button>
             </div>
             <div style={{display:"grid",gap:14}}>
-              <SelettoreTema value={temaCorrente} onChange={t=>{setTemaCorrente(t);applyTheme(t);}} />
+              <SelettoreTema value={temaCorrente} onChange={async t=>{
+  setTemaCorrente(t);
+  applyTheme(t);
+  localStorage.setItem("manumanTema", t);
+  const meOp = operatori.find(o=>o.email===session?.user?.email);
+  if(meOp) await supabase.from("operatori").update({tema:t}).eq("id",meOp.id);
+}} />
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
                 {TEMI.map(t=>(
-                  <div key={t.id} onClick={()=>{setTemaCorrente(t.id);applyTheme(t.id);}}
+                  <div key={t.id} onClick={async()=>{
+  setTemaCorrente(t.id);
+  applyTheme(t.id);
+  localStorage.setItem("manumanTema", t.id);
+  const meOp2 = operatori.find(o=>o.email===session?.user?.email);
+  if(meOp2) await supabase.from("operatori").update({tema:t.id}).eq("id",meOp2.id);
+}}
                     style={{padding:"10px 12px",borderRadius:"var(--radius-sm)",border:`2px solid ${temaCorrente===t.id?"var(--text-1)":"var(--border)"}`,cursor:"pointer",transition:"all .15s",background:temaCorrente===t.id?"var(--surface-2)":"var(--surface)"}}>
                     <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:3}}>
                       <div style={{width:14,height:14,borderRadius:3,background:t.top}} />

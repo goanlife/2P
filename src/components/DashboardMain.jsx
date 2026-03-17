@@ -70,7 +70,7 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
           <div className="section-head"><span className="section-title">⚙ Asset per stato</span></div>
           {[{s:"attivo",l:"Attivi",c:"#059669"},{s:"manutenzione",l:"In manutenzione",c:"#D97706"},{s:"inattivo",l:"Inattivi",c:"#DC2626"}].map(({s:st,l,c})=>{const n=assets.filter(a=>a.stato===st).length;return n>0?<div key={st} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 0",borderBottom:"1px solid var(--border)"}}><span style={{fontSize:13,color:"var(--text-2)"}}>{l}</span><span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,color:c}}>{n}</span></div>:null;})}
           <div style={{marginTop:16}}><div className="section-title" style={{marginBottom:10}}>👥 Utenti per tipo</div>
-            {["fornitore","cliente","interno"].map(t=>{const n=operatori.filter(o=>o.tipo===t).length;const cfg=TIPO_OP[t];return <div key={t} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}><span className="badge" style={cfg.style}>{cfg.label}</span><span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>{n}</span></div>;})}
+            {["fornitore","cliente","interno"].map(t=>{const n=operatori.filter(o=>o.tipo===t).length;const cfg=TIPO_OP[t]||{label:t,style:{}};return <div key={t} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid var(--border)"}}><span className="badge" style={cfg.style}>{cfg.label}</span><span style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>{n}</span></div>;})}
           </div>
         </div>
       </div>

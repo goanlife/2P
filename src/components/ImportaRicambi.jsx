@@ -119,7 +119,11 @@ export function ImportaRicambi({ tenantId, onDone }) {
 
     for (let i = 0; i < rows.length; i += BATCH) {
       const batch = rows.slice(i, i + BATCH).map(r => ({ ...r, tenant_id: tenantId }));
-      await supabase.from("ricambi").upsert(batch, { onConflict: "tenant_id,codice", ignoreDuplicates: false });
+      // Separa record con codice (upsert) da quelli senza (insert)
+      const conCodice = batch.filter(r => r.codice);
+      const senzaCodice = batch.filter(r => !r.codice);
+      if (conCodice.length) await supabase.from("ricambi").upsert(conCodice, { onConflict: "tenant_id,codice" });
+      if (senzaCodice.length) await supabase.from("ricambi").insert(senzaCodice);
       imported += batch.length;
       setProgress(Math.round(imported / rows.length * 100));
     }
