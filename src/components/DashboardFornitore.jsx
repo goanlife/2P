@@ -11,6 +11,56 @@ const traGiorni = (n) => {
   const d = new Date(); d.setDate(d.getDate() + n); return isoDate(d);
 };
 
+function AttivaCard({ m, clienti, assets, onStato, onChiudi, urgent }) {
+  const cl = clienti.find(c => c.id === m.clienteId);
+  const as = assets.find(a => a.id === m.assetId);
+
+  return (
+    <div style={{
+      border: `1px solid ${urgent ? "#FECACA" : "var(--border)"}`,
+      borderRadius: "var(--radius-sm)", padding: "12px 14px", marginBottom: 8,
+      background: urgent ? "#FFF5F5" : "var(--surface)",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <div style={{ width: 3, borderRadius: 99, background: PRI_COLOR[m.priorita] || "#ccc", alignSelf: "stretch", flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{m.titolo}</div>
+          <div style={{ fontSize: 12, color: "var(--text-3)", display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <span>📅 {fmtData(m.data)}</span>
+            <span>⏱ {m.durata} min</span>
+            {cl && <span style={{ color: "#7F77DD", fontWeight: 500 }}>🏢 {cl.rs}</span>}
+            {as && <span>⚙ {as.nome}</span>}
+          </div>
+        </div>
+      </div>
+      {/* Bottoni azione grandi — ottimizzati per touch */}
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        {m.stato === "pianificata" && (
+          <button onClick={() => onStato(m.id, "inCorso")}
+            style={{ flex: 1, padding: "10px", background: "#F59E0B", color: "white",
+              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            ▶ Avvia
+          </button>
+        )}
+        {m.stato === "inCorso" && (
+          <button onClick={() => onChiudi(m)}
+            style={{ flex: 1, padding: "10px", background: "#059669", color: "white",
+              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            ✓ Completa intervento
+          </button>
+        )}
+        {m.stato === "scaduta" && (
+          <button onClick={() => onStato(m.id, "inCorso")}
+            style={{ flex: 1, padding: "10px", background: "#EF4444", color: "white",
+              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            ▶ Avvia ora
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardFornitore({ me, man, clienti, assets, onStato, onApriChiudi }) {
   const [settimana, setSettimana] = useState(0); // 0=questa, 1=prossima
 
@@ -178,56 +228,6 @@ export function DashboardFornitore({ me, man, clienti, assets, onStato, onApriCh
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function AttivaCard({ m, clienti, assets, onStato, onChiudi, urgent }) {
-  const cl = clienti.find(c => c.id === m.clienteId);
-  const as = assets.find(a => a.id === m.assetId);
-
-  return (
-    <div style={{
-      border: `1px solid ${urgent ? "#FECACA" : "var(--border)"}`,
-      borderRadius: "var(--radius-sm)", padding: "12px 14px", marginBottom: 8,
-      background: urgent ? "#FFF5F5" : "var(--surface)",
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div style={{ width: 3, borderRadius: 99, background: PRI_COLOR[m.priorita] || "#ccc", alignSelf: "stretch", flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>{m.titolo}</div>
-          <div style={{ fontSize: 12, color: "var(--text-3)", display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <span>📅 {fmtData(m.data)}</span>
-            <span>⏱ {m.durata} min</span>
-            {cl && <span style={{ color: "#7F77DD", fontWeight: 500 }}>🏢 {cl.rs}</span>}
-            {as && <span>⚙ {as.nome}</span>}
-          </div>
-        </div>
-      </div>
-      {/* Bottoni azione grandi — ottimizzati per touch */}
-      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        {m.stato === "pianificata" && (
-          <button onClick={() => onStato(m.id, "inCorso")}
-            style={{ flex: 1, padding: "10px", background: "#F59E0B", color: "white",
-              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            ▶ Avvia
-          </button>
-        )}
-        {m.stato === "inCorso" && (
-          <button onClick={() => onChiudi(m)}
-            style={{ flex: 1, padding: "10px", background: "#059669", color: "white",
-              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            ✓ Completa intervento
-          </button>
-        )}
-        {m.stato === "scaduta" && (
-          <button onClick={() => onStato(m.id, "inCorso")}
-            style={{ flex: 1, padding: "10px", background: "#EF4444", color: "white",
-              border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            ▶ Avvia ora
-          </button>
-        )}
       </div>
     </div>
   );

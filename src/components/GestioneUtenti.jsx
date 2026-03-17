@@ -234,6 +234,107 @@ export function ModalUtente({ ini, onClose, onSalva }) {
 
 
 // ─── Gestione Utenti ──────────────────────────────────────────────────────
+export function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
+  const [email,  setEmail]  = useState(operatore.email||"");
+  const [pass,   setPass]   = useState("");
+  const [pass2,  setPass2]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err,    setErr]    = useState(null);
+  const [done,   setDone]   = useState(false);
+
+  const ok = email.trim() && pass.length>=6 && pass===pass2;
+
+  const crea = async () => {
+    setLoading(true); setErr(null);
+    try {
+      // Usa un client separato per non toccare la sessione corrente
+      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+      const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const res = await fetch(`${SUPA_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": ANON_KEY,
+        },
+        body: JSON.stringify({ email: email.trim(), password: pass }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error?.message || data.msg || "Errore registrazione");
+      }
+
+      const authUserId = data.user?.id || data.id;
+      await onSuccess(operatore.id, email.trim(), authUserId);
+      setDone(true);
+    } catch(e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Overlay>
+      <div className="modal-box" style={{width:"min(460px,96vw)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+          <div>
+            <div className="modal-title">🔑 Crea accesso</div>
+            <div style={{fontSize:12,color:"var(--text-3)",marginTop:3}}>{operatore.nome}</div>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {done ? (
+          <div style={{textAlign:"center",padding:"20px 0"}}>
+            <div style={{fontSize:40,marginBottom:12}}>✅</div>
+            <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,marginBottom:8}}>Accesso creato!</div>
+            <div style={{fontSize:13,color:"var(--text-2)",marginBottom:16}}>
+              <strong>{email}</strong> può ora accedere all'app.
+            </div>
+            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"12px 16px",fontSize:12,color:"var(--text-2)",textAlign:"left"}}>
+              <div style={{fontWeight:600,marginBottom:4}}>⚠ Comunica queste credenziali all'utente:</div>
+              <div>Email: <strong>{email}</strong></div>
+              <div>Password: <strong>{pass}</strong></div>
+              <div style={{marginTop:8,fontSize:11,color:"var(--text-3)"}}>Suggerisci di cambiarla al primo accesso.</div>
+            </div>
+            <button className="btn-primary" onClick={onClose} style={{marginTop:16,width:"100%"}}>Chiudi</button>
+          </div>
+        ) : (
+          <>
+            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:12,color:"var(--text-2)",marginBottom:16}}>
+              ℹ Crea le credenziali per permettere a <strong>{operatore.nome}</strong> di accedere all'app con la propria email e password.
+            </div>
+            <div style={{display:"grid",gap:14}}>
+              <Field label="Email *">
+                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} />
+              </Field>
+              <Field label="Password temporanea * (min. 6 caratteri)">
+                <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%"}} />
+              </Field>
+              <Field label="Conferma password *">
+                <input type="password" value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••" style={{width:"100%"}}
+                  onKeyDown={e=>e.key==="Enter"&&ok&&!loading&&crea()} />
+              </Field>
+              {pass&&pass2&&pass!==pass2&&(
+                <div style={{fontSize:12,color:"var(--red)",fontWeight:500}}>⚠ Le password non coincidono</div>
+              )}
+              {err&&<div style={{background:"var(--red-bg)",border:"1px solid var(--red-bd)",borderRadius:"var(--radius-sm)",padding:"10px 12px",fontSize:12,color:"var(--red)",fontWeight:500}}>❌ {err}</div>}
+            </div>
+            <div className="modal-footer">
+              <button onClick={onClose}>Annulla</button>
+              <button className="btn-primary" disabled={!ok||loading} onClick={crea}>
+                {loading?"Creazione...":"🔑 Crea accesso"}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </Overlay>
+  );
+}
+
 export function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, onSaveSiti, onCreaAccesso }) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
@@ -616,105 +717,3 @@ export function GestioneGruppi({ gruppi, operatori, clienti, man, gOps, gSiti, o
 
 
 // ─── Modal Crea Accesso ────────────────────────────────────────────────────
-export function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
-  const [email,  setEmail]  = useState(operatore.email||"");
-  const [pass,   setPass]   = useState("");
-  const [pass2,  setPass2]  = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err,    setErr]    = useState(null);
-  const [done,   setDone]   = useState(false);
-
-  const ok = email.trim() && pass.length>=6 && pass===pass2;
-
-  const crea = async () => {
-    setLoading(true); setErr(null);
-    try {
-      // Usa un client separato per non toccare la sessione corrente
-      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
-      const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const res = await fetch(`${SUPA_URL}/auth/v1/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": ANON_KEY,
-        },
-        body: JSON.stringify({ email: email.trim(), password: pass }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error?.message || data.msg || "Errore registrazione");
-      }
-
-      const authUserId = data.user?.id || data.id;
-      await onSuccess(operatore.id, email.trim(), authUserId);
-      setDone(true);
-    } catch(e) {
-      setErr(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Overlay>
-      <div className="modal-box" style={{width:"min(460px,96vw)"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-          <div>
-            <div className="modal-title">🔑 Crea accesso</div>
-            <div style={{fontSize:12,color:"var(--text-3)",marginTop:3}}>{operatore.nome}</div>
-          </div>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        {done ? (
-          <div style={{textAlign:"center",padding:"20px 0"}}>
-            <div style={{fontSize:40,marginBottom:12}}>✅</div>
-            <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16,marginBottom:8}}>Accesso creato!</div>
-            <div style={{fontSize:13,color:"var(--text-2)",marginBottom:16}}>
-              <strong>{email}</strong> può ora accedere all'app.
-            </div>
-            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"12px 16px",fontSize:12,color:"var(--text-2)",textAlign:"left"}}>
-              <div style={{fontWeight:600,marginBottom:4}}>⚠ Comunica queste credenziali all'utente:</div>
-              <div>Email: <strong>{email}</strong></div>
-              <div>Password: <strong>{pass}</strong></div>
-              <div style={{marginTop:8,fontSize:11,color:"var(--text-3)"}}>Suggerisci di cambiarla al primo accesso.</div>
-            </div>
-            <button className="btn-primary" onClick={onClose} style={{marginTop:16,width:"100%"}}>Chiudi</button>
-          </div>
-        ) : (
-          <>
-            <div style={{background:"var(--surface-2)",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:12,color:"var(--text-2)",marginBottom:16}}>
-              ℹ Crea le credenziali per permettere a <strong>{operatore.nome}</strong> di accedere all'app con la propria email e password.
-            </div>
-            <div style={{display:"grid",gap:14}}>
-              <Field label="Email *">
-                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} />
-              </Field>
-              <Field label="Password temporanea * (min. 6 caratteri)">
-                <input type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" style={{width:"100%"}} />
-              </Field>
-              <Field label="Conferma password *">
-                <input type="password" value={pass2} onChange={e=>setPass2(e.target.value)} placeholder="••••••••" style={{width:"100%"}}
-                  onKeyDown={e=>e.key==="Enter"&&ok&&!loading&&crea()} />
-              </Field>
-              {pass&&pass2&&pass!==pass2&&(
-                <div style={{fontSize:12,color:"var(--red)",fontWeight:500}}>⚠ Le password non coincidono</div>
-              )}
-              {err&&<div style={{background:"var(--red-bg)",border:"1px solid var(--red-bd)",borderRadius:"var(--radius-sm)",padding:"10px 12px",fontSize:12,color:"var(--red)",fontWeight:500}}>❌ {err}</div>}
-            </div>
-            <div className="modal-footer">
-              <button onClick={onClose}>Annulla</button>
-              <button className="btn-primary" disabled={!ok||loading} onClick={crea}>
-                {loading?"Creazione...":"🔑 Crea accesso"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </Overlay>
-  );
-}
-
-

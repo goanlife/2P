@@ -33,6 +33,10 @@ export function ConflictiBanner({ conf }) {
   );
 }
 
+export function Overlay({ children, zIndex=1000 }) {
+  return <div className="overlay" style={{zIndex}}>{children}</div>;
+}
+
 export function ConfirmDialog({ msg, onConfirm, onCancel }) {
   return (
     <Overlay zIndex={2000}>
@@ -49,9 +53,6 @@ export function ConfirmDialog({ msg, onConfirm, onCancel }) {
   );
 }
 
-export function Overlay({ children, zIndex=1000 }) {
-  return <div className="overlay" style={{zIndex}}>{children}</div>;
-}
 export function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, saveOk=true, children }) {
   return (
     <Overlay>
