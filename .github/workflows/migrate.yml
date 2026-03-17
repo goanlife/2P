@@ -20,13 +20,10 @@ jobs:
         env:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          # Installa psql
           sudo apt-get install -y postgresql-client
 
-          # Connessione al DB Supabase (connection pooler)
-          DB_URL="postgresql://postgres.nnsylkjahuhttwajuxls:${SUPABASE_DB_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+          DB_URL="postgresql://postgres:${SUPABASE_DB_PASSWORD}@db.nnsylkjahuhttwajuxls.supabase.co:5432/postgres"
 
-          # Applica ogni migration in ordine
           for f in $(ls supabase/migrations/*.sql | sort); do
             echo "▶ Applying: $f"
             psql "$DB_URL" -f "$f" -v ON_ERROR_STOP=1
