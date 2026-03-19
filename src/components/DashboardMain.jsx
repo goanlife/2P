@@ -17,7 +17,16 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const carichi=useMemo(()=>fornitori.map(op=>({...op,att:man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").length,ore:Math.round(man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").reduce((a,m)=>a+m.durata,0)/60*10)/10})),[man,fornitori]);
   const maxOre=Math.max(...carichi.map(c=>c.ore),1);
-  const confMap=useMemo(()=>{const m={};man.filter(x=>x.stato!=="completata").forEach(x=>{const k=`${x.operatoreId}_${x.data}`;if(!m[k])m[k]=[];m[k].push(x);});return Object.values(m).filter(g=>g.length>1);},[man]);
+  const [confOpen, setConfOpen] = React.useState(false);
+  const oggi = new Date().toISOString().split("T")[0];
+  const tra7 = new Date(Date.now()+7*86400000).toISOString().split("T")[0];
+  // Conflitti solo nei prossimi 7 giorni (non tutto il futuro)
+  const confMap=useMemo(()=>{
+    const m={};
+    man.filter(x=>x.stato!=="completata"&&x.data>=oggi&&x.data<=tra7)
+       .forEach(x=>{const k=`${x.operatoreId}_${x.data}`;if(!m[k])m[k]=[];m[k].push(x);});
+    return Object.values(m).filter(g=>g.length>1);
+  },[man, oggi]);
   const kpis=[
     {v:stats.tot, l:"Totale attività", c:"#0D1B2A", action:()=>onNavigate("manutenzioni",{})},
     {v:clienti.length, l:"Clienti", c:"#7F77DD", action:()=>onNavigate("clienti",{})},
@@ -30,7 +39,36 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
   ];
   return (
     <div style={{display:"grid",gap:20}}>
-      {confMap.length>0&&(<div className="global-conflict"><div className="global-conflict-title">⚠ {confMap.length} conflitto/i di calendario</div>{confMap.map((g,i)=>{const op=operatori.find(o=>o.id===g[0].operatoreId);return <div key={i} className="global-conflict-item">→ {op?.nome||"—"}: {g.length} attività il {fmtData(g[0].data)}</div>;})}</div>)}
+      {confMap.length>0&&(
+        <div style={{position:"relative",display:"inline-block"}}>
+          <button onClick={()=>setConfOpen(o=>!o)}
+            style={{display:"flex",alignItems:"center",gap:8,padding:"7px 14px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:20,fontSize:13,fontWeight:700,color:"#92400E",cursor:"pointer"}}>
+            ⚠ {confMap.length} sovrapposizione{confMap.length>1?"i":""} nei prossimi 7 giorni
+          </button>
+          {confOpen&&(
+            <>
+              <div onClick={()=>setConfOpen(false)} style={{position:"fixed",inset:0,zIndex:1998}}/>
+              <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,zIndex:1999,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",minWidth:320,maxWidth:420,boxShadow:"0 4px 24px rgba(0,0,0,.18)"}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>⚠ Attività sovrapposte nei prossimi 7 giorni:</div>
+                {confMap.slice(0,10).map((g,i)=>{
+                  const op=operatori.find(o=>o.id===g[0].operatoreId);
+                  return(
+                    <div key={i} style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8,alignItems:"center",padding:"6px 0",borderBottom:"1px solid var(--border-dim)"}}>
+                      <div>
+                        <div style={{fontSize:12,fontWeight:600}}>{op?.nome||"—"}</div>
+                        <div style={{fontSize:11,color:"var(--text-3)"}}>{g.map(m=>m.titolo).join(" · ")}</div>
+                      </div>
+                      <div style={{fontSize:11,color:"#92400E",fontWeight:600,whiteSpace:"nowrap"}}>{fmtData(g[0].data)}</div>
+                    </div>
+                  );
+                })}
+                {confMap.length>10&&<div style={{fontSize:11,color:"var(--text-3)",marginTop:8}}>...e altri {confMap.length-10}</div>}
+                <div style={{fontSize:10,color:"var(--text-3)",marginTop:8}}>Vai al Calendario per gestire le sovrapposizioni.</div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       <div className="kpi-grid">{kpis.map(k=>(
         <div key={k.l} className="kpi-card" style={{"--c":k.c, cursor:"pointer"}}
           onClick={k.action}
