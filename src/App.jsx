@@ -192,8 +192,22 @@ export default function App() {
       });
   }, [tenant?.id, gOps.length]);
 
+  // Ruolo utente corrente - DEVE stare prima di tabsVisibili
+  const meOperatore = useMemo(() => operatori.find(o => o.email === session?.user?.email), [operatori, session]);
+  const ruolo = meOperatore?.tipo || "admin";
+  const isCliente = ruolo === "cliente";
+  const fornitori = useMemo(() => operatori.filter(o=>o.tipo==="fornitore"), [operatori]);
+
+  // Clienti associati a questo utente (se tipo=cliente)
+  const mySiti = useMemo(() => isCliente ? siti.filter(s => s.operatoreId === meOperatore?.id).map(s => s.clienteId) : null, [isCliente, siti, meOperatore]);
+
+  // Dati filtrati per il ruolo cliente
+  const manView     = useMemo(() => isCliente && mySiti ? man.filter(m => mySiti.includes(m.clienteId)) : man, [isCliente, mySiti, man]);
+  const clientiView = useMemo(() => isCliente && mySiti ? clienti.filter(c => mySiti.includes(c.id)) : clienti, [isCliente, mySiti, clienti]);
+  const assetsView  = useMemo(() => isCliente && mySiti ? assets.filter(a => mySiti.includes(a.clienteId)) : assets, [isCliente, mySiti, assets]);
+
   // Calcola i tab visibili per l'utente corrente
-  const tabsVisibili = (() => {
+  const tabsVisibili = useMemo(() => {
     // Admin vede sempre tutto
     if (ruoloTenant === "admin") return ALL_TABS;
     // Cliente: tab di default se nessun gruppo configurato
@@ -203,7 +217,7 @@ export default function App() {
     // Nessun gruppo configurato → tutto visibile
     if (!gOps.length || !Object.keys(menuConfig).length) return ALL_TABS;
     // Unione dei tab visibili in tutti i gruppi dell'utente
-    const mieGruppi = gOps.filter(go => go.operatoreId === Number(operatori.find(o => o.userId === uid())?.id));
+    const mieGruppi = gOps.filter(go => go.operatoreId === Number(operatori.find(o => o.userId === session?.user?.id)?.id));
     if (!mieGruppi.length) return ALL_TABS;
     const visibili = new Set();
     mieGruppi.forEach(go => {
@@ -212,7 +226,7 @@ export default function App() {
       else cfg.forEach(id => visibili.add(id));
     });
     return ALL_TABS.filter(t => visibili.has(t.id));
-  })();
+  }, [ruoloTenant, ruolo, gOps, menuConfig]);
 
   // Se la vista corrente non è più nei tab visibili, torna alla dashboard
   // NOTA: questo useEffect DEVE stare dopo la definizione di tabsVisibili
@@ -221,10 +235,10 @@ export default function App() {
 
   // Se la vista corrente non è più nei tab visibili, torna alla dashboard
   useEffect(() => {
-    if (tabsVisibili.length && !tabsVisibili.find(t => t.id === vista)) {
+    if (tabsVisibili && tabsVisibili.length && !tabsVisibili.find(t => t.id === vista)) {
       sV(tabsVisibili[0].id);
     }
-  }, [tabsVisibili.length]);
+  }, [tabsVisibili]);
 
   // Keyboard shortcut: Ctrl+K / Cmd+K per ricerca globale
   useEffect(() => {
@@ -290,8 +304,8 @@ export default function App() {
       const mappedOps = (ro.data||[]).map(mapOp);
       sOp(mappedOps);
       // Applica tema dell'utente loggato se presente
-      const meOp = mappedOps.find(o => o.email === session?.user?.email);
-      if (meOp?.tema) { applyTheme(meOp.tema); setTemaCorrente(meOp.tema); }
+      const opLogin = mappedOps.find(o => o.email === session?.user?.email);
+      if (opLogin?.tema) { applyTheme(opLogin.tema); setTemaCorrente(opLogin.tema); }
       sCl((rc.data||[]).map(mapC)); sAs((ra.data||[]).map(mapA)); sPi((rp.data||[]).map(mapP)); sMan((rm.data||[]).map(mapM));
       // Carica assegnazioni separatamente (tabella nuova - non blocca se fallisce)
       supabase.from("piano_assegnazioni").select("*").order("created_at")
@@ -488,8 +502,8 @@ export default function App() {
       oreEffettive: ore_effettive, partiUsate: parti_usate,
       firmaSvg: firma_svg, chiusoAt: chiuso_at,
     } : m));
-    const meOp = operatori.find(o => o.email === session?.user?.email);
-    await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOp?.nome || "", uid());
+    const meOpLog = operatori.find(o => o.email === session?.user?.email);
+    await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOpLog?.nome || "", uid());
     notify("Intervento chiuso con successo ✅", "success");
   };
   const navigateTo = (tab, filters={}) => {
@@ -506,8 +520,8 @@ export default function App() {
     if (!session || !man.length) return [];
     const oggi_ = isoDate(new Date());
     const result = [];
-    const meOp = operatori.find(o => o.email === session?.user?.email);
-    const mieM = meOp?.tipo === "fornitore" ? man.filter(m => m.operatoreId === meOp.id) : meOp?.tipo === "cliente" ? manView : man;
+    const meOpNotif = operatori.find(o => o.email === session?.user?.email);
+    const mieM = meOpNotif?.tipo === "fornitore" ? man.filter(m => m.operatoreId === meOpNotif.id) : meOpNotif?.tipo === "cliente" ? manView : man;
     mieM.filter(m => m.stato !== "completata").forEach(m => {
       if (m.data < oggi_) result.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
       else if (m.data === oggi_) result.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
@@ -540,26 +554,7 @@ export default function App() {
     </div>
   );
 
-  const fornitori = operatori.filter(o=>o.tipo==="fornitore");
-  const meOperatore = operatori.find(o => o.email === session?.user?.email);
-  const ruolo = meOperatore?.tipo || "admin";
-  const isCliente = ruolo === "cliente";
 
-  // Clienti associati a questo utente (se tipo=cliente)
-  const mySiti = isCliente
-    ? siti.filter(s => s.operatoreId === meOperatore?.id).map(s => s.clienteId)
-    : null;
-
-  // Dati filtrati per il ruolo cliente (vede solo i suoi clienti/asset/attività)
-  const manView      = isCliente && mySiti
-    ? man.filter(m => mySiti.includes(m.clienteId))
-    : man;
-  const clientiView  = isCliente && mySiti
-    ? clienti.filter(c => mySiti.includes(c.id))
-    : clienti;
-  const assetsView   = isCliente && mySiti
-    ? assets.filter(a => mySiti.includes(a.clienteId))
-    : assets;
 
   return (
     <div className="app-shell">
@@ -697,8 +692,8 @@ export default function App() {
   setTemaCorrente(t);
   applyTheme(t);
   localStorage.setItem("manumanTema", t);
-  const meOp = operatori.find(o=>o.email===session?.user?.email);
-  if(meOp) await supabase.from("operatori").update({tema:t}).eq("id",meOp.id);
+  const meOpTema = operatori.find(o=>o.email===session?.user?.email);
+  if(meOpTema) await supabase.from("operatori").update({tema:t}).eq("id",meOpTema.id);
 }} />
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
                 {TEMI.map(t=>(
