@@ -17,7 +17,7 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const carichi=useMemo(()=>fornitori.map(op=>({...op,att:man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").length,ore:Math.round(man.filter(m=>m.operatoreId===op.id&&m.stato!=="completata").reduce((a,m)=>a+m.durata,0)/60*10)/10})),[man,fornitori]);
   const maxOre=Math.max(...carichi.map(c=>c.ore),1);
-  const [confOpen, setConfOpen] = React.useState(false);
+  const [confOpen, setConfOpen] = useState(false);
   const oggi = new Date().toISOString().split("T")[0];
   const tra7 = new Date(Date.now()+7*86400000).toISOString().split("T")[0];
   // Conflitti solo nei prossimi 7 giorni (non tutto il futuro)

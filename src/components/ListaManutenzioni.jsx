@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { AvatarComp, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
@@ -63,8 +63,8 @@ export function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onCl
 // ─── Lista manutenzioni ───────────────────────────────────────────────────
 // Mini badge checklist per la card manutenzione
 export function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
-  const [prog, setProg] = React.useState(null);
-  React.useEffect(() => {
+  const [prog, setProg] = useState(null);
+  useEffect(() => {
     if (!pianoId || !manutenzioneId) return;
     Promise.all([
       supabase.from("piano_checklist").select("id,obbligatorio,ogni_n_interventi").eq("piano_id", pianoId),

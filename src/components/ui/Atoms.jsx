@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // ─── Atoms ───────────────────────────────────────────────────────────────
 export function AvatarComp({ nome, col, size=36 }) {
@@ -24,7 +24,7 @@ export function Toast({ msg, type="error", onDismiss }) {
 }
 
 export function ConflictiBanner({ conf }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   if (!conf?.length) return null;
   return (
     <div style={{position:"relative",display:"inline-block"}}>
@@ -74,7 +74,7 @@ export function ConfirmDialog({ msg, onConfirm, onCancel }) {
 }
 
 export function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, saveOk=true, children }) {
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -99,7 +99,7 @@ export function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, sa
   );
 }
 export function AvvisoConflitto({ conflitti: conf }) {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   if (!conf||!conf.length) return null;
   return (
     <div style={{position:"relative",display:"inline-block"}}>
