@@ -157,17 +157,28 @@ export default function App() {
   useEffect(() => {
     if (!session) return;
     const agentId = import.meta.env.VITE_ASSISTLOOP_AGENT_ID;
-    if (!agentId) return;
-    if (document.querySelector('script[src*="assistloop"]')) {
+    if (!agentId) { console.warn("[ManuMan] VITE_ASSISTLOOP_AGENT_ID non configurato"); return; }
+    // Evita doppio caricamento
+    if (document.getElementById('assistloop-script')) {
       window.AssistLoopWidget?.init({ agentId });
       return;
     }
     const script = document.createElement('script');
+    script.id = 'assistloop-script';
     script.src = 'https://assistloop.ai/assistloop-widget.js';
     script.async = true;
-    script.onload = () => window.AssistLoopWidget?.init({ agentId });
+    script.defer = true;
+    script.onload = () => {
+      try { window.AssistLoopWidget?.init({ agentId }); }
+      catch(e) { console.warn("[ManuMan] AssistLoop init error:", e); }
+    };
+    script.onerror = () => console.warn("[ManuMan] AssistLoop script non caricato");
     document.body.appendChild(script);
-  }, [session]);
+    return () => {
+      // Cleanup widget alla logout
+      try { window.AssistLoopWidget?.destroy?.(); } catch(e) {}
+    };
+  }, [session?.user?.id]); // ricarica solo se cambia utente
 
   // Apply default theme on mount - legge da localStorage per evitare flickering
   useEffect(() => {
