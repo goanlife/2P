@@ -153,6 +153,22 @@ export default function App() {
     }
   };
 
+  // AssistLoop widget — caricato dopo il login
+  useEffect(() => {
+    if (!session) return;
+    const agentId = import.meta.env.VITE_ASSISTLOOP_AGENT_ID;
+    if (!agentId) return;
+    if (document.querySelector('script[src*="assistloop"]')) {
+      window.AssistLoopWidget?.init({ agentId });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://assistloop.ai/assistloop-widget.js';
+    script.async = true;
+    script.onload = () => window.AssistLoopWidget?.init({ agentId });
+    document.body.appendChild(script);
+  }, [session]);
+
   // Apply default theme on mount - legge da localStorage per evitare flickering
   useEffect(() => {
     const saved = localStorage.getItem("manumanTema") || "navy";
