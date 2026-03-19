@@ -48,7 +48,7 @@ export function Dashboard({ man, clienti, assets, piani, operatori, onNavigate }
           {confOpen&&(
             <>
               <div onClick={()=>setConfOpen(false)} style={{position:"fixed",inset:0,zIndex:1998}}/>
-              <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,zIndex:1999,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",minWidth:320,maxWidth:420,boxShadow:"0 4px 24px rgba(0,0,0,.18)"}}>
+              <div style={{position:"absolute",top:"calc(100% + 8px)",left:0,zIndex:1999,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"14px 16px",minWidth:320,maxWidth:420,maxHeight:320,overflowY:"auto",boxShadow:"0 4px 24px rgba(0,0,0,.18)"}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:10}}>⚠ Attività sovrapposte nei prossimi 7 giorni:</div>
                 {confMap.slice(0,10).map((g,i)=>{
                   const op=operatori.find(o=>o.id===g[0].operatoreId);

@@ -72,6 +72,20 @@ export function useNotifiche(man, operatori, meId) {
 
 export function CampanellaNotifiche({ notifiche, onNavigate }) {
   const [aperta, setAperta] = useState(false);
+  const [popupPos, setPopupPos] = useState({});
+  const btnRef = React.useRef(null);
+
+  const apri = () => {
+    if (!aperta && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const openUp = r.bottom > window.innerHeight * 0.6;
+      setPopupPos(openUp
+        ? { bottom: window.innerHeight - r.top + 8, left: Math.max(8, Math.min(r.right - 360, window.innerWidth - 368)) }
+        : { top: r.bottom + 8, left: Math.max(8, Math.min(r.right - 360, window.innerWidth - 368)) }
+      );
+    }
+    setAperta(v => !v);
+  };
   const count = notifiche.filter(n => n.tipo === "scaduta" || n.tipo === "urgente" || n.tipo === "oggi").length;
 
   const coloreNota = (tipo) => ({
@@ -84,7 +98,7 @@ export function CampanellaNotifiche({ notifiche, onNavigate }) {
   return (
     <div style={{ position: "relative" }}>
       <button
-        onClick={() => setAperta(v => !v)}
+        onClick={apri}
         style={{
           width: 36, height: 36,
           background: aperta ? "var(--navy-3)" : "var(--navy-3)",
@@ -96,6 +110,8 @@ export function CampanellaNotifiche({ notifiche, onNavigate }) {
           transition: "all .15s",
         }}
         title="Notifiche"
+        ref={btnRef}
+        data-campanella="true"
       >
         🔔
         {count > 0 && (
@@ -117,13 +133,14 @@ export function CampanellaNotifiche({ notifiche, onNavigate }) {
             style={{ position: "fixed", inset: 0, zIndex: 999 }}
             onClick={() => setAperta(false)}
           />
-          {/* Drawer */}
+          {/* Drawer - fixed per non essere clippato dalla sidebar */}
           <div style={{
-            position: "absolute", top: "calc(100% + 8px)", right: 0,
+            position: "fixed",
+            ...popupPos,
             width: "min(360px, 92vw)", maxHeight: "70vh",
             background: "var(--surface)", border: "1px solid var(--border)",
             borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-lg)",
-            zIndex: 1000, overflow: "hidden", display: "flex", flexDirection: "column",
+            zIndex: 9999, overflow: "hidden", display: "flex", flexDirection: "column",
           }}>
             <div style={{
               padding: "14px 16px", borderBottom: "1px solid var(--border)",
