@@ -91,7 +91,7 @@ export function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
   );
 }
 
-export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters, onChiudi, onVerbale }) {
+export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters, onChiudi, onVerbale, readOnly=false }) {
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
   const [fC,sfC]=useState("tutti");
@@ -164,8 +164,8 @@ export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, on
               <div style={{display:"flex",gap:5,flexShrink:0,alignItems:"center"}}>
                 {m.stato==="pianificata"&&<button className="btn-sm" onClick={()=>onStato(m.id,"inCorso")}>Avvia ▶</button>}
                 {m.stato==="inCorso"&&<button className="btn-sm btn-success" onClick={()=>onChiudi?onChiudi(m):onStato(m.id,"completata")}>✓ Chiudi</button>}
-                <button className="btn-sm btn-icon" onClick={()=>onMod(m)}>✏</button>
-                <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(m.id)}>✕</button>
+                {!readOnly && <button className="btn-sm btn-icon" onClick={()=>onMod(m)}>✏</button>}
+                {!readOnly && <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(m.id)}>✕</button>}
               </div>
             </div>
           );

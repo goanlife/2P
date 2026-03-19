@@ -196,6 +196,10 @@ export default function App() {
   const tabsVisibili = (() => {
     // Admin vede sempre tutto
     if (ruoloTenant === "admin") return ALL_TABS;
+    // Cliente: tab di default se nessun gruppo configurato
+    if (ruolo === "cliente" && (!gOps.length || !Object.keys(menuConfig).length)) {
+      return ALL_TABS.filter(t => ["dashboard","manutenzioni","calendario","assets","statistiche"].includes(t.id));
+    }
     // Nessun gruppo configurato → tutto visibile
     if (!gOps.length || !Object.keys(menuConfig).length) return ALL_TABS;
     // Unione dei tab visibili in tutti i gruppi dell'utente
@@ -503,7 +507,7 @@ export default function App() {
     const oggi_ = isoDate(new Date());
     const result = [];
     const meOp = operatori.find(o => o.email === session?.user?.email);
-    const mieM = meOp?.tipo === "fornitore" ? man.filter(m => m.operatoreId === meOp.id) : man;
+    const mieM = meOp?.tipo === "fornitore" ? man.filter(m => m.operatoreId === meOp.id) : meOp?.tipo === "cliente" ? manView : man;
     mieM.filter(m => m.stato !== "completata").forEach(m => {
       if (m.data < oggi_) result.push({ id:`sc_${m.id}`, tipo:"scaduta", titolo:"Attività scaduta", testo:m.titolo, data:m.data, manId:m.id, icon:"🔴" });
       else if (m.data === oggi_) result.push({ id:`og_${m.id}`, tipo:"oggi", titolo:"Attività per oggi", testo:m.titolo, data:m.data, manId:m.id, icon:"📅" });
@@ -539,6 +543,23 @@ export default function App() {
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
   const meOperatore = operatori.find(o => o.email === session?.user?.email);
   const ruolo = meOperatore?.tipo || "admin";
+  const isCliente = ruolo === "cliente";
+
+  // Clienti associati a questo utente (se tipo=cliente)
+  const mySiti = isCliente
+    ? siti.filter(s => s.operatoreId === meOperatore?.id).map(s => s.clienteId)
+    : null;
+
+  // Dati filtrati per il ruolo cliente (vede solo i suoi clienti/asset/attività)
+  const manView      = isCliente && mySiti
+    ? man.filter(m => mySiti.includes(m.clienteId))
+    : man;
+  const clientiView  = isCliente && mySiti
+    ? clienti.filter(c => mySiti.includes(c.id))
+    : clienti;
+  const assetsView   = isCliente && mySiti
+    ? assets.filter(a => mySiti.includes(a.clienteId))
+    : assets;
 
   return (
     <div className="app-shell">
@@ -560,9 +581,11 @@ export default function App() {
 
         {/* ── Nuova attività ── */}
         <div className="sb-new-wrap">
-          <button className="sb-new-btn" onClick={()=>{siMM(null);sDD("");sMM(true);setSidebar(false);}}>
-            <span>＋</span> Nuova attività
-          </button>
+          {!isCliente && (
+            <button className="sb-new-btn" onClick={()=>{siMM(null);sDD("");sMM(true);setSidebar(false);}}>
+              <span>＋</span> Nuova attività
+            </button>
+          )}
         </div>
 
         {/* ── Nav ── */}
@@ -614,14 +637,14 @@ export default function App() {
           </div>
           <div className="mini-topbar-right">
             <CampanellaNotifiche notifiche={notifiche} onNavigate={navigateTo} />
-            <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova</button>
+            {!isCliente && <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova</button>}
           </div>
         </header>
         <main className="page-content">
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
             ? <DashboardFornitore me={meOperatore} man={man} clienti={clienti} assets={assets} onStato={statoM} onApriChiudi={m=>setChiudiModal(m)} />
-            : <Dashboard man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} onNavigate={navigateTo} />
+            : <Dashboard man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} onNavigate={navigateTo} />
         )}
         {manTotale && man.length < manTotale && !manCaricaTutto && (
           <div style={{background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
@@ -629,18 +652,19 @@ export default function App() {
             <button onClick={caricaTutteLeManut} style={{padding:"6px 14px",background:"#1D4ED8",color:"white",border:"none",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Carica tutto</button>
           </div>
         )}
-        {vista==="manutenzioni" && <ListaManut   man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
+        {vista==="manutenzioni" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
+          readOnly={isCliente}
           onChiudi={m=>setChiudiModal(m)}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
-        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione} />}
-        {vista==="calendario"   && <Calendario   man={man} clienti={clienti} assets={assets} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
-        {vista==="assets"       && <GestioneAssets assets={assets} clienti={clienti} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} />}
+        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione} />}
+        {vista==="calendario"   && <Calendario   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
+        {vista==="assets"       && <GestioneAssets assets={assetsView} clienti={clientiView} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={(id)=>confirmDel("Eliminare questo gruppo? L'operazione non è reversibile.",()=>delGruppo(id))} onSaveAssoc={saveAssocGruppo} />}
-        {vista==="clienti"      && <GestioneClienti clienti={clienti} manutenzioni={man} assets={assets} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}
-        {vista==="statistiche"  && <Statistiche man={man} clienti={clienti} assets={assets} piani={piani} operatori={operatori} />}
-        {vista==="kanban"       && <KanbanView man={man} clienti={clienti} assets={assets} operatori={operatori} onStato={statoM} onMod={apriModM} />}
+        {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}
+        {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
+        {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
       </main>
 
@@ -706,9 +730,9 @@ export default function App() {
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
       <MobileNav vista={vista} sV={sV} tabs={tabsVisibili} />
-      {modalM && <ModalManut
+      {modalM && !isCliente && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
-        clienti={clienti} assets={assets} manutenzioni={man} operatori={operatori}
+        clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
         userId={UID}
         onClose={()=>{sMM(false);siMM(null);}}
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}
