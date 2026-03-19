@@ -9,11 +9,6 @@ function BarChart({ data, colore = "#3B82F6", height = 160, label }) {
   const w = 100 / data.length;
   return (
     <div>
-      {isParziale && (
-        <div style={{background:"#FEF3C7",border:"1px solid #FDE68A",borderRadius:6,padding:"8px 14px",marginBottom:12,fontSize:12,color:"#92400E"}}>
-          ⚠ Le statistiche si basano sulle ultime {man.length} attività (ultimi 6 mesi). Per dati completi usa "Carica tutto" nella sezione Manutenzioni.
-        </div>
-      )}
       {label && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>{label}</div>}
       <svg width="100%" height={height} style={{ overflow: "visible" }}>
         {data.map((d, i) => {
@@ -86,9 +81,7 @@ function PieChart({ slices, size = 140 }) {
 }
 
 export function Statistiche({ man, clienti, assets, piani, operatori }) {
-  // Controlla se i dati potrebbero essere parziali (paginazione 6 mesi)
-  const dataPiuVecchia = man.length ? man.reduce((min, m) => m.data < min ? m.data : min, man[0].data) : null;
-  const isParziale = man.length >= 200;
+  const isParziale = man.length >= 200; // dati parziali se paginati
   const [periodo, setPeriodo] = useState(6); // ultimi N mesi
 
   const oggi = new Date();
@@ -183,6 +176,11 @@ export function Statistiche({ man, clienti, assets, piani, operatori }) {
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {isParziale && (
+        <div style={{background:"#FEF3C7",border:"1px solid #FDE68A",borderRadius:6,padding:"8px 14px",fontSize:12,color:"#92400E"}}>
+          ⚠ Statistiche basate sulle ultime {man.length} attività (6 mesi). Per dati completi vai in Manutenzioni → "Carica tutto".
+        </div>
+      )}
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <div>

@@ -153,33 +153,21 @@ export default function App() {
     }
   };
 
-  // AssistLoop widget — caricato dopo il login, nascosto di default
-  const [assistOpen, setAssistOpen] = useState(false);
+  // AssistLoop widget — caricato dopo il login
   useEffect(() => {
     if (!session) return;
     const agentId = import.meta.env.VITE_ASSISTLOOP_AGENT_ID;
     if (!agentId) return;
-    const load = () => {
+    if (document.querySelector('script[src*="assistloop"]')) {
       window.AssistLoopWidget?.init({ agentId });
-      // Nascondi il widget nativo subito dopo l'init
-      setTimeout(() => {
-        const w = document.querySelector('[class*="assistloop"], [id*="assistloop"], iframe[src*="assistloop"]');
-        if (w) w.style.display = "none";
-      }, 500);
-    };
-    if (document.querySelector('script[src*="assistloop"]')) { load(); return; }
+      return;
+    }
     const script = document.createElement('script');
     script.src = 'https://assistloop.ai/assistloop-widget.js';
     script.async = true;
-    script.onload = load;
+    script.onload = () => window.AssistLoopWidget?.init({ agentId });
     document.body.appendChild(script);
   }, [session]);
-
-  // Mostra/nasconde il widget AssistLoop al click del bottone custom
-  useEffect(() => {
-    const w = document.querySelector('[class*="assistloop"], [id*="assistloop"], iframe[src*="assistloop"]');
-    if (w) w.style.display = assistOpen ? "block" : "none";
-  }, [assistOpen]);
 
   // Apply default theme on mount - legge da localStorage per evitare flickering
   useEffect(() => {
@@ -752,84 +740,10 @@ export default function App() {
       )}
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
-      {/* Bottone flottante AssistLoop */}
-      {session && import.meta.env.VITE_ASSISTLOOP_AGENT_ID && (
-        <button
-          onClick={() => setAssistOpen(o => !o)}
-          title={assistOpen ? "Chiudi assistente" : "Apri assistente AI"}
-          style={{
-            position: "fixed",
-            bottom: 80,
-            right: 20,
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            background: assistOpen ? "#EF4444" : "var(--amber)",
-            color: "#0D1B2A",
-            border: "none",
-            boxShadow: "0 4px 16px rgba(0,0,0,.25)",
-            cursor: "pointer",
-            fontSize: 22,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1050,
-            transition: "all .2s",
-          }}
-        >
-          {assistOpen ? "✕" : "🤖"}
-        </button>
-      )}
+
       <MobileNav vista={vista} sV={sV} tabs={tabsVisibili} />
 
-      {/* AssistLoop Widget a scomparsa */}
-      {session && import.meta.env.VITE_ASSISTLOOP_AGENT_ID && (
-        <>
-          {/* Bottone toggle */}
-          <button
-            onClick={()=>setAssistOpen(o=>!o)}
-            style={{
-              position:"fixed", bottom:24, right:24, zIndex:3000,
-              width:52, height:52, borderRadius:"50%",
-              background:"var(--amber)", color:"#0D1B2A",
-              border:"none", cursor:"pointer",
-              boxShadow:"0 4px 16px rgba(0,0,0,.25)",
-              fontSize:22, display:"flex", alignItems:"center", justifyContent:"center",
-              transition:"transform .2s",
-              transform: assistOpen ? "rotate(45deg)" : "rotate(0deg)",
-            }}
-            title={assistOpen ? "Chiudi assistente" : "Apri assistente AI"}
-          >
-            {assistOpen ? "✕" : "💬"}
-          </button>
 
-          {/* Pannello scorrevole */}
-          <div style={{
-            position:"fixed", bottom:90, right:24, zIndex:2999,
-            width:"min(380px, calc(100vw - 48px))", height:"min(560px, calc(100vh - 120px))",
-            background:"var(--surface)", border:"1px solid var(--border)",
-            borderRadius:16, boxShadow:"0 8px 40px rgba(0,0,0,.2)",
-            overflow:"hidden",
-            transition:"opacity .25s, transform .25s",
-            opacity: assistOpen ? 1 : 0,
-            transform: assistOpen ? "translateY(0) scale(1)" : "translateY(16px) scale(.97)",
-            pointerEvents: assistOpen ? "all" : "none",
-          }}>
-            {/* Header pannello */}
-            <div style={{
-              padding:"12px 16px", borderBottom:"1px solid var(--border)",
-              display:"flex", alignItems:"center", gap:10,
-              background:"var(--surface-2)"
-            }}>
-              <span style={{fontSize:18}}>🤖</span>
-              <span style={{fontWeight:700, fontSize:14}}>Assistente AI</span>
-              <span style={{fontSize:11, color:"var(--text-3)", marginLeft:"auto"}}>powered by AssistLoop</span>
-            </div>
-            {/* Il widget viene iniettato qui */}
-            <div id="assistloop-container" style={{width:"100%", height:"calc(100% - 49px)"}} />
-          </div>
-        </>
-      )}
       {modalM && !isCliente && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
