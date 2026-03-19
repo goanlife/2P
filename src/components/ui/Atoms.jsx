@@ -24,11 +24,31 @@ export function Toast({ msg, type="error", onDismiss }) {
 }
 
 export function ConflictiBanner({ conf }) {
+  const [open, setOpen] = React.useState(false);
   if (!conf?.length) return null;
   return (
-    <div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:"var(--radius-sm)",padding:"10px 14px",fontSize:13,color:"#92400E"}}>
-      <strong>⚠ Attenzione:</strong> {conf.length} attività già pianificata/e in questa data:
-      <ul style={{margin:"6px 0 0",paddingLeft:18}}>{conf.map(m=><li key={m.id}>{m.titolo} ({m.durata} min)</li>)}</ul>
+    <div style={{position:"relative",display:"inline-block"}}>
+      <button
+        onClick={()=>setOpen(o=>!o)}
+        style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:20,fontSize:12,fontWeight:700,color:"#92400E",cursor:"pointer",lineHeight:1}}
+      >
+        ⚠ {conf.length} sovrapposizione{conf.length>1?"i":""}
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:1998}} />
+          <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:1999,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",minWidth:260,boxShadow:"0 4px 20px rgba(0,0,0,.18)"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:8}}>⚠ Attività già pianificate in questa data:</div>
+            {conf.map(m=>(
+              <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid var(--border-dim)"}}>
+                <span style={{fontSize:11,fontWeight:600,flex:1}}>{m.titolo}</span>
+                <span style={{fontSize:10,color:"var(--text-3)",whiteSpace:"nowrap"}}>{m.durata} min</span>
+              </div>
+            ))}
+            <div style={{fontSize:10,color:"var(--text-3)",marginTop:6}}>Puoi procedere comunque se necessario.</div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -79,11 +99,31 @@ export function Modal({ title, onClose, onSave, saveLabel="Salva", saveColor, sa
   );
 }
 export function AvvisoConflitto({ conflitti: conf }) {
+  const [open, setOpen] = React.useState(false);
   if (!conf||!conf.length) return null;
   return (
-    <div className="conflict-banner">
-      <strong>⚠ Conflitto:</strong> {conf.length} attività già pianificata/e in questa data:
-      <ul style={{margin:"6px 0 0",paddingLeft:18}}>{conf.map(m=><li key={m.id}>{m.titolo} ({m.durata} min)</li>)}</ul>
+    <div style={{position:"relative",display:"inline-block"}}>
+      <button
+        onClick={()=>setOpen(o=>!o)}
+        style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",background:"#FEF3C7",border:"1px solid #F59E0B",borderRadius:20,fontSize:12,fontWeight:700,color:"#92400E",cursor:"pointer",lineHeight:1}}
+      >
+        ⚠ {conf.length} sovrapposizione{conf.length>1?"i":""}
+      </button>
+      {open && (
+        <>
+          <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:1998}} />
+          <div style={{position:"absolute",top:"calc(100% + 6px)",left:0,zIndex:1999,background:"var(--surface)",border:"1px solid var(--border)",borderRadius:10,padding:"12px 14px",minWidth:260,boxShadow:"0 4px 20px rgba(0,0,0,.18)"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#92400E",marginBottom:8}}>⚠ Attività già pianificate in questa data:</div>
+            {conf.map(m=>(
+              <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid var(--border-dim)"}}>
+                <span style={{fontSize:11,fontWeight:600,flex:1}}>{m.titolo}</span>
+                <span style={{fontSize:10,color:"var(--text-3)",whiteSpace:"nowrap"}}>{m.durata} min</span>
+              </div>
+            ))}
+            <div style={{fontSize:10,color:"var(--text-3)",marginTop:6}}>Puoi procedere comunque se necessario.</div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
