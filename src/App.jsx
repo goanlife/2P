@@ -156,8 +156,7 @@ export default function App() {
   // AssistLoop widget — caricato dopo il login
   useEffect(() => {
     if (!session) return;
-    const agentId = import.meta.env.VITE_ASSISTLOOP_AGENT_ID;
-    if (!agentId) { console.warn("[ManuMan] VITE_ASSISTLOOP_AGENT_ID non configurato"); return; }
+    const agentId = import.meta.env.VITE_ASSISTLOOP_AGENT_ID || "3480f742-152e-4476-8f73-c5d2ed8d0217";
     // Evita doppio caricamento
     if (document.getElementById('assistloop-script')) {
       window.AssistLoopWidget?.init({ agentId });
