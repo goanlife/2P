@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { SelettoreTema, TEMI} from "./AllegatiTemi";
 import { AvatarComp, Overlay, Modal, Field } from "./ui/Atoms";
 
+const COLORI_OP = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6"];
+
 const FREQUENZE = [
   { v:"settimanale", l:"Settimanale", giorni:7   },
   { v:"mensile",     l:"Mensile",     giorni:30  },
@@ -26,7 +28,7 @@ const TIPO_OP = {
 const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
 
 // ─── Modal Siti Cliente ───────────────────────────────────────────────────
-export function ModalSitiCliente({ operatore, clienti, siti, onClose, onSave }) {
+export function ModalSitiCliente({operatore, clienti=[], siti=[], onClose, onSave}) {
   // siti = array di {operatoreId, clienteId} già salvati per questo operatore
   const mieiSiti = useMemo(()=>siti.filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
   const [sel, setSel] = useState(new Set(mieiSiti));
@@ -72,7 +74,7 @@ export function ModalSitiCliente({ operatore, clienti, siti, onClose, onSave }) 
 }
 
 // ─── Vista Cliente ────────────────────────────────────────────────────────
-export function VistaCliente({ operatore, clienti=[], assets=[], manutenzioni=[], piani=[], siti=[], onClose }) {
+export function VistaCliente({operatore, clienti=[], assets=[], manutenzioni=[], piani=[], siti=[], onClose}) {
   const clientiIds = useMemo(()=>(siti||[]).filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
   const myClienti  = useMemo(()=>(clienti||[]).filter(c=>clientiIds.includes(c.id)),[clienti,clientiIds]);
   const myAssets   = useMemo(()=>(assets||[]).filter(a=>clientiIds.includes(a.clienteId)),[assets,clientiIds]);
@@ -190,7 +192,7 @@ export function VistaCliente({ operatore, clienti=[], assets=[], manutenzioni=[]
 }
 
 // ─── Modal Utente (ex Operatore) ──────────────────────────────────────────
-export function ModalUtente({ ini, onClose, onSalva }) {
+export function ModalUtente({ini, onClose, onSalva}) {
   const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore",email:"",tema:"navy"});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
@@ -234,7 +236,7 @@ export function ModalUtente({ ini, onClose, onSalva }) {
 
 
 // ─── Gestione Utenti ──────────────────────────────────────────────────────
-export function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
+export function ModalCreaAccesso({operatore, onClose, onSuccess}) {
   const [email,  setEmail]  = useState(operatore.email||"");
   const [pass,   setPass]   = useState("");
   const [pass2,  setPass2]  = useState("");
@@ -335,7 +337,7 @@ export function ModalCreaAccesso({ operatore, onClose, onSuccess }) {
   );
 }
 
-export function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, onDel, onSaveSiti, onCreaAccesso }) {
+export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg, onMod, onDel, onSaveSiti, onCreaAccesso}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
   const [accessoModal,setAccessoModal]=useState(null);
@@ -428,13 +430,11 @@ export function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, on
               {/* Tema badge */}
               {op.tema&&op.tema!=="navy"&&(
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8,padding:"6px 10px",borderRadius:"var(--radius-sm)",background:"var(--surface-2)",border:"1px solid var(--border)"}}>
-                  {TEMI.find(t=>t.id===op.tema)&&(
-                    <>
-                      <div style={{width:16,height:16,borderRadius:3,background:TEMI.find(t=>t.id===op.tema).top,flexShrink:0}} />
-                      <div style={{width:8,height:16,borderRadius:2,background:TEMI.find(t=>t.id===op.tema).bot,flexShrink:0}} />
-                      <span style={{fontSize:11.5,fontWeight:600,color:"var(--text-2)"}}>Tema: {TEMI.find(t=>t.id===op.tema).nome}</span>
-                    </>
-                  )}
+                  {(()=>{const tema=TEMI.find(t=>t.id===op.tema);return tema?(<>
+                      <div style={{width:16,height:16,borderRadius:3,background:tema.top,flexShrink:0}} />
+                      <div style={{width:8,height:16,borderRadius:2,background:tema.bot,flexShrink:0}} />
+                      <span style={{fontSize:11.5,fontWeight:600,color:"var(--text-2)"}}>Tema: {tema.nome}</span>
+                    </>):null;})()}
                 </div>
               )}
 
@@ -473,7 +473,7 @@ export function GestioneUtenti({ operatori, man, clienti, siti, onAgg, onMod, on
 
 
 // ─── Gestione Gruppi ──────────────────────────────────────────────────────
-export function ModalGruppo({ ini, onClose, onSalva }) {
+export function ModalGruppo({ini, onClose, onSalva}) {
   const [f,sf] = useState(ini||{nome:"",descrizione:"",col:"#378ADD"});
   const s = (k,v) => sf(p=>({...p,[k]:v}));
   return (
@@ -489,7 +489,7 @@ export function ModalGruppo({ ini, onClose, onSalva }) {
   );
 }
 
-export function ModalAssegnaGruppo({ gruppo, operatori, clienti, gOps, gSiti, onClose, onSave }) {
+export function ModalAssegnaGruppo({gruppo, operatori=[], clienti=[], gOps=[], gSiti=[], onClose, onSave}) {
   const meiOps   = useMemo(()=>new Set(gOps.filter(g=>g.gruppoId===gruppo.id).map(g=>g.operatoreId)),[gOps,gruppo.id]);
   const meiSiti  = useMemo(()=>new Set(gSiti.filter(g=>g.gruppoId===gruppo.id).map(g=>g.clienteId)),[gSiti,gruppo.id]);
   const [selOps,  setSelOps]  = useState(new Set(meiOps));
@@ -557,7 +557,7 @@ export function ModalAssegnaGruppo({ gruppo, operatori, clienti, gOps, gSiti, on
   );
 }
 
-export function GestioneGruppi({ gruppi, operatori, clienti, man, gOps, gSiti, onAgg, onMod, onDel, onSaveAssoc }) {
+export function GestioneGruppi({gruppi=[], operatori=[], clienti=[], man=[], gOps=[], gSiti=[], onAgg, onMod, onDel, onSaveAssoc}) {
   const [showM,  ssM]  = useState(false);
   const [inMod,  siM]  = useState(null);
   const [assocModal, setAssoc] = useState(null);

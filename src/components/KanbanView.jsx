@@ -9,7 +9,7 @@ const COLONNE = [
   { id: "completata",  label: "Completate",  col: "#059669", bg: "#ECFDF5" },
 ];
 
-export function KanbanView({ man, clienti, assets, operatori, onStato, onMod }) {
+export function KanbanView({ man=[], clienti=[], assets=[], operatori=[], onStato, onMod }) {
   const [filtroOp, setFiltroOp] = useState(0);
   const [dragId, setDragId] = useState(null);
   const [dragOver, setDragOver] = useState(null);

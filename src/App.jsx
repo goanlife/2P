@@ -243,7 +243,7 @@ export default function App() {
     // Nessun gruppo configurato → tutto visibile
     if (!gOps.length || !Object.keys(menuConfig).length) return ALL_TABS;
     // Unione dei tab visibili in tutti i gruppi dell'utente
-    const mieGruppi = gOps.filter(go => go.operatoreId === Number(operatori.find(o => o.userId === session?.user?.id)?.id));
+    const meId = operatori.find(o => o.userId === session?.user?.id)?.id; const mieGruppi = meId ? gOps.filter(go => go.operatoreId === Number(meId)) : [];
     if (!mieGruppi.length) return ALL_TABS;
     const visibili = new Set();
     mieGruppi.forEach(go => {

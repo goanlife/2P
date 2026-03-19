@@ -19,7 +19,7 @@ export const ALL_TABS = [
 // Tab sempre visibili per admin (non modificabili)
 const ADMIN_ONLY = ["azienda", "gruppi", "utenti"];
 
-export function ConfigurazioneMenu({ gruppi, tenantId }) {
+export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
   const [configs, setConfigs]     = useState({}); // gruppoId → Set<tabId> visibili
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);

@@ -46,7 +46,7 @@ function ConflictiBanner({ conf }) {
 // ─── Piani ────────────────────────────────────────────────────────────────
 
 // Modal Piano Template (solo nome/frequenza/tipo - senza asset/cliente/operatore)
-export function ModalPiano({ ini, onClose, onSalva, userId }) {
+export function ModalPiano({ini, onClose, onSalva, userId}) {
   const vuoto = { nome:"", descrizione:"", tipo:"ordinaria", frequenza:"mensile", durata:60, priorita:"media", attivo:true };
   const [f, sf] = useState(ini || vuoto);
   const s = (k,v) => sf(p=>({...p,[k]:v}));
@@ -74,7 +74,7 @@ export function ModalPiano({ ini, onClose, onSalva, userId }) {
 }
 
 // Modal Assegnazione (piano → asset + operatore + date)
-export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manutenzioni, onClose, onSalva }) {
+export function ModalAssegnazione({ini, piano, clienti=[], assets=[], operatori=[], manutenzioni=[], onClose, onSalva}) {
   const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp = fornitori[0]?.id ? String(fornitori[0].id) : "";
   const vuoto = { pianoId:piano?.id||"", assetId:"", clienteId:"", operatoreId:defOp, dataInizio:isoDate(new Date()), dataFine:"", attivo:true };
@@ -132,7 +132,7 @@ export function ModalAssegnazione({ ini, piano, clienti, assets, operatori, manu
   );
 }
 
-export function GestionePiani({ piani, assegnazioni=[], clienti, assets, manutenzioni, operatori, onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova }) {
+export function GestionePiani({piani=[], assegnazioni=[], clienti=[], assets=[], manutenzioni=[], operatori=[], onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova}) {
   const [showM, ssM] = useState(false);
   const [inMod, siM] = useState(null);
   const [showAss, setShowAss] = useState(false);

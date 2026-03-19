@@ -16,7 +16,7 @@ const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
-export function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onClose, onSalva, userId }) {
+export function ModalManut({ini, clienti=[], assets=[], manutenzioni=[], operatori=[], onClose, onSalva, userId}) {
   // Solo i fornitori sono assegnabili
   const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp = fornitori[0]?.id||"";
@@ -62,7 +62,7 @@ export function ModalManut({ ini, clienti, assets, manutenzioni, operatori, onCl
 
 // ─── Lista manutenzioni ───────────────────────────────────────────────────
 // Mini badge checklist per la card manutenzione
-export function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
+export function ChecklistBadge({manutenzioneId, pianoId, numeroIntervento}) {
   const [prog, setProg] = useState(null);
   useEffect(() => {
     if (!pianoId || !manutenzioneId) return;
@@ -91,7 +91,7 @@ export function ChecklistBadge({ manutenzioneId, pianoId, numeroIntervento }) {
   );
 }
 
-export function ListaManut({ man, clienti, assets, operatori, onStato, onDel, onMod, initialFilters, onChiudi, onVerbale, readOnly=false }) {
+export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato, onDel, onMod, initialFilters, onChiudi, onVerbale, readOnly=false}) {
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
   const [fC,sfC]=useState("tutti");

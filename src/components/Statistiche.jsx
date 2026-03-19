@@ -80,7 +80,7 @@ function PieChart({ slices, size = 140 }) {
   );
 }
 
-export function Statistiche({ man, clienti, assets, piani, operatori }) {
+export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=[]}) {
   const isParziale = man.length >= 200; // dati parziali se paginati
   const [periodo, setPeriodo] = useState(6); // ultimi N mesi
 

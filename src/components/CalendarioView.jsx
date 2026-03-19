@@ -13,7 +13,7 @@ const GIORNI = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 
 
 // ─── Calendario ───────────────────────────────────────────────────────────
-export function ModalRipianifica({ manut, nuovaData, man, operatori, onConferma, onClose }) {
+export function ModalRipianifica({manut, nuovaData, man=[], operatori=[], onConferma, onClose}) {
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const [data,sd]=useState(nuovaData);const [opId,sOp]=useState(manut.operatoreId||"");
   const conf=useMemo(()=>opId?conflitti(man,opId,data,manut.id):[],[man,opId,data]);
@@ -40,7 +40,7 @@ export function ModalRipianifica({ manut, nuovaData, man, operatori, onConferma,
 }
 
 // ─── Popup dettaglio giorno ───────────────────────────────────────────────
-export function PopupGiorno({ data, attivita, clienti, assets, operatori, onClose, onStato, onMod, onChiudi, onRipianifica }) {
+export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operatori=[], onClose, onStato, onMod, onChiudi, onRipianifica}) {
   const STATO_COL = { pianificata:"#3B82F6", inCorso:"#F59E0B", completata:"#059669", scaduta:"#EF4444" };
   const STATO_BG  = { pianificata:"#EFF6FF", inCorso:"#FFFBEB", completata:"#ECFDF5", scaduta:"#FEF2F2" };
   const STATO_LBL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
@@ -125,7 +125,7 @@ export function PopupGiorno({ data, attivita, clienti, assets, operatori, onClos
   );
 }
 
-export function Calendario({ man, clienti, assets, operatori, onRipianifica, onNuovaData, onStato, onMod, onChiudi }) {
+export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipianifica, onNuovaData, onStato, onMod, onChiudi}) {
   const oggi=new Date();
   const [anno,sA]=useState(oggi.getFullYear());const [mese,sM]=useState(oggi.getMonth());
   const [opF,sOpF]=useState(0);const [drag,sDrag]=useState(null);const [drop,sDrop]=useState(null);const [ripModal,sRip]=useState(null);

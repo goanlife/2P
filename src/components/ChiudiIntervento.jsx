@@ -3,7 +3,7 @@ import { ChecklistIntervento } from "./PianoChecklist";
 import { InterventoRicambi } from "./GestioneRicambi";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-export function ChiudiIntervento({ manutenzione, cliente, asset, onClose, onSalva }) {
+export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva}) {
   const [note,    setNote]    = useState(manutenzione.noteChiusura || "");
   const [ore,     setOre]     = useState(manutenzione.oreEffettive || Math.round((manutenzione.durata || 60) / 60 * 10) / 10);
   const [parti,   setParti]   = useState(manutenzione.partiUsate || "");

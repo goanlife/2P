@@ -7,7 +7,7 @@ import { Field, Modal } from "./ui/Atoms";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 // ─── Asset ────────────────────────────────────────────────────────────────
-export function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {
+export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
   const [f,sf]=useState(ini||{nome:"",tipo:"",clienteId:"",ubicazione:"",matricola:"",marca:"",modello:"",dataInst:"",stato:"attivo",note:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   const TIPI=["Impianto elettrico","Linea produzione","Impianto termico","Impianto pneumatico","Impianto idraulico","Sicurezza","Meccanico","Altro"];
@@ -32,7 +32,7 @@ export function ModalAsset({ ini, clienti, onClose, onSalva, userId }) {
   );
 }
 
-export function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, onDel, onQR }) {
+export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], onAgg, onMod, onDel, onQR}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
@@ -76,7 +76,7 @@ export function GestioneAssets({ assets, clienti, manutenzioni, onAgg, onMod, on
 
 
 // ─── Clienti ──────────────────────────────────────────────────────────────
-export function ModalCliente({ ini, onClose, onSalva, userId }) {
+export function ModalCliente({ini, onClose, onSalva, userId}) {
   const [f,sf]=useState(ini||{rs:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
@@ -98,7 +98,7 @@ export function ModalCliente({ ini, onClose, onSalva, userId }) {
   );
 }
 
-export function GestioneClienti({ clienti, manutenzioni, assets, onAgg, onMod, onDel, tenantId, userId, onImportDone }) {
+export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, onMod, onDel, tenantId, userId, onImportDone}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [showImport,setShowImport]=useState(false);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
   const BG=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];const TX=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
