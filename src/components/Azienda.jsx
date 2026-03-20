@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
 import { CatalogoRicambi } from "./GestioneRicambi"
+import { ConfigSLA } from "./SLABadge"
+import { OrdiniAcquisto } from "./OrdiniAcquisto"
 import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
 export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate, gruppi=[] }) {
@@ -152,7 +154,7 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
 
       {/* Tabs */}
       <div style={st.tabs}>
-        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"], ["menu","🎛 Menu"]].map(([id, label]) =>
+        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"], ["sla","⏱ SLA"], ["menu","🎛 Menu"]].map(([id, label]) =>
           <button key={id} style={st.tab(tab===id)} onClick={() => setTab(id)}>{label}</button>
         )}
       </div>
@@ -273,6 +275,13 @@ export default function Azienda({ tenant, session, operatori, ruoloTenant, onTen
       {tab === "ricambi" && (
         <div style={st.card}>
           <CatalogoRicambi tenantId={tenant?.id} />
+        </div>
+      )}
+
+      {/* Tab SLA */}
+      {tab === "sla" && (
+        <div style={st.card}>
+          <ConfigSLA tenantId={tenant?.id} />
         </div>
       )}
 

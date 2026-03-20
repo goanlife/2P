@@ -20,6 +20,8 @@ import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } fr
 import { MobileNav } from "./components/MobileNav";
 import { ALL_TABS } from "./components/ConfigurazioneMenu";
 import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
+import { ConfigSLA } from "./components/SLABadge";
+import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
 import { Dashboard } from "./components/DashboardMain";
 
 
@@ -138,7 +140,8 @@ export default function App() {
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
   const [sidebarOpen, setSidebar] = useState(false);
-  const [menuConfig, setMenuConfig] = useState({}); // gruppoId → Set<tabId>
+  const [menuConfig, setMenuConfig] = useState({});
+  const [slaConfig, setSlaConfig] = useState([]); // gruppoId → Set<tabId>
   const [confirmDlg, setConfirmDlg] = useState(null); // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
@@ -207,6 +210,7 @@ export default function App() {
   // Carica configurazione menu quando cambiano i gruppi dell'utente
   useEffect(() => {
     if (!tenant?.id) return;
+    supabase.from("sla_config").select("*").eq("tenant_id", tenant.id).then(({ data: sd }) => { if(sd) setSlaConfig(sd); });
     supabase.from("menu_config").select("*").eq("tenant_id", tenant.id)
       .then(({ data }) => {
         const mmap = {};
@@ -675,6 +679,7 @@ export default function App() {
         )}
         {vista==="manutenzioni" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
           readOnly={isCliente}
+          slaConfig={slaConfig}
           onChiudi={m=>setChiudiModal(m)}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
@@ -686,6 +691,7 @@ export default function App() {
         {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
+        {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
         {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
       </main>
 

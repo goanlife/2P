@@ -4,6 +4,8 @@ import { PannelloAllegati } from "./AllegatiTemi";
 import { AvatarComp, AvvisoConflitto, Field, Modal } from "./ui/Atoms";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { InterventoRicambi } from "./GestioneRicambi";
+import { CommentiAttivita } from "./CommentiAttivita";
+import { SLABadge } from "./SLABadge";
 
 function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
   return (manutenzioni||[]).filter(m=>m.operatoreId===Number(operatoreId)&&m.data===data&&m.stato!=="completata"&&m.id!==escludiId);
@@ -151,6 +153,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
                   {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡ Urgente</span>}
                   {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
+                  <SLABadge manutenzione={m} slaConfig={slaConfig} />
                   {m.pianoId&&m.stato!=="completata"&&<ChecklistBadge manutenzioneId={m.id} pianoId={m.pianoId} numeroIntervento={m.numeroIntervento} />}
                 </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:12,color:"var(--text-3)"}}>

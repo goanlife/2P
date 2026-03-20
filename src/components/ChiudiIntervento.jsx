@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { InterventoRicambi } from "./GestioneRicambi";
+import { CommentiAttivita } from "./CommentiAttivita";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
 export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva}) {
@@ -140,7 +141,7 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
 
         {/* Tab switcher */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface-2)" }}>
-          {[{ id: "dati", l: "📝 Dati intervento" }, ...(manutenzione.pianoId ? [{ id: "checklist", l: "✅ Checklist" }] : []), { id: "ricambi", l: "🔩 Ricambi" }, { id: "firma", l: "✍ Firma" }].map(t => (
+          {[{ id: "dati", l: "📝 Dati intervento" }, ...(manutenzione.pianoId ? [{ id: "checklist", l: "✅ Checklist" }] : []), { id: "ricambi", l: "🔩 Ricambi" }, { id: "commenti", l: "💬 Note" }, { id: "firma", l: "✍ Firma" }].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               flex: 1, padding: "12px 16px", border: "none",
               borderBottom: tab === t.id ? "2px solid #059669" : "2px solid transparent",
@@ -207,7 +208,7 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
                 background: "#ECFDF5", border: "1px solid #A7F3D0",
                 borderRadius: "var(--radius-sm)", padding: "10px 14px", fontSize: 12, color: "#065F46",
               }}>
-                ℹ Dopo la chiusura puoi aggiungere la firma nel tab "Firma" e generare il verbale PDF.
+                ℹ Usa il tab <strong>🔩 Ricambi</strong> per registrare i materiali usati e calcolare il costo totale dell'intervento. La firma nel tab <strong>✍ Firma</strong> per il verbale PDF.
               </div>
             </div>
           )}
@@ -225,6 +226,16 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
           {tab === "ricambi" && (
             <div style={{ padding: "4px 0" }}>
               <InterventoRicambi manutenzioneId={manutenzione.id} readOnly={false} />
+            </div>
+          )}
+
+          {tab === "commenti" && (
+            <div style={{ padding: "4px 0" }}>
+              <CommentiAttivita
+                manutenzioneId={manutenzione.id}
+                meOperatore={null}
+                onStatoChange={null}
+              />
             </div>
           )}
 
