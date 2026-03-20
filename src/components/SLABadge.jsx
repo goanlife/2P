@@ -60,12 +60,17 @@ export function ConfigSLA({ tenantId }) {
   useEffect(() => { carica(); }, [tenantId]);
 
   const carica = async () => {
-    if (!tenantId) return;
+    if (!tenantId) {
+      // Mostra default anche senza tenantId
+      setConfig(PRIORITA.map(p => ({ priorita: p, ore_risposta: SLA_DEFAULT[p].ore_risposta, ore_risoluzione: SLA_DEFAULT[p].ore_risoluzione })));
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase.from("sla_config").select("*").eq("tenant_id", tenantId).order("priorita");
     if (data && data.length) {
       setConfig(data);
     } else {
-      // Default
+      // Nessun record → mostra default
       setConfig(PRIORITA.map(p => ({ priorita: p, ore_risposta: SLA_DEFAULT[p].ore_risposta, ore_risoluzione: SLA_DEFAULT[p].ore_risoluzione })));
     }
     setLoading(false);
