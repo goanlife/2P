@@ -60,6 +60,7 @@ export function ConfigSLA({ tenantId }) {
   useEffect(() => { carica(); }, [tenantId]);
 
   const carica = async () => {
+    if (!tenantId) return;
     const { data } = await supabase.from("sla_config").select("*").eq("tenant_id", tenantId).order("priorita");
     if (data && data.length) {
       setConfig(data);
@@ -76,6 +77,7 @@ export function ConfigSLA({ tenantId }) {
   };
 
   const salva = async () => {
+    if (!tenantId) return;
     setSaving(true);
     for (const c of config) {
       await supabase.from("sla_config").upsert({ tenant_id: tenantId, priorita: c.priorita, ore_risposta: c.ore_risposta, ore_risoluzione: c.ore_risoluzione }, { onConflict: "tenant_id,priorita" });

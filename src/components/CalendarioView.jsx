@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { ChecklistIntervento } from "./PianoChecklist";
 import { AvvisoConflitto, Field, Modal, Overlay } from "./ui/Atoms";
 
+const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+
 function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
   return (manutenzioni||[]).filter(m=>m.operatoreId===Number(operatoreId)&&m.data===data&&m.stato!=="completata"&&m.id!==escludiId);
 }

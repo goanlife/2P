@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-export function RicercaGlobale({ man, clienti, assets, piani, operatori, onNavigate, onClose }) {
+export function RicercaGlobale({ man=[], clienti=[], assets=[], piani=[], operatori=[], onNavigate, onClose }) {
   const [q, setQ] = useState("");
 
   const risultati = useMemo(() => {

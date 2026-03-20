@@ -152,6 +152,7 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
   useEffect(() => { carica(); }, [tenantId]);
 
   const carica = async () => {
+    if (!tenantId) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
       .from("ordini_acquisto")
