@@ -28,7 +28,7 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
     return Object.values(m).filter(g=>g.length>1);
   },[man, oggi]);
   const kpis=[
-    {v:stats.tot, l:"Totale attività", c:"#0D1B2A", action:()=>onNavigate("manutenzioni",{})},
+    {v:manTotale!=null&&!manCaricaTutto ? manTotale : stats.tot, l:"Totale attività"+(manTotale!=null&&!manCaricaTutto?" *":""), c:"#0D1B2A", action:()=>onNavigate("manutenzioni",{})},
     {v:clienti.length, l:"Clienti", c:"#7F77DD", action:()=>onNavigate("clienti",{})},
     {v:assets.length, l:"Asset", c:"#2563EB", action:()=>onNavigate("assets",{})},
     {v:piani.filter(p=>p.attivo).length, l:"Piani attivi", c:"#059669", action:()=>onNavigate("piani",{})},
@@ -79,6 +79,11 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
           <div style={{fontSize:10,color:"var(--c, var(--text-3))",opacity:.6,marginTop:4,fontWeight:600}}>Vai →</div>
         </div>
       ))}</div>
+      {manTotale!=null&&!manCaricaTutto&&(
+        <div style={{fontSize:11,color:"var(--text-3)",marginTop:-12,marginBottom:4}}>
+          * Dato basato su tutto lo storico · Altri KPI sugli ultimi 6 mesi — <button onClick={()=>onNavigate("manutenzioni",{})} style={{fontSize:11,color:"var(--amber)",background:"none",border:"none",cursor:"pointer",padding:0,textDecoration:"underline"}}>Carica tutto per dati completi</button>
+        </div>
+      )}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:16}}>
         <div className="card">
           <div className="section-head"><span className="section-title">📋 Prossime attività</span></div>
