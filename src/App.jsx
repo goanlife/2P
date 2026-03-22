@@ -53,12 +53,12 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1 });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"" });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"" });
 const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
-const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy" });
+const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy", tariffa_ora:r.tariffa_ora||null });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
 const mapGOp    = r => ({ id:r.id, gruppoId:r.gruppo_id, operatoreId:r.operatore_id });
@@ -70,7 +70,7 @@ const toDbC  = (f,uid,tid) => ({ rs:f.rs, piva:f.piva||"", contatto:f.contatto||
 const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
-const toDbOp    = (f,uid,tid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", email:f.email||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
+const toDbOp    = (f,uid,tid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", email:f.email||"", tariffa_ora:f.tariffa_ora?Number(f.tariffa_ora):null, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbGruppo = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid, ...(tid&&{tenant_id:tid}) });
 
 // ─── Utils ────────────────────────────────────────────────────────────────
@@ -381,6 +381,22 @@ export default function App() {
   };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(error){notify("Errore modifica: "+error.message);return;} sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
   const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
+  const dupM = async m => {
+    const nuova = toDbM({
+      ...m,
+      titolo: m.titolo + " (copia)",
+      stato: "pianificata",
+      data: isoDate(new Date()),     // oggi come data di default
+      pianoId: null,                  // slegata dal piano
+      assegnazioneId: null,
+    }, uid(), tenant?.id);
+    delete nuova.note_chiusura; delete nuova.ore_effettive;
+    delete nuova.parti_usate;   delete nuova.firma_svg; delete nuova.chiuso_at;
+    const { data, error } = await supabase.from("manutenzioni").insert(nuova).select().single();
+    if (error) { notify("Errore duplicazione: " + error.message); return; }
+    sMan(p => [...p, mapM(data)]);
+    notify("✅ Attività duplicata!", "success");
+  };
   const statoM = async (id,stato) => {
     const {error} = await supabase.from("manutenzioni").update({stato}).eq("id",id);
     if (error) { notify("Errore: "+error.message); return; }
@@ -609,6 +625,11 @@ export default function App() {
     sV(tab);
     window.scrollTo({top:0, behavior:"smooth"});
   };
+  // Reset filtri manutenzioni quando si naviga via dalla tab manutenzioni
+  const sVWithReset = (tab) => {
+    if (tab !== "manutenzioni") setFiltroMan({});
+    sV(tab);
+  };
   const apriModM   = m => { siMM({...m, userId:uid()}); sDD(""); sMM(true); };
   const logout     = () => supabase.auth.signOut();
 
@@ -685,7 +706,7 @@ export default function App() {
         <nav className="sb-nav">
           {tabsVisibili.map(t=>(
             <button key={t.id} className={"sb-item"+(vista===t.id?" active":"")}
-              onClick={()=>{ sV(t.id); setSidebar(false); }}>
+              onClick={()=>{ sVWithReset(t.id); setSidebar(false); }}>
               <span className="sb-icon">{t.icon}</span>
               <span className="sb-label">{t.l}</span>
             </button>
@@ -745,7 +766,7 @@ export default function App() {
             <button onClick={caricaTutteLeManut} style={{padding:"6px 14px",background:"#1D4ED8",color:"white",border:"none",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Carica tutto</button>
           </div>
         )}
-        {vista==="manutenzioni" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
+        {vista==="manutenzioni" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} onDup={dupM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
           readOnly={isCliente}
           slaConfig={slaConfig}
           onChiudi={m=>setChiudiModal(m)}
@@ -826,7 +847,7 @@ export default function App() {
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
       {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
 
-      <MobileNav vista={vista} sV={sV} tabs={tabsVisibili} />
+      <MobileNav vista={vista} sV={sVWithReset} tabs={tabsVisibili} />
 
 
       {modalM && !isCliente && <ModalManut

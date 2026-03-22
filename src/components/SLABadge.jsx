@@ -28,7 +28,10 @@ export function SLABadge({ manutenzione, slaConfig=[] }) {
   const cfg = slaConfig.find(s => s.priorita === manutenzione.priorita) || SLA_DEFAULT[manutenzione.priorita] || SLA_DEFAULT.media;
   if (manutenzione.stato === "completata") return null;
 
-  const oreRis = oreRimaste(manutenzione.data + "T08:00:00", cfg.ore_risoluzione);
+  // Usa created_at come inizio SLA (quando l'attività è stata creata/presa in carico)
+  // Fallback sulla data pianificata se created_at non è disponibile
+  const startSla = manutenzione.createdAt || (manutenzione.data + "T08:00:00");
+  const oreRis = oreRimaste(startSla, cfg.ore_risoluzione);
   if (oreRis === null) return null;
 
   const scaduto = oreRis < 0;

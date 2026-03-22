@@ -193,12 +193,13 @@ export function VistaCliente({operatore, clienti=[], assets=[], manutenzioni=[],
 
 // ─── Modal Utente (ex Operatore) ──────────────────────────────────────────
 export function ModalUtente({ini, onClose, onSalva}) {
-  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore",email:"",tema:"navy"});
+  const [f,sf]=useState(ini||{nome:"",spec:"",col:"#378ADD",tipo:"fornitore",email:"",tema:"navy",tariffa_ora:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
     <Modal title={ini?"Modifica utente":"Nuovo utente"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.nome.trim()} saveLabel={ini?"Aggiorna":"Aggiungi"}>
       <Field label="Nome e cognome *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} placeholder="Es. Mario Rossi..." style={{width:"100%"}} /></Field>
       <Field label="Email (per accesso app)"><input type="email" value={f.email||""} onChange={e=>s("email",e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} /></Field>
+      {f.tipo==="fornitore" && <Field label="Tariffa oraria (€/h)"><input type="number" min="0" step="0.5" value={f.tariffa_ora||""} onChange={e=>s("tariffa_ora",e.target.value)} placeholder="Es. 45.00" style={{width:"100%"}} /></Field>}
       <Field label="Tipologia utente *">
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
           {["fornitore","cliente","interno"].map(t=>{

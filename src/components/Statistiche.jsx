@@ -75,6 +75,52 @@ function PieChart({ slices, size = 140 }) {
             <span style={{ color: "var(--text-3)", fontSize: 11 }}>({Math.round(s.v / total * 100)}%)</span>
           </div>
         ))}
+        {costoPerOperatore.length > 0 && (
+          <Card title="💰 Ore e costo per operatore">
+            <div style={{ display: "grid", gap: 8 }}>
+              {costoPerOperatore.map(o => (
+                <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: o.col, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{o.nome}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-3)" }}>{o.interventi} interventi</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{o.ore}h</div>
+                    {o.costo && <div style={{ fontSize: 11, color: "var(--amber)", fontWeight: 700 }}>{fmtEuro(o.costo)}</div>}
+                  </div>
+                </div>
+              ))}
+              {costoPerOperatore.some(o => !o.costo) && (
+                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4, fontStyle: "italic" }}>
+                  * Configura la tariffa oraria in Utenti per vedere il costo
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {costoPerAsset.length > 0 && (
+          <Card title="⚙ Ore di manutenzione per asset">
+            <div style={{ display: "grid", gap: 8 }}>
+              {costoPerAsset.map((a, i) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", width: 20, textAlign: "right" }}>{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
+                    <div style={{ height: 5, background: "var(--surface-3)", borderRadius: 99, marginTop: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(a.ore / Math.max(...costoPerAsset.map(x => x.ore), 1)) * 100}%`, background: "#D97706", borderRadius: 99 }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{a.ore}h</div>
+                    <div style={{ fontSize: 11, color: "var(--text-3)" }}>{a.interventi} interventi</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -155,6 +201,29 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
   );
 
   const maxClienti = Math.max(...topClienti.map(c => c.cnt), 1);
+
+  // Costo per operatore: ore_effettive × tariffa_ora (se disponibile)
+  const costoPerOperatore = useMemo(() =>
+    operatori.filter(o => o.tipo === "fornitore").map(o => {
+      const sue = manPeriodo.filter(m => m.operatoreId === o.id && m.stato === "completata" && m.oreEffettive);
+      const ore = sue.reduce((s, m) => s + (m.oreEffettive || 0), 0);
+      const costo = o.tariffa_ora ? ore * o.tariffa_ora : null;
+      return { ...o, ore: Math.round(ore * 10) / 10, costo, interventi: sue.length };
+    }).filter(x => x.ore > 0).sort((a, b) => b.ore - a.ore),
+    [operatori, manPeriodo]
+  );
+
+  // Costo per asset: somma ore operative
+  const costoPerAsset = useMemo(() =>
+    assets.map(a => {
+      const sue = manPeriodo.filter(m => m.assetId === a.id && m.stato === "completata");
+      const ore = sue.reduce((s, m) => s + (m.oreEffettive || 0), 0);
+      return { ...a, ore: Math.round(ore * 10) / 10, interventi: sue.length };
+    }).filter(x => x.interventi > 0).sort((a, b) => b.ore - a.ore).slice(0, 8),
+    [assets, manPeriodo]
+  );
+
+  const fmtEuro = v => v ? "€" + Number(v).toFixed(0) : null;
 
   // KPI generali
   const totale      = man.length;
@@ -263,6 +332,52 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
                     </div>
                   </div>
                   <span style={{ fontFamily: "var(--font-head)", fontWeight: 700, fontSize: 15, color: "#7F77DD", minWidth: 28, textAlign: "right" }}>{c.cnt}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+        {costoPerOperatore.length > 0 && (
+          <Card title="💰 Ore e costo per operatore">
+            <div style={{ display: "grid", gap: 8 }}>
+              {costoPerOperatore.map(o => (
+                <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: o.col, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{o.nome}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-3)" }}>{o.interventi} interventi</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{o.ore}h</div>
+                    {o.costo && <div style={{ fontSize: 11, color: "var(--amber)", fontWeight: 700 }}>{fmtEuro(o.costo)}</div>}
+                  </div>
+                </div>
+              ))}
+              {costoPerOperatore.some(o => !o.costo) && (
+                <div style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4, fontStyle: "italic" }}>
+                  * Configura la tariffa oraria in Utenti per vedere il costo
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {costoPerAsset.length > 0 && (
+          <Card title="⚙ Ore di manutenzione per asset">
+            <div style={{ display: "grid", gap: 8 }}>
+              {costoPerAsset.map((a, i) => (
+                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-3)", width: 20, textAlign: "right" }}>{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.nome}</div>
+                    <div style={{ height: 5, background: "var(--surface-3)", borderRadius: 99, marginTop: 3, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${(a.ore / Math.max(...costoPerAsset.map(x => x.ore), 1)) * 100}%`, background: "#D97706", borderRadius: 99 }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>{a.ore}h</div>
+                    <div style={{ fontSize: 11, color: "var(--text-3)" }}>{a.interventi} interventi</div>
+                  </div>
                 </div>
               ))}
             </div>
