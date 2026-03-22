@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
 import { supabase } from "../supabase";
-import * as XLSX from "xlsx";
 
 const UNITA_VALIDE = ["pz", "m", "m²", "kg", "l", "h", "conf.", "set", "rotolo"];
 
@@ -54,8 +53,10 @@ export function ImportaRicambi({ tenantId, onDone }) {
     setFileName(file.name);
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        // Lazy import XLSX solo quando serve (risparmia ~300KB nel bundle iniziale)
+        const XLSX = await import("xlsx");
         let rawRows = [];
 
         if (file.name.endsWith(".csv")) {

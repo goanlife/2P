@@ -130,8 +130,9 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
   const isParziale = man.length >= 200; // dati parziali se paginati
   const [periodo, setPeriodo] = useState(6); // ultimi N mesi
 
-  const oggi = new Date();
+  // oggi come useMemo per evitare stale reference a mezzanotte
   const da = useMemo(() => {
+    const oggi = new Date();
     const d = new Date(oggi); d.setMonth(d.getMonth() - periodo); return isoDate(d);
   }, [periodo]);
 
@@ -140,6 +141,7 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
   // Manutenzioni per mese (ultimi 6/12 mesi)
   const perMese = useMemo(() => {
     const mesi = [];
+    const oggi = new Date();
     for (let i = periodo - 1; i >= 0; i--) {
       const d = new Date(oggi); d.setMonth(d.getMonth() - i);
       const y = d.getFullYear(), m = d.getMonth();
@@ -155,6 +157,7 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
   // Completate per mese
   const completatePerMese = useMemo(() => {
     const mesi = [];
+    const oggi = new Date();
     for (let i = periodo - 1; i >= 0; i--) {
       const d = new Date(oggi); d.setMonth(d.getMonth() - i);
       const y = d.getFullYear(), m = d.getMonth();

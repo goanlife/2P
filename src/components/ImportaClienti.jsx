@@ -1,6 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
 import { supabase } from "../supabase";
-import * as XLSX from "xlsx";
 
 // Mappatura flessibile colonne → campi DB
 const COL_MAP = {
@@ -56,8 +55,10 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
     if (!file) return;
     setFileName(file.name);
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        // Lazy import XLSX solo quando serve (risparmia ~300KB nel bundle iniziale)
+        const XLSX = await import("xlsx");
         let rawRows = [];
         if (file.name.toLowerCase().endsWith(".csv")) {
           const text = new TextDecoder("utf-8").decode(e.target.result);

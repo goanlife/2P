@@ -170,7 +170,8 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
       await supabase.from("ordini_acquisto").update({ ...ordineData, totale:f.totale, updated_at:new Date().toISOString() }).eq("id",f.id);
       await supabase.from("ordini_acquisto_righe").delete().eq("ordine_id",f.id);
     } else {
-      const num = `OA-${new Date().getFullYear()}-${String(ordini.length+1).padStart(3,"0")}`;
+      const ts = Date.now().toString(36).toUpperCase().slice(-4);
+      const num = `OA-${new Date().getFullYear()}-${ts}`;
       const { data } = await supabase.from("ordini_acquisto").insert({
         tenant_id: tenantId, fornitore: f.fornitore, stato:"bozza",
         note: f.note, data_ordine: f.data_ordine, data_attesa: f.data_attesa,
