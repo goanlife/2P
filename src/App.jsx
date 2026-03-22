@@ -363,10 +363,23 @@ export default function App() {
   const BATCH = 50;
   const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento, ...(tenant?.id&&{tenant_id:tenant.id}) });
 
-  const aggM = async f => { const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single(); if(error){notify("Errore creazione: "+error.message);return;} sMan(p=>[...p,mapM(data)]); };
+  const aggM = async f => {
+    const {data,error}=await supabase.from("manutenzioni").insert(toDbM(f,uid(),tenant?.id)).select().single();
+    if(error){notify("Errore creazione: "+error.message);return;}
+    sMan(p=>[...p,mapM(data)]);
+    sMM(false); siMM(null);           // chiude il modal
+    notify("✅ Attività creata!","success");
+    sV("manutenzioni");               // naviga alla lista
+  };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(error){notify("Errore modifica: "+error.message);return;} sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
   const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
-  const statoM = async (id,stato) => { await supabase.from("manutenzioni").update({stato}).eq("id",id); sMan(p=>p.map(m=>m.id===id?{...m,stato}:m)); };
+  const statoM = async (id,stato) => {
+    const {error} = await supabase.from("manutenzioni").update({stato}).eq("id",id);
+    if (error) { notify("Errore: "+error.message); return; }
+    sMan(p=>p.map(m=>m.id===id?{...m,stato}:m));
+    const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta"};
+    notify(label[stato]||"Stato aggiornato","success");
+  };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
   const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid(),tenant?.id)).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
   const modC = async f => { await supabase.from("clienti").update(toDbC(f,uid(),tenant?.id)).eq("id",f.id); sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c)); };
@@ -492,6 +505,12 @@ export default function App() {
     const oggi=isoDate(new Date());
     await supabase.from("manutenzioni").delete().eq("assegnazione_id",upd.id).eq("stato","pianificata");
     sMan(prev=>prev.filter(m=>m.assegnazioneId!==upd.id||m.stato==="completata"||m.stato==="inCorso"));
+    // Aggiorna operatore/cliente/asset anche sulle attività inCorso (non le rigenera, solo aggiorna i riferimenti)
+    await supabase.from("manutenzioni")
+      .update({ operatore_id:upd.operatoreId||null, cliente_id:upd.clienteId||null, asset_id:upd.assetId||null })
+      .eq("assegnazione_id",upd.id).eq("stato","inCorso");
+    sMan(prev=>prev.map(m=>m.assegnazioneId===upd.id&&m.stato==="inCorso"
+      ? {...m, operatoreId:upd.operatoreId, clienteId:upd.clienteId, assetId:upd.assetId} : m));
     const dp=upd.dataInizio>oggi?upd.dataInizio:oggi;
     const occ=generaOccorrenze(piano,dp,12); if(!occ.length)return;
     const completati=man.filter(m=>m.assegnazioneId===upd.id&&m.stato==="completata").length;
@@ -700,6 +719,7 @@ export default function App() {
           manutenzione={chiudiModal}
           cliente={clienti.find(c=>c.id===chiudiModal.clienteId)}
           asset={assets.find(a=>a.id===chiudiModal.assetId)}
+          meOperatore={meOperatore}
           onClose={()=>setChiudiModal(null)}
           onSalva={salvaChiusura}
         />
@@ -764,6 +784,7 @@ export default function App() {
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
         clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
         userId={UID}
+        meOperatore={meOperatore}
         onClose={()=>{sMM(false);siMM(null);}}
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}
       />}

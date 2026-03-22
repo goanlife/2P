@@ -4,7 +4,7 @@ import { InterventoRicambi } from "./GestioneRicambi";
 import { CommentiAttivita } from "./CommentiAttivita";
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva}) {
+export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva}, meOperatore=null) {
   const [note,    setNote]    = useState(manutenzione.noteChiusura || "");
   const [ore,     setOre]     = useState(manutenzione.oreEffettive || Math.round((manutenzione.durata || 60) / 60 * 10) / 10);
   const [parti,   setParti]   = useState(manutenzione.partiUsate || "");
@@ -233,7 +233,7 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
             <div style={{ padding: "4px 0" }}>
               <CommentiAttivita
                 manutenzioneId={manutenzione.id}
-                meOperatore={null}
+                meOperatore={meOperatore}
                 onStatoChange={null}
               />
             </div>

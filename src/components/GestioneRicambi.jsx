@@ -29,23 +29,43 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
 
   const aggiungi = async () => {
     const rc = catalogo.find(c => String(c.id) === nuova.ricambioId);
+    const qty = Number(nuova.quantita) || 1;
     const { data } = await supabase.from("intervento_ricambi").insert({
       manutenzione_id: manutenzioneId,
       ricambio_id:     rc ? rc.id : null,
       nome_libero:     rc ? null : (nuova.nomeLibero || "Ricambio"),
-      quantita:        Number(nuova.quantita) || 1,
+      quantita:        qty,
       prezzo_unitario: nuova.prezzoUnitario ? Number(nuova.prezzoUnitario) : (rc?.prezzo || null),
       note:            nuova.note || null,
     }).select("*, ricambi(nome,codice,unita)").single();
     if (data) {
       setRighe(p => [...p, data]);
       setNuova({ ricambioId:"", nomeLibero:"", quantita:1, prezzoUnitario:"", note:"" });
+      // Decrementa stock se è un ricambio a catalogo
+      if (rc?.id) {
+        const { data: rcDb } = await supabase.from("ricambi").select("quantita_stock").eq("id", rc.id).single();
+        if (rcDb) {
+          const nuovoStock = Math.max(0, (rcDb.quantita_stock || 0) - qty);
+          await supabase.from("ricambi").update({ quantita_stock: nuovoStock }).eq("id", rc.id);
+          setCatalogo(p => p.map(c => c.id === rc.id ? { ...c, quantita_stock: nuovoStock } : c));
+        }
+      }
     }
   };
 
   const rimuovi = async (id) => {
+    const riga = righe.find(r => r.id === id);
     await supabase.from("intervento_ricambi").delete().eq("id", id);
     setRighe(p => p.filter(r => r.id !== id));
+    // Ripristina stock se era un ricambio a catalogo
+    if (riga?.ricambio_id) {
+      const { data: rcDb } = await supabase.from("ricambi").select("quantita_stock").eq("id", riga.ricambio_id).single();
+      if (rcDb) {
+        const ripristinato = (rcDb.quantita_stock || 0) + (riga.quantita || 1);
+        await supabase.from("ricambi").update({ quantita_stock: ripristinato }).eq("id", riga.ricambio_id);
+        setCatalogo(p => p.map(c => c.id === riga.ricambio_id ? { ...c, quantita_stock: ripristinato } : c));
+      }
+    }
   };
 
   const totale = righe.reduce((s, r) => s + (r.quantita || 1) * (r.prezzo_unitario || 0), 0);
@@ -98,7 +118,7 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
             {catalogo.length > 0 ? (
               <select value={nuova.ricambioId} onChange={e => setNuova(p => ({ ...p, ricambioId: e.target.value, nomeLibero: "" }))} style={st.inp}>
                 <option value="">— Da catalogo —</option>
-                {catalogo.map(c => <option key={c.id} value={String(c.id)}>{c.nome}{c.codice ? ` [${c.codice}]` : ""}</option>)}
+                {catalogo.map(c => <option key={c.id} value={String(c.id)}>{c.nome}{c.codice ? ` [${c.codice}]` : ""}{c.quantita_stock != null ? ` — stock: ${c.quantita_stock}` : ""}</option>)}
                 <option value="__libero">+ Inserisci manualmente</option>
               </select>
             ) : null}
