@@ -185,9 +185,14 @@ export default function App() {
 
   // Apply default theme on mount - legge da localStorage per evitare flickering
   useEffect(() => {
-    const saved = localStorage.getItem("manumanTema") || "navy";
-    applyTheme(saved);
-    setTemaCorrente(saved);
+    try {
+      const saved = localStorage.getItem("manumanTema") || "navy";
+      applyTheme(saved);
+      setTemaCorrente(saved);
+    } catch(e) {
+      // localStorage non disponibile (es. modalità privata iOS)
+      applyTheme("navy");
+    }
   }, []);
 
   // Aggiorna automaticamente stato → scaduta per attività passate non completate
@@ -848,7 +853,7 @@ export default function App() {
               <SelettoreTema value={temaCorrente} onChange={async t=>{
   setTemaCorrente(t);
   applyTheme(t);
-  localStorage.setItem("manumanTema", t);
+  try { localStorage.setItem("manumanTema", t); } catch(e) {}
   const meOpTema = operatori.find(o=>o.email===session?.user?.email);
   if(meOpTema) await supabase.from("operatori").update({tema:t}).eq("id",meOpTema.id);
 }} />
@@ -857,7 +862,7 @@ export default function App() {
                   <div key={t.id} onClick={async()=>{
   setTemaCorrente(t.id);
   applyTheme(t.id);
-  localStorage.setItem("manumanTema", t.id);
+  try { localStorage.setItem("manumanTema", t.id); } catch(e) {}
   const meOp2 = operatori.find(o=>o.email===session?.user?.email);
   if(meOp2) await supabase.from("operatori").update({tema:t.id}).eq("id",meOp2.id);
 }}
