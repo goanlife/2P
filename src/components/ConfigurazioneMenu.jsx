@@ -15,6 +15,7 @@ export const ALL_TABS = [
   { id: "statistiche",  l: "Statistiche",  icon: "📊", desc: "Report e analisi" },
   { id: "azienda",      l: "Azienda",      icon: "🏛", desc: "Impostazioni azienda" },
   { id: "ordini",       l: "Ordini",       icon: "📦", desc: "Ordini di acquisto ricambi" },
+  { id: "richieste",    l: "Richieste",    icon: "📋", desc: "Richiedi un intervento (portale cliente)" },
 ];
 
 // Tab sempre visibili per admin (non modificabili)

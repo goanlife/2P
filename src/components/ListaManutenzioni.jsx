@@ -128,7 +128,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
         </select>
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca manutenzione..." style={{flex:1,minWidth:140}} />
         <select value={fT} onChange={e=>sfT(e.target.value)}><option value="tutti">Tutti i tipi</option><option value="ordinaria">Ordinaria</option><option value="straordinaria">Straordinaria</option></select>
-        <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
+        <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="richiesta">📋 Richiesta</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
         <select value={fC} onChange={e=>sfC(e.target.value)}><option value="tutti">Tutti i clienti</option>{clienti.map(c=><option key={c.id} value={c.id}>{c.rs}</option>)}</select>
         <select value={fPri} onChange={e=>sfPri(e.target.value)}><option value="tutti">Tutte le priorità</option><option value="urgente">⚡ Urgente</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
         <span style={{fontSize:12,color:"var(--text-3)",alignSelf:"center",whiteSpace:"nowrap"}}>{filtrate.length} risultati{(fT!=="tutti"||fS!=="tutti"||fC!=="tutti"||fPri!=="tutti"||cerca)?" (filtri attivi)":""}</span>

@@ -22,6 +22,7 @@ import { ALL_TABS } from "./components/ConfigurazioneMenu";
 import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
 import { ConfigSLA } from "./components/SLABadge";
 import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
+import { RichiestaIntervento } from "./components/RichiestaIntervento";
 import { Dashboard } from "./components/DashboardMain";
 
 
@@ -43,7 +44,7 @@ const OP_DEFAULT = [
   { nome:"Anna Conti",    spec:"Generico",   col:"#7F77DD", tipo:"interno"   },
 ];
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+const STATO_LABEL = { richiesta:"Richiesta", pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
 const TIPO_OP = {
   fornitore: { label:"Fornitore", cls:"badge", style:{background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #BFDBFE"} },
   cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
@@ -795,6 +796,26 @@ export default function App() {
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
+        {vista==="richieste" && (
+          isCliente
+            ? <RichiestaIntervento
+                meOperatore={meOperatore}
+                siti={siti}
+                assets={assetsView}
+                tenantId={tenant?.id}
+                onCreata={m=>{sMan(p=>[...p,m]);notify("✅ Richiesta inviata!","success");}}
+              />
+            : <div style={{padding:32}}>
+                <div style={{fontWeight:700,fontSize:16,marginBottom:8}}>📋 Richieste clienti</div>
+                <ListaManut man={manView.filter(m=>m.stato==="richiesta")}
+                  clienti={clientiView} assets={assetsView} operatori={operatori}
+                  onStato={statoM} onDel={(id)=>confirmDel("Eliminare?",()=>delM(id))}
+                  onMod={apriModM} onDup={dupM} slaConfig={slaConfig}
+                  onChiudi={m=>setChiudiModal(m)}
+                  onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
+                />
+              </div>
+        )}
         {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
       </main>
 
