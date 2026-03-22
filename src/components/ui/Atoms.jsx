@@ -23,7 +23,7 @@ export function Toast({ msg, type="error", onDismiss }) {
   );
 }
 
-export function ConflictiBanner({ conf }) {
+export function ConflictiBanner({ conf=[] }) {
   const [open, setOpen] = useState(false);
   if (!conf?.length) return null;
   return (

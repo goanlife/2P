@@ -56,6 +56,11 @@ export function ModalManut({ini, clienti=[], assets=[], manutenzioni=[], operato
         </div>
       )}
       {ini?.id&&<PannelloAllegati entitaTipo="manutenzione" entitaId={ini.id} userId={userId||""} />}
+      {ini?.id&&(
+        <div style={{borderTop:"1px solid var(--border)",paddingTop:16,marginTop:8}}>
+          <CommentiAttivita manutenzioneId={ini.id} meOperatore={meOperatore} onStatoChange={null} />
+        </div>
+      )}
     </Modal>
   );
 }

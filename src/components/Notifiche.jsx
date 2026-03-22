@@ -70,7 +70,7 @@ export function useNotifiche(man, operatori, meId) {
   }, [man]);
 }
 
-export function CampanellaNotifiche({ notifiche, onNavigate }) {
+export function CampanellaNotifiche({ notifiche=[], onNavigate }) {
   const [aperta, setAperta] = useState(false);
   const [popupPos, setPopupPos] = useState({});
   const btnRef = React.useRef(null);

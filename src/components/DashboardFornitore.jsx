@@ -61,7 +61,7 @@ function AttivaCard({ m, clienti, assets, onStato, onChiudi, urgent }) {
   );
 }
 
-export function DashboardFornitore({ me, man, clienti, assets, onStato, onApriChiudi }) {
+export function DashboardFornitore({ me, man=[], clienti, assets, onStato, onApriChiudi }) {
   const [settimana, setSettimana] = useState(0); // 0=questa, 1=prossima
 
   const lunedi = useMemo(() => {

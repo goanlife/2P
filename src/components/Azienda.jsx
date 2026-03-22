@@ -5,7 +5,7 @@ import { ConfigSLA } from "./SLABadge"
 import { OrdiniAcquisto } from "./OrdiniAcquisto"
 import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
-export default function Azienda({ tenant, session, operatori, ruoloTenant, onTenantUpdate, gruppi=[] }) {
+export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[] }) {
   const [tab, setTab] = useState("info")
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
