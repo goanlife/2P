@@ -64,7 +64,7 @@ export function ModalApplicaTemplate({
 
       // 2. Copia checklist steps del template nel nuovo piano
       if (steps.length > 0) {
-        await supabase.from("piano_checklist_steps").insert(
+        await supabase.from("piano_checklist").insert(
           steps.sort((a,b) => a.ordine - b.ordine).map((s, i) => ({
             piano_id:     pianoRow.id,
             testo:        s.testo,

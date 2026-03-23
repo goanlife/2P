@@ -240,9 +240,18 @@ export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=f
   };
 
   if (loading) return <div style={{ fontSize: 13, color: "var(--text-3)", padding: "8px 0" }}>Caricamento checklist...</div>;
-  if (steps.length === 0) return null;
+  if (steps.length === 0) return (
+    <div style={{ textAlign:"center", padding:"28px 16px", color:"var(--text-3)" }}>
+      <div style={{ fontSize:32, marginBottom:10 }}>📋</div>
+      <div style={{ fontSize:13, fontWeight:600, marginBottom:6, color:"var(--text-2)" }}>Nessuna checklist configurata</div>
+      <div style={{ fontSize:12, lineHeight:1.6 }}>
+        Per aggiungere una checklist a questo piano,<br/>
+        vai in <strong>Piani</strong> → modifica il piano → tab Checklist.
+      </div>
+    </div>
+  );
 
-  const bloccata = stato === "pianificata";
+  const bloccata = manutenzione?.stato === "pianificata";
 
   const completati = steps.filter(s => stato[s.id]?.completato).length;
   const obbligatoriMancanti = steps.filter(s => s.obbligatorio && !stato[s.id]?.completato);
