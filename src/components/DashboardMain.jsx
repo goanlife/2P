@@ -11,7 +11,7 @@ const TIPO_OP = {
 const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
-export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[], onNavigate}) {
+export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[], onNavigate, manTotale=null, manCaricaTutto=false}) {
   const stats=useMemo(()=>({tot:man.length,pi:man.filter(m=>m.stato==="pianificata").length,ic:man.filter(m=>m.stato==="inCorso").length,sc:man.filter(m=>m.stato==="scaduta").length,ur:man.filter(m=>m.priorita==="urgente"&&m.stato!=="completata").length,rq:man.filter(m=>m.stato==="richiesta").length}),[man]);
   const prossime=useMemo(()=>man.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6),[man]);
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
