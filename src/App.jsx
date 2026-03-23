@@ -16,6 +16,7 @@ import { ModalRipianifica, PopupGiorno, Calendario } from "./components/Calendar
 import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGruppo, ModalAssegnaGruppo, GestioneGruppi, ModalCreaAccesso } from "./components/GestioneUtenti";
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
+import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
@@ -137,6 +138,7 @@ export default function App() {
   const [temaCorrente, setTemaCorrente] = useState("navy");
   const [chiudiModal, setChiudiModal] = useState(null); // manutenzione da chiudere
   const [ricercaAperta, setRicercaAperta] = useState(false);
+  const [templateAsset, setTemplateAsset] = useState(null); // asset su cui aprire modal template
   const [qrAsset, setQrAsset] = useState(null);
   const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
   const [toast,   sToast] = useState(null);
@@ -795,7 +797,7 @@ export default function App() {
         />}
         {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori} templates={[]} ricambi={[]} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione} />}
         {vista==="calendario"   && <Calendario   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
-        {vista==="assets"       && <GestioneAssets assets={assetsView} clienti={clientiView} manutenzioni={man} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} />}
+        {vista==="assets"       && <GestioneAssets assets={assetsView} clienti={clientiView} manutenzioni={man} assegnazioni={assegnazioni} piani={piani} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} onApplicaTemplate={a=>setTemplateAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={(id)=>confirmDel("Eliminare questo gruppo? L'operazione non è reversibile.",()=>delGruppo(id))} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}

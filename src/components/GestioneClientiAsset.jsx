@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { AssetSaluteBadge } from "./TemplateAsset";
+import { PianiAsset } from "./ApplicaTemplate";
 import { ImportaClienti } from "./ImportaClienti";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
@@ -44,7 +45,7 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
   );
 }
 
-export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], onAgg, onMod, onDel, onQR}) {
+export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnazioni=[], piani=[], onAgg, onMod, onDel, onQR, onApplicaTemplate}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
@@ -76,6 +77,10 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], onAgg, o
               <span className={sc.cls}>{sc.l}</span><AssetSaluteBadge asset={a} /><span style={{flex:1}} />
               <span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{manAss.filter(m=>m.stato!=="completata").length} attive · {manAss.length} tot.</span>
             </div>
+            {onApplicaTemplate && (
+              <PianiAsset asset={a} assegnazioni={assegnazioni} piani={piani}
+                onApplica={onApplicaTemplate} />
+            )}
           </div>);
         })}
       </div>
