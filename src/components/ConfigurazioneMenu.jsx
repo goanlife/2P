@@ -16,6 +16,7 @@ export const ALL_TABS = [
   { id: "azienda",      l: "Azienda",      icon: "🏛", desc: "Impostazioni azienda" },
   { id: "ordini",       l: "Ordini",       icon: "📦", desc: "Ordini di acquisto ricambi" },
   { id: "richieste",    l: "Richieste",    icon: "📋", desc: "Richiedi un intervento (portale cliente)" },
+  { id: "template",     l: "Template",     icon: "🔧", desc: "Template attività per tipo asset" },
 ];
 
 // Tab sempre visibili per admin (non modificabili)

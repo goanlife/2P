@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { AssetSaluteBadge } from "./TemplateAsset";
 import { ImportaClienti } from "./ImportaClienti";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
@@ -8,7 +9,7 @@ const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "
 
 // ─── Asset ────────────────────────────────────────────────────────────────
 export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
-  const [f,sf]=useState(ini||{nome:"",tipo:"",clienteId:"",ubicazione:"",matricola:"",marca:"",modello:"",dataInst:"",stato:"attivo",note:""});
+  const [f,sf]=useState(ini||{nome:"",tipo:"",clienteId:"",ubicazione:"",matricola:"",marca:"",modello:"",dataInst:"",stato:"attivo",note:"",ore_utilizzo:"",soglia_ore:"",costo_acquisto:"",garanzia_al:"",vita_utile_anni:"",specifiche_json:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   const TIPI=["Impianto elettrico","Linea produzione","Impianto termico","Impianto pneumatico","Impianto idraulico","Sicurezza","Meccanico","Altro"];
   return (
@@ -26,6 +27,17 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
         <Field label="Modello"><input value={f.modello} onChange={e=>s("modello",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
       <Field label="Data installazione"><input type="date" value={f.dataInst} onChange={e=>s("dataInst",e.target.value)} style={{width:"100%"}} /></Field>
+      <div style={{borderTop:"1px solid var(--border-dim)",paddingTop:14,marginTop:6}}>
+        <div style={{fontSize:11,fontWeight:700,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>📊 Dati tecnici e costi</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          <Field label="Ore utilizzo attuali"><input type="number" min="0" step="0.5" value={f.ore_utilizzo||""} onChange={e=>s("ore_utilizzo",e.target.value)} style={{width:"100%"}} placeholder="Es. 1250" /></Field>
+          <Field label="Soglia intervento (ore)"><input type="number" min="0" step="50" value={f.soglia_ore||""} onChange={e=>s("soglia_ore",e.target.value)} style={{width:"100%"}} placeholder="Es. 500 (ogni 500h)" /></Field>
+          <Field label="Costo acquisto (€)"><input type="number" min="0" step="100" value={f.costo_acquisto||""} onChange={e=>s("costo_acquisto",e.target.value)} style={{width:"100%"}} placeholder="Es. 8500" /></Field>
+          <Field label="Garanzia fino al"><input type="date" value={f.garanzia_al||""} onChange={e=>s("garanzia_al",e.target.value)} style={{width:"100%"}} /></Field>
+          <Field label="Vita utile stimata (anni)"><input type="number" min="0" step="1" value={f.vita_utile_anni||""} onChange={e=>s("vita_utile_anni",e.target.value)} style={{width:"100%"}} placeholder="Es. 15" /></Field>
+          <Field label="Specifiche tecniche"><input value={f.specifiche_json||""} onChange={e=>s("specifiche_json",e.target.value)} style={{width:"100%"}} placeholder={`Es. Potenza: 7.5kW, Pressione: 10bar`} /></Field>
+        </div>
+      </div>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
       {ini?.id&&<PannelloAllegati entitaTipo="asset" entitaId={ini.id} userId={userId||""} />}
     </Modal>
@@ -61,7 +73,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], onAgg, o
             </div>
             {a.note&&<div style={{fontSize:11.5,color:"var(--text-3)",fontStyle:"italic",marginBottom:10}}>{a.note}</div>}
             <div style={{display:"flex",alignItems:"center",gap:8,borderTop:"1px solid var(--border)",paddingTop:10}}>
-              <span className={sc.cls}>{sc.l}</span><span style={{flex:1}} />
+              <span className={sc.cls}>{sc.l}</span><AssetSaluteBadge asset={a} /><span style={{flex:1}} />
               <span style={{fontSize:11.5,color:"var(--text-3)",fontWeight:500}}>{manAss.filter(m=>m.stato!=="completata").length} attive · {manAss.length} tot.</span>
             </div>
           </div>);

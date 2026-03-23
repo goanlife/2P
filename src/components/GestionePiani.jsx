@@ -1,3 +1,4 @@
+import { SuggerimentoRicambi } from "./TemplateAsset";
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { Overlay, Modal, Field } from "./ui/Atoms";
@@ -132,7 +133,7 @@ export function ModalAssegnazione({ini, piano, clienti=[], assets=[], operatori=
   );
 }
 
-export function GestionePiani({piani=[], assegnazioni=[], clienti=[], assets=[], manutenzioni=[], operatori=[], onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova}) {
+export function GestionePiani({piani=[], assegnazioni=[], clienti=[], assets=[], manutenzioni=[], operatori=[], templates=[], ricambi=[], onAgg, onMod, onDel, onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova}) {
   const [showM, ssM] = useState(false);
   const [inMod, siM] = useState(null);
   const [showAss, setShowAss] = useState(false);
