@@ -94,11 +94,14 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
 
 // ─── Clienti ──────────────────────────────────────────────────────────────
 export function ModalCliente({ini, onClose, onSalva, userId}) {
-  const [f,sf]=useState(ini||{rs:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:""});
+  const [f,sf]=useState(ini||{rs:"",codice:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:""});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
     <Modal title={ini?"Modifica cliente":"Nuovo cliente"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.rs.trim()} saveColor="#7F77DD" saveLabel={ini?"Aggiorna":"Aggiungi"}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:12}}>
       <Field label="Ragione sociale *"><input value={f.rs} onChange={e=>s("rs",e.target.value)} style={{width:"100%"}} /></Field>
+      <Field label="Codice (es. CLI1)"><input value={f.codice||""} onChange={e=>s("codice",e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} style={{width:90}} placeholder="CLI1" maxLength={8} /></Field>
+    </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
         <Field label="P.IVA"><input value={f.piva} onChange={e=>s("piva",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Settore"><input value={f.settore} onChange={e=>s("settore",e.target.value)} style={{width:"100%"}} /></Field>
@@ -138,7 +141,13 @@ export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, 
           return(<div key={c.id} className="client-card">
             <div style={{display:"flex",gap:12,marginBottom:12}}>
               <div style={{width:46,height:46,borderRadius:"var(--radius)",background:BG[idx%BG.length],display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--font-head)",fontWeight:700,fontSize:14,color:TX[idx%TX.length],flexShrink:0}}>{ini}</div>
-              <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.rs}</div>{c.settore&&<div style={{fontSize:11.5,color:"#7F77DD",fontWeight:500,marginTop:2}}>{c.settore}</div>}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{fontWeight:700,fontSize:14,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{c.rs}</div>
+                  {c.codice&&<span style={{fontSize:10,fontWeight:800,color:"#7F77DD",background:"#F5F3FF",border:"1px solid #DDD6FE",padding:"1px 7px",borderRadius:99,flexShrink:0,fontFamily:"monospace"}}>{c.codice}</span>}
+                </div>
+                {c.settore&&<div style={{fontSize:11.5,color:"#7F77DD",fontWeight:500,marginTop:2}}>{c.settore}</div>}
+              </div>
               <div style={{display:"flex",gap:4}}><button className="btn-sm btn-icon" onClick={()=>{siM(c);ssM(true);}}>✏</button><button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(c.id)}>✕</button></div>
             </div>
             <div style={{fontSize:12,color:"var(--text-2)",display:"grid",gap:3,marginBottom:12}}>{c.contatto&&<div>👤 {c.contatto}</div>}{c.tel&&<div>📞 {c.tel}</div>}{c.email&&<div>✉ {c.email}</div>}</div>

@@ -107,6 +107,20 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
   const [ordinamento, setOrd] = useState("data");
   const PRIOR = { urgente:0, alta:1, media:2, bassa:3 };
   const STATO_ORD = { scaduta:0, inCorso:1, pianificata:2, completata:3 };
+  // Genera numero attività formattato: [COD]-[ANNO]-[NNN] o #N
+  const fmtNumero = (m) => {
+    const cl = clienti.find(c=>c.id===m.clienteId);
+    const anno = m.data ? m.data.slice(0,4) : new Date().getFullYear();
+    const n = m.pianoId ? (m.numeroIntervento||1) : m.id;
+    const nStr = String(n).padStart(3,"0");
+    // Con codice cliente: ROSS-2025-003 (sempre, con o senza piano)
+    if (cl?.codice) return `${cl.codice}-${anno}-${nStr}`;
+    // Senza codice ma con piano: 2025-003
+    if (m.pianoId) return `${anno}-${nStr}`;
+    // Standalone senza codice: #104
+    return `#${m.id}`;
+  };
+
   const filtrate=useMemo(()=>{
     const r = man.filter(m=>{
       if(fT!=="tutti"&&m.tipo!==fT)return false;
@@ -159,7 +173,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
                   {haConf&&<span style={{fontSize:12}}>⚠️</span>}
-                  <span style={{fontSize:11,fontWeight:700,color:"var(--text-3)",fontFamily:"var(--font-head)",background:"var(--surface-2)",border:"1px solid var(--border)",padding:"1px 7px",borderRadius:99,flexShrink:0}}>#{m.pianoId?m.numeroIntervento||1:m.id}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:"var(--text-3)",fontFamily:"var(--font-head)",background:"var(--surface-2)",border:"1px solid var(--border)",padding:"1px 7px",borderRadius:99,flexShrink:0}}>{fmtNumero(m)}</span>
                   <span style={{fontWeight:600,fontSize:14}}>{m.titolo}</span>
                   <span className={"badge "+(m.tipo==="ordinaria"?"badge-ordinaria":"badge-straord")}>{m.tipo==="ordinaria"?"Ordinaria":"Straord."}</span>
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
