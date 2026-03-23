@@ -124,7 +124,10 @@ export function KanbanView({ man=[], clienti=[], assets=[], operatori=[], onStat
                       onMouseEnter={e => e.currentTarget.style.boxShadow = "var(--shadow)"}
                       onMouseLeave={e => e.currentTarget.style.boxShadow = "var(--shadow-sm)"}
                     >
-                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4, lineHeight: 1.3 }}>{m.titolo}</div>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4, lineHeight: 1.3 }}>
+                        <span style={{fontSize:10,fontWeight:700,color:"var(--text-3)",marginRight:4,fontFamily:"var(--font-head)"}}>#{m.pianoId?m.numeroIntervento||1:m.id}</span>
+                        {m.titolo}
+                      </div>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", fontSize: 11, color: "var(--text-3)" }}>
                         <span>📅 {fmtData(m.data)}</span>
                         {cl && <span style={{ color: "#7F77DD", fontWeight: 500 }}>🏢 {cl.rs.split(" ")[0]}</span>}

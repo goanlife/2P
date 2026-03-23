@@ -80,6 +80,14 @@ export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operat
                 <div style={{flex:1}}>
                   <div style={{fontWeight:700,fontSize:14,marginBottom:3}}>
                     {m.pianoId && <span style={{fontSize:11,color:"#059669",marginRight:5}}>🔄</span>}
+                    {m.pianoId && m.numeroIntervento && (
+                      <span style={{
+                        fontSize:11,fontWeight:800,
+                        background:"var(--surface-2)",color:"var(--text-3)",
+                        padding:"1px 6px",borderRadius:99,marginRight:6,
+                        border:"1px solid var(--border)",fontFamily:"var(--font-head)",
+                      }}>#{m.numeroIntervento}</span>
+                    )}
                     {m.titolo}
                   </div>
                   <span style={{fontSize:11,fontWeight:700,color:col,background:col+"18",padding:"2px 8px",borderRadius:20}}>{STATO_LBL[m.stato]}</span>
@@ -200,7 +208,12 @@ export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipia
                           padding:"2px 4px",borderRadius:"0 4px 4px 0",
                         }}>
                         <span style={{width:14,height:14,borderRadius:"50%",background:op?.col||"#888",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:7,fontWeight:700,color:"white",flexShrink:0}}>{initials}</span>
-                        <span style={{fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{m.pianoId?"🔄 ":""}{m.titolo}</span>
+                        <span style={{fontSize:10,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>
+                          {m.pianoId && m.numeroIntervento && (
+                            <span style={{fontWeight:700,color:"var(--text-3)",marginRight:2}}>#{m.numeroIntervento}</span>
+                          )}
+                          {m.titolo}
+                        </span>
                         <span style={{fontSize:9,color:"var(--text-3)",flexShrink:0}}>{m.durata<60?m.durata+"m":Math.round(m.durata/60*10)/10+"h"}</span>
                       </div>
                     );

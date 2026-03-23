@@ -123,6 +123,7 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
                 ✓ Chiudi intervento
               </div>
               <div style={{ fontSize: 13, opacity: .8, marginTop: 3 }}>
+                <span style={{opacity:.7,marginRight:5}}>#{manutenzione.pianoId ? manutenzione.numeroIntervento||1 : manutenzione.id}</span>
                 {manutenzione.titolo}
               </div>
             </div>
