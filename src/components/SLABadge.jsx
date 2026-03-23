@@ -24,8 +24,14 @@ function fmtOre(ore) {
 }
 
 // ── Badge SLA inline nella card attività ──────────────────────────────────
-export function SLABadge({ manutenzione, slaConfig=[] }) {
-  const cfg = slaConfig.find(s => s.priorita === manutenzione.priorita) || SLA_DEFAULT[manutenzione.priorita] || SLA_DEFAULT.media;
+export function SLABadge({ manutenzione, slaConfig=[], clienti=[], slaProfili=[] }) {
+  // Risoluzione SLA: profilo cliente > config tenant > hardcoded default
+  const cliente = clienti.find(c => c.id === manutenzione.clienteId);
+  const profilo = cliente?.slaProfilo_id
+    ? slaProfili.find(p => p.id === cliente.slaProfilo_id)
+    : slaProfili.find(p => p.is_default);
+  const profiloCfg = profilo?.sla_profilo_config?.find(c => c.priorita === manutenzione.priorita);
+  const cfg = profiloCfg || slaConfig.find(s => s.priorita === manutenzione.priorita) || SLA_DEFAULT[manutenzione.priorita] || SLA_DEFAULT.media;
   if (manutenzione.stato === "completata") return null;
 
   // Usa created_at come inizio SLA (quando l'attività è stata creata/presa in carico)

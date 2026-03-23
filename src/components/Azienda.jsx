@@ -2,10 +2,11 @@ import { useState, useEffect } from "react"
 import { supabase } from "../supabase"
 import { CatalogoRicambi } from "./GestioneRicambi"
 import { ConfigSLA } from "./SLABadge"
+import { GestioneSLAProfili } from "./GestioneSLAProfili"
 import { OrdiniAcquisto } from "./OrdiniAcquisto"
 import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
-export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[] }) {
+export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[], clienti=[]}) {
   const [tab, setTab] = useState("info")
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -281,7 +282,7 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
       {/* Tab SLA */}
       {tab === "sla" && (
         <div style={st.card}>
-          <ConfigSLA tenantId={tenant?.id} />
+          <GestioneSLAProfili tenantId={tenant?.id} clienti={clienti} />
         </div>
       )}
 

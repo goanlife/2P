@@ -23,6 +23,7 @@ import { MobileNav } from "./components/MobileNav";
 import { ALL_TABS } from "./components/ConfigurazioneMenu";
 import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
 import { ConfigSLA } from "./components/SLABadge";
+import { GestioneSLAProfili } from "./components/GestioneSLAProfili";
 import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
 import { RichiestaIntervento } from "./components/RichiestaIntervento";
 import { Dashboard } from "./components/DashboardMain";
@@ -57,7 +58,7 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null });
-const mapC  = r => ({ id:r.id, rs:r.rs, codice:r.codice||"", piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"" });
+const mapC  = r => ({ id:r.id, rs:r.rs, codice:r.codice||"", piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"", slaProfilo_id:r.sla_profilo_id||null });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"", ore_utilizzo:r.ore_utilizzo||0, soglia_ore:r.soglia_ore||null, costo_acquisto:r.costo_acquisto||null, garanzia_al:r.garanzia_al||null, vita_utile_anni:r.vita_utile_anni||null, specifiche_json:r.specifiche_json||null });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"" });
 const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
@@ -69,7 +70,7 @@ const mapGSito  = r => ({ id:r.id, gruppoId:r.gruppo_id, clienteId:r.cliente_id 
 const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mimeType:r.mime_type||"", dimensione:r.dimensione||0, createdAt:r.created_at||"" });
 
 const toDbM  = (f,uid,tid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato, priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
-const toDbC  = (f,uid,tid) => ({ rs:f.rs, codice:f.codice||null, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
+const toDbC  = (f,uid,tid) => ({ rs:f.rs, codice:f.codice||null, sla_profilo_id:f.slaProfilo_id?Number(f.slaProfilo_id):null, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, ore_utilizzo:f.ore_utilizzo?Number(f.ore_utilizzo):0, soglia_ore:f.soglia_ore?Number(f.soglia_ore):null, costo_acquisto:f.costo_acquisto?Number(f.costo_acquisto):null, garanzia_al:f.garanzia_al||null, vita_utile_anni:f.vita_utile_anni?Number(f.vita_utile_anni):null, specifiche_json:f.specifiche_json||null, ...(tid&&{tenant_id:tid}) });
 const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
@@ -145,7 +146,8 @@ export default function App() {
   const notify = (msg,type="error") => sToast({msg,type});
   const [sidebarOpen, setSidebar] = useState(false);
   const [menuConfig, setMenuConfig] = useState({});
-  const [slaConfig, setSlaConfig] = useState([]); // gruppoId → Set<tabId>
+  const [slaConfig, setSlaConfig] = useState([]);
+  const [slaProfili, setSlaProfili] = useState([]); // profili SLA con config per cliente
   const [confirmDlg, setConfirmDlg] = useState(null); // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
@@ -220,6 +222,8 @@ export default function App() {
   useEffect(() => {
     if (!tenant?.id) return;
     supabase.from("sla_config").select("*").eq("tenant_id", tenant.id).then(({ data: sd }) => { if(sd) setSlaConfig(sd); });
+    supabase.from("sla_profili").select("*, sla_profilo_config(*)").eq("tenant_id", tenant.id)
+      .then(({ data: sp }) => { if(sp) setSlaProfili(sp); });
     supabase.from("menu_config").select("*").eq("tenant_id", tenant.id)
       .then(({ data }) => {
         const mmap = {};
@@ -827,13 +831,13 @@ export default function App() {
                 <ListaManut man={manView.filter(m=>m.stato==="richiesta")}
                   clienti={clientiView} assets={assetsView} operatori={operatori}
                   onStato={statoM} onDel={(id)=>confirmDel("Eliminare?",()=>delM(id))}
-                  onMod={apriModM} onDup={dupM} slaConfig={slaConfig}
+                  onMod={apriModM} onDup={dupM} slaConfig={slaConfig} slaProfili={slaProfili}
                   onChiudi={m=>setChiudiModal(m)}
                   onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
                 />
               </div>
         )}
-        {vista==="azienda"      && <Azienda tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
+        {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
       </main>
 
       {chiudiModal && (

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { AssetSaluteBadge } from "./TemplateAsset";
 import { PianiAsset } from "./ApplicaTemplate";
+import { SelectSLAProfilo } from "./GestioneSLAProfili";
 import { ImportaClienti } from "./ImportaClienti";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
@@ -93,8 +94,8 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
 
 
 // ─── Clienti ──────────────────────────────────────────────────────────────
-export function ModalCliente({ini, onClose, onSalva, userId}) {
-  const [f,sf]=useState(ini||{rs:"",codice:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:""});
+export function ModalCliente({ini, onClose, onSalva, userId, tenantId=null}) {
+  const [f,sf]=useState(ini||{rs:"",codice:"",piva:"",contatto:"",tel:"",email:"",ind:"",settore:"",note:"",slaProfilo_id:null});
   const s=(k,v)=>sf(p=>({...p,[k]:v}));
   return (
     <Modal title={ini?"Modifica cliente":"Nuovo cliente"} onClose={onClose} onSave={()=>onSalva(f)} saveOk={!!f.rs.trim()} saveColor="#7F77DD" saveLabel={ini?"Aggiorna":"Aggiungi"}>
@@ -157,7 +158,7 @@ export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, 
           </div>);
         })}
       </div>
-      {showM&&<ModalCliente ini={inMod} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
+      {showM&&<ModalCliente tenantId={tenantId} ini={inMod} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
     </div>
   );
 }
