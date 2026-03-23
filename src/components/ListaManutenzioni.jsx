@@ -159,8 +159,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
               <div style={{flex:1,minWidth:0}}>
                 <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center",marginBottom:5}}>
                   {haConf&&<span style={{fontSize:12}}>⚠️</span>}
-                  {m.pianoId&&m.numeroIntervento&&<span style={{fontSize:11,fontWeight:800,color:"var(--text-3)",background:"var(--surface-2)",border:"1px solid var(--border)",padding:"1px 7px",borderRadius:99,fontFamily:"var(--font-head)",flexShrink:0}}>#{m.numeroIntervento}</span>}
-                  <span style={{fontSize:11,fontWeight:700,color:"var(--text-3)",fontFamily:"var(--font-head)"}}>#{m.pianoId?m.numeroIntervento||1:m.id}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:"var(--text-3)",fontFamily:"var(--font-head)",background:"var(--surface-2)",border:"1px solid var(--border)",padding:"1px 7px",borderRadius:99,flexShrink:0}}>#{m.pianoId?m.numeroIntervento||1:m.id}</span>
                   <span style={{fontWeight:600,fontSize:14}}>{m.titolo}</span>
                   <span className={"badge "+(m.tipo==="ordinaria"?"badge-ordinaria":"badge-straord")}>{m.tipo==="ordinaria"?"Ordinaria":"Straord."}</span>
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
