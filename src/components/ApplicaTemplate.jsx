@@ -46,8 +46,10 @@ export function ModalApplicaTemplate({
     if (!templateScelto) return;
     setSaving(true);
     try {
-      // 1. Crea piano dal template
-      const { data: pianoRow, error: pErr } = await supabase.from("piani").insert({
+      const steps = templateScelto.template_checklist_steps || [];
+
+      // 1. Crea piano via App.jsx (che aggiorna anche lo state React)
+      const pianoRow = await aggPiano({
         nome:        templateScelto.nome,
         descrizione: templateScelto.descrizione || "",
         tipo:        templateScelto.tipo_attivita,
@@ -57,16 +59,13 @@ export function ModalApplicaTemplate({
         attivo:      true,
         stima_costo: templateScelto.stima_costo || null,
         template_id: templateScelto.id,
-        user_id:     uid,
-        tenant_id:   tenantId,
-      }).select().single();
-      if (pErr) throw pErr;
+      });
+      if (!pianoRow?.id) throw new Error("Piano non creato");
 
-      // 2. Copia checklist steps del template nel piano
-      const steps = templateScelto.template_checklist_steps || [];
+      // 2. Copia checklist steps del template nel nuovo piano
       if (steps.length > 0) {
         await supabase.from("piano_checklist_steps").insert(
-          steps.sort((a,b)=>a.ordine-b.ordine).map((s,i) => ({
+          steps.sort((a,b) => a.ordine - b.ordine).map((s, i) => ({
             piano_id:     pianoRow.id,
             testo:        s.testo,
             obbligatorio: s.obbligatorio,
@@ -75,10 +74,14 @@ export function ModalApplicaTemplate({
         );
       }
 
-      // 3. Passa piano e assegnazione ad App.jsx per generare le attività
-      await aggPiano({ ...pianoRow, id: pianoRow.id });
-
-      // L'aggAssegnazione genera automaticamente le occorrenze
+      // 3. Crea assegnazione piano → asset e genera attività (via App.jsx)
+      // Passiamo pianoRow direttamente per evitare race condition con React 18 state batching
+      const pianoMapped = {
+        id: pianoRow.id, nome: pianoRow.nome,
+        tipo: pianoRow.tipo, frequenza: pianoRow.frequenza,
+        durata: pianoRow.durata, priorita: pianoRow.priorita,
+        attivo: pianoRow.attivo, descrizione: pianoRow.descrizione||"",
+      };
       await aggAssegnazione({
         pianoId:     pianoRow.id,
         assetId:     asset.id,
@@ -87,12 +90,12 @@ export function ModalApplicaTemplate({
         dataInizio:  cfg.dataInizio,
         dataFine:    cfg.dataFine || null,
         attivo:      true,
-      });
+      }, pianoMapped); // <-- pianoOverride: evita race condition
 
       setRisultato({ pianoNome: pianoRow.nome, steps: steps.length });
       setStep("fatto");
     } catch(e) {
-      console.error(e);
+      console.error("[ApplicaTemplate] Errore:", e);
       alert("Errore: " + e.message);
     } finally { setSaving(false); }
   };

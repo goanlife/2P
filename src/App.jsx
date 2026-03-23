@@ -485,20 +485,28 @@ export default function App() {
 
   // Crea piano template (senza asset/cliente/operatore)
   const aggPiano = async f => {
-    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(toDbP(f,uid(),tenant?.id)).select().single();
-    if(pErr){console.error(pErr);notify("Errore creazione piano: "+pErr.message);return;}
+    const payload = {
+      ...toDbP(f, uid(), tenant?.id),
+      ...(f.stima_costo != null && { stima_costo: Number(f.stima_costo) }),
+      ...(f.template_id  != null && { template_id:  Number(f.template_id)  }),
+    };
+    const {data:pianoRow,error:pErr}=await supabase.from("piani").insert(payload).select().single();
+    if(pErr){console.error(pErr);notify("Errore creazione piano: "+pErr.message);return null;}
     const np=mapP(pianoRow); sPi(p=>[...p,np]);
-    notify("Piano creato. Ora aggiungi un'assegnazione per generare le attività.", "success");
+    // Notifica solo se chiamata manuale (non da template wizard)
+    if(!f.template_id) notify("Piano creato. Ora aggiungi un'assegnazione per generare le attività.", "success");
+    return pianoRow; // il chiamante (ModalApplicaTemplate) ha bisogno dell'ID
   };
 
   // Crea assegnazione piano → asset e genera occorrenze
-  const aggAssegnazione = async f => {
+  // pianoOverride: se passato, usa questo piano direttamente (evita race condition React 18 batching)
+  const aggAssegnazione = async (f, pianoOverride=null) => {
     const ass={...f,pianoId:Number(f.pianoId),assetId:f.assetId?Number(f.assetId):null,clienteId:f.clienteId?Number(f.clienteId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
     const {data:assRow,error:aErr}=await supabase.from("piano_assegnazioni").insert(toDbAss(ass,uid())).select().single();
     if(aErr){console.error(aErr);notify("Errore assegnazione: "+aErr.message);return;}
     const na=mapAss(assRow); sAss(p=>[...p,na]);
-    // Genera occorrenze per questa assegnazione
-    const piano=piani.find(p=>p.id===na.pianoId);
+    // Genera occorrenze: usa pianoOverride se passato (evita race condition con sPi batching)
+    const piano=pianoOverride || piani.find(p=>p.id===na.pianoId);
     if(!piano||!na.dataInizio)return;
     const occ=generaOccorrenze(piano,na.dataInizio,12); if(!occ.length)return;
     let saved=[];
@@ -889,6 +897,18 @@ export default function App() {
         </Overlay>
       )}
       {toast&&<Toast msg={toast.msg} type={toast.type} onDismiss={()=>sToast(null)} />}
+      {templateAsset && (
+        <ModalApplicaTemplate
+          asset={templateAsset}
+          clienti={clienti}
+          operatori={operatori}
+          tenantId={tenant?.id}
+          uid={uid()}
+          aggPiano={aggPiano}
+          aggAssegnazione={aggAssegnazione}
+          onClose={()=>setTemplateAsset(null)}
+        />
+      )}
       {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
 
       <MobileNav vista={vista} sV={sVWithReset} tabs={tabsVisibili} />
