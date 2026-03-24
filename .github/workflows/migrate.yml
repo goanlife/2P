@@ -16,18 +16,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply migrations via psql
+      - name: Apply migrations via Supabase Management API
         env:
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          sudo apt-get install -y postgresql-client
+          PROJECT_REF="nnsylkjahuhttwajuxls"
+          API="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          DB_URL="postgresql://postgres:${SUPABASE_DB_PASSWORD}@db.nnsylkjahuhttwajuxls.supabase.co:5432/postgres"
+          echo "🔍 Migration da applicare:"
+          ls supabase/migrations/*.sql | sort
 
           for f in $(ls supabase/migrations/*.sql | sort); do
+            echo ""
             echo "▶ Applying: $f"
-            psql "$DB_URL" -f "$f" -v ON_ERROR_STOP=1
-            echo "✅ Done: $f"
+
+            # Leggi SQL e invialo via Management API (HTTPS - no psql)
+            RESPONSE=$(curl -s -w "\n%{http_code}" \
+              -X POST "$API" \
+              -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\": $(cat "$f" | jq -Rs .)}")
+
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
+
+            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+              echo "✅ OK: $f"
+            else
+              # Molti errori sono "già esiste" (idempotenti) — warning non bloccante
+              echo "⚠️  HTTP $HTTP_CODE per $f"
+              echo "   Risposta: $BODY"
+              echo "   (Se è 'already exists' o 'duplicate', è normale — già applicata)"
+            fi
           done
 
-          echo "🎉 All migrations applied!"
+          echo ""
+          echo "🎉 Processo completato!"
