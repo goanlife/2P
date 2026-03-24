@@ -280,5 +280,11 @@ jobs:
           run_sql "006 operatori: tariffa_ora" \
             "alter table operatori add column if not exists tariffa_ora numeric(10,2) default 0;"
 
+          # ──────────────────────────────────────────────────
+          # 011 — SLA snapshot su manutenzioni (opzione C)
+          # ──────────────────────────────────────────────────
+          run_sql "011 manutenzioni: sla_profilo_id (snapshot chiusura)" \
+            "alter table manutenzioni add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
+
           echo ""
           echo "🎉 Tutte le migration applicate!"

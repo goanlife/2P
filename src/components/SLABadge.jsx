@@ -25,12 +25,14 @@ function fmtOre(ore) {
 
 // ── Badge SLA inline nella card attività ──────────────────────────────────
 export function SLABadge({ manutenzione, slaConfig=[], clienti=[], slaProfili=[] }) {
-  // Risoluzione SLA: contenitore cliente (voce per priorità) > tenant default > hardcoded
-  const cliente = clienti.find(c => c.id === manutenzione.clienteId);
-  const contenitore = cliente?.slaProfilo_id
-    ? slaProfili.find(p => p.id === cliente.slaProfilo_id)
+  // Risoluzione SLA:
+  // - Attività completata → usa snapshot congelato al momento della chiusura (C)
+  // - Attività attiva    → usa profilo corrente del cliente (runtime)
+  const profiloId = manutenzione.slaProfiloId ||       // C: snapshot congelato alla chiusura
+    clienti.find(c => c.id === manutenzione.clienteId)?.slaProfilo_id; // D: runtime per attive
+  const contenitore = profiloId
+    ? slaProfili.find(p => p.id === profiloId)
     : slaProfili.find(p => p.is_default);
-  // Cerca la voce del contenitore che matcha la priorità
   const voceContenitore = contenitore?.sla_profilo_config
     ?.filter(v => v.priorita === manutenzione.priorita)
     ?.sort((a,b) => (a.ordine||0) - (b.ordine||0))[0];

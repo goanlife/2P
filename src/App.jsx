@@ -57,7 +57,7 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 
 
 // ─── Mappers ──────────────────────────────────────────────────────────────
-const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null });
+const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null, slaProfiloSnapshot:r.sla_profilo_id||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, codice:r.codice||"", piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"", slaProfilo_id:r.sla_profilo_id||null });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"", ore_utilizzo:r.ore_utilizzo||0, soglia_ore:r.soglia_ore||null, costo_acquisto:r.costo_acquisto||null, garanzia_al:r.garanzia_al||null, vita_utile_anni:r.vita_utile_anni||null, specifiche_json:r.specifiche_json||null });
 const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"" });
@@ -424,7 +424,29 @@ export default function App() {
   };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
   const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid(),tenant?.id)).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
-  const modC = async f => { await supabase.from("clienti").update(toDbC(f,uid(),tenant?.id)).eq("id",f.id); sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c)); };
+  const modC = async f => {
+    // D: se il profilo SLA cambia, controlla quante attività attive sono interessate
+    const vecchioCliente = clienti.find(c => c.id === f.id);
+    const profiloVecchio = vecchioCliente?.slaProfilo_id || null;
+    const profiloNuovo   = f.slaProfilo_id || null;
+    const profiloCambiato = String(profiloVecchio) !== String(profiloNuovo);
+    if (profiloCambiato) {
+      const attiveCliente = man.filter(m => m.clienteId === f.id && m.stato !== "completata");
+      if (attiveCliente.length > 0) {
+        const conferma = window.confirm(
+          `Il profilo SLA è cambiato.\n\n` +
+          `${attiveCliente.length} attivit${attiveCliente.length === 1 ? "à attiva" : "à attive"} per questo cliente ` +
+          `useranno automaticamente il nuovo profilo.\n\n` +
+          `Le attività già completate mantengono il profilo al momento della chiusura.\n\n` +
+          `Confermi il cambio?`
+        );
+        if (!conferma) return;
+      }
+    }
+    await supabase.from("clienti").update(toDbC(f,uid(),tenant?.id)).eq("id",f.id);
+    sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c));
+    if (profiloCambiato) notify("Profilo SLA aggiornato — si applica alle attività future", "success");
+  };
   const delC = async id => { await supabase.from("clienti").delete().eq("id",id); sCl(p=>p.filter(c=>c.id!==id)); };
   const aggA = async f => { const {data,error}=await supabase.from("assets").insert(toDbA(f,uid(),tenant?.id)).select().single(); if(!error)sAs(p=>[...p,mapA(data)]); };
   const modA = async f => { await supabase.from("assets").update(toDbA(f,uid(),tenant?.id)).eq("id",f.id); sAs(p=>p.map(a=>a.id===f.id?{...a,...f}:a)); };
@@ -639,8 +661,13 @@ export default function App() {
   // Chiudi intervento con firma
   const salvaChiusura = async (dati) => {
     const { id, stato, note_chiusura, ore_effettive, parti_usate, firma_svg, chiuso_at } = dati;
+    // C: al momento della chiusura congela il profilo SLA del cliente (snapshot)
+    const manutenzione = man.find(m => m.id === id);
+    const clienteM = manutenzione ? clienti.find(c => c.id === manutenzione.clienteId) : null;
+    const slaSnapshot = clienteM?.slaProfilo_id || null;
     const { error } = await supabase.from("manutenzioni").update({
       stato, note_chiusura, ore_effettive, parti_usate, firma_svg, chiuso_at,
+      sla_profilo_id: slaSnapshot, // congela profilo SLA al momento della chiusura
     }).eq("id", id);
     if (error) {
       notify("Errore salvataggio: " + error.message, "error");
@@ -650,6 +677,7 @@ export default function App() {
       ...m, stato, noteChiusura: note_chiusura,
       oreEffettive: ore_effettive, partiUsate: parti_usate,
       firmaSvg: firma_svg, chiusoAt: chiuso_at,
+      slaProfiloSnapshot: slaSnapshot,
     } : m));
     const meOpLog = operatori.find(o => o.email === session?.user?.email);
     await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOpLog?.nome || "", uid());
