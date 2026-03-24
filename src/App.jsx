@@ -17,6 +17,7 @@ import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGrupp
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
 import { GestioneOdL } from "./components/GestioneOdL";
+import { ScadenzarioNormativo } from "./components/ScadenzarioNormativo";
 import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
@@ -718,6 +719,12 @@ export default function App() {
     const meOpLog = operatori.find(o => o.email === session?.user?.email);
     await logAction(supabase, "manutenzione", id, "completato", { ore_effettive }, meOpLog?.nome || "", uid());
     notify("Intervento chiuso con successo ✅", "success");
+    // Email al cliente (se ha email configurata)
+    try {
+      const { emailInterventoCompletato } = await import("./notifiche-email.js");
+      const tecnico = operatori.find(o=>o.id===manutenzione?.operatoreId);
+      await emailInterventoCompletato(clienteM, {...manutenzione,...dati}, tecnico);
+    } catch(e) { /* email non bloccante */ }
   };
   const navigateTo = (tab, filters={}) => {
     setFiltroMan(filters);
@@ -882,6 +889,7 @@ export default function App() {
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
         {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
+        {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
         {vista==="richieste" && (
           isCliente
             ? <RichiestaIntervento

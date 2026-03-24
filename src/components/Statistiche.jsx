@@ -189,6 +189,24 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
   const scadute     = man.filter(m => m.stato === "scaduta").length;
   const urgenti     = man.filter(m => m.priorita === "urgente" && m.stato !== "completata").length;
 
+  const kpiPerCliente = useMemo(() => clienti.map(c => {
+    const mc = manPeriodo.filter(m => m.clienteId === c.id);
+    if (!mc.length) return null;
+    const comp=mc.filter(m=>m.stato==="completata").length;
+    const scad=mc.filter(m=>m.stato==="scaduta").length;
+    const oreEff=mc.reduce((s,m)=>s+(m.oreEffettive||0),0);
+    return {...c,tot:mc.length,comp,scad,tasso:Math.round(comp/mc.length*100),oreEff};
+  }).filter(Boolean).sort((a,b)=>b.tot-a.tot), [manPeriodo,clienti]);
+
+  const kpiPerPiano = useMemo(() => piani.map(p => {
+    const mp = manPeriodo.filter(m => m.pianoId === p.id);
+    if (!mp.length) return null;
+    const comp=mp.filter(m=>m.stato==="completata").length;
+    const scad=mp.filter(m=>m.stato==="scaduta").length;
+    const cl=clienti.find(c=>c.id===p.clienteId);
+    return {...p,tot:mp.length,comp,scad,tasso:Math.round(comp/mp.length*100),clienteNome:cl?.rs||""};
+  }).filter(Boolean).sort((a,b)=>b.tot-a.tot), [manPeriodo,piani,clienti]);
+
   const Card = ({ title, children }) => (
     <div style={{
       background: "var(--surface)", border: "1px solid var(--border)",
@@ -202,6 +220,12 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      <div style={{display:"flex",borderBottom:"1px solid var(--border)",marginBottom:8}}>
+        {[{id:"globale",l:"Globale"},{id:"cliente",l:"Per cliente"},{id:"piano",l:"Per piano"}].map(t=>(
+          <button key={t.id} onClick={()=>setTabAttiva(t.id)} style={{padding:"8px 16px",border:"none",background:"none",cursor:"pointer",fontWeight:tabAttiva===t.id?700:400,fontSize:13,color:tabAttiva===t.id?"var(--navy)":"var(--text-3)",borderBottom:tabAttiva===t.id?"2px solid var(--amber)":"2px solid transparent"}}>{t.l}</button>
+        ))}
+      </div>
+      <div style={{display:tabAttiva==="globale"?undefined:"none"}}>
       {isParziale && (
         <div style={{background:"#FEF3C7",border:"1px solid #FDE68A",borderRadius:6,padding:"8px 14px",fontSize:12,color:"#92400E"}}>
           ⚠ Statistiche basate sulle ultime {man.length} attività (6 mesi). Per dati completi vai in Manutenzioni → "Carica tutto".
@@ -341,6 +365,46 @@ export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=
           </Card>
         )}
       </div>
+      </div>
+      {tabAttiva==="cliente"&&(
+        <div style={{display:"grid",gap:12}}>
+          {kpiPerCliente.length===0
+            ?<div className="empty"><div className="empty-icon">📊</div><div className="empty-text">Nessun dato nel periodo</div></div>
+            :kpiPerCliente.map(c=>(
+              <div key={c.id} style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius-xl)",padding:"16px 18px",borderLeft:"4px solid #7F77DD"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:12,marginBottom:10}}>
+                  <div><div style={{fontWeight:700,fontSize:15}}>{c.rs}</div>{c.settore&&<div style={{fontSize:12,color:"#7F77DD",marginTop:2}}>{c.settore}</div>}</div>
+                  <div style={{display:"flex",gap:14}}>
+                    {[{l:"Totali",v:c.tot,col:"var(--text-2)"},{l:"Completate",v:c.comp,col:"#059669"},{l:"Scadute",v:c.scad,col:"#EF4444"},{l:"Ore",v:Math.round(c.oreEff)+"h",col:"#F59E0B"}].map(k=>(
+                      <div key={k.l} style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:18,color:k.col}}>{k.v}</div><div style={{fontSize:10,color:"var(--text-3)",textTransform:"uppercase"}}>{k.l}</div></div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{flex:1,height:8,background:"var(--border)",borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:`${c.tasso}%`,background:c.tasso>=80?"#059669":c.tasso>=50?"#F59E0B":"#EF4444",borderRadius:99}}/></div>
+                  <span style={{fontSize:12,fontWeight:700,color:c.tasso>=80?"#059669":c.tasso>=50?"#92400E":"#DC2626",minWidth:38}}>{c.tasso}%</span>
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+      {tabAttiva==="piano"&&(
+        <div style={{display:"grid",gap:10}}>
+          {kpiPerPiano.length===0
+            ?<div className="empty"><div className="empty-icon">🔄</div><div className="empty-text">Nessun dato nel periodo</div></div>
+            :kpiPerPiano.map(p=>(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius-xl)"}}>
+                <div style={{width:40,height:40,borderRadius:"var(--radius)",background:"#ECFDF5",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>🔄</div>
+                <div style={{flex:1,minWidth:0}}><div style={{fontWeight:700,fontSize:13}}>{p.nome}</div>{p.clienteNome&&<div style={{fontSize:11,color:"#7F77DD",fontWeight:600}}>🏢 {p.clienteNome}</div>}</div>
+                <div style={{display:"flex",gap:14,alignItems:"center"}}>
+                  <div style={{textAlign:"center"}}><div style={{fontWeight:700,fontSize:16}}>{p.tot}</div><div style={{fontSize:10,color:"var(--text-3)"}}>Totali</div></div>
+                  <div style={{width:90}}><div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--text-3)",marginBottom:3}}><span>Comp.</span><span style={{fontWeight:700}}>{p.tasso}%</span></div><div style={{height:6,background:"var(--border)",borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:`${p.tasso}%`,background:p.tasso>=80?"#059669":p.tasso>=50?"#F59E0B":"#EF4444",borderRadius:99}}/></div></div>
+                  {p.scad>0&&<span style={{fontSize:11,fontWeight:700,color:"#DC2626",background:"#FEF2F2",padding:"2px 8px",borderRadius:99}}>⚠ {p.scad} scadute</span>}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

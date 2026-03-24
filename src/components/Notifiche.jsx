@@ -1,4 +1,45 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+
+// ── Web Push Notifications (browser nativo) ──────────────────────────────
+export function useBrowserNotifiche(notifiche) {
+  useEffect(() => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "denied") return;
+    if (notifiche.length === 0) return;
+
+    const urgenti = notifiche.filter(n => n.tipo === "scaduta" || n.tipo === "urgente");
+    if (!urgenti.length) return;
+
+    const richiediEMostra = async () => {
+      if (Notification.permission === "default") {
+        const perm = await Notification.requestPermission();
+        if (perm !== "granted") return;
+      }
+      // Mostra max 3 notifiche browser al caricamento
+      urgenti.slice(0, 3).forEach(n => {
+        try {
+          new Notification("ManuMan — " + n.titolo, {
+            body: n.testo + " · " + (n.data ? new Date(n.data+"T00:00:00").toLocaleDateString("it-IT") : ""),
+            icon: "/favicon.ico",
+            tag: n.id, // evita duplicati
+          });
+        } catch(e) { /* browser può bloccare */ }
+      });
+    };
+    // Delay per non bloccare il caricamento iniziale
+    const t = setTimeout(richiediEMostra, 2000);
+    return () => clearTimeout(t);
+  }, []); // solo al mount — notifiche iniziali
+}
+
+// ── Richiedi permesso notifiche browser ──────────────────────────────────
+export async function richiediPermessoNotifiche() {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  const p = await Notification.requestPermission();
+  return p === "granted";
+}
+
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 const isoDate = d => { const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; };
 

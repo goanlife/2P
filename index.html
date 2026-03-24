@@ -2,7 +2,15 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ManuMan" />
+    <meta name="theme-color" content="#0D1B2A" />
+    <meta name="description" content="CMMS per la gestione delle manutenzioni e ordini di lavoro" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
     <title>ManuMan</title>
   </head>
   <body>
@@ -13,5 +21,12 @@
       data-agent-id="3480f742-152e-4476-8f73-c5d2ed8d0217"
       defer
     ></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+      });
+    }
+  </script>
   </body>
 </html>
