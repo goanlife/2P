@@ -28,7 +28,7 @@ export function SLABadge({ manutenzione, slaConfig=[], clienti=[], slaProfili=[]
   // Risoluzione SLA:
   // - Attività completata → usa snapshot congelato al momento della chiusura (C)
   // - Attività attiva    → usa profilo corrente del cliente (runtime)
-  const profiloId = manutenzione.slaProfiloId ||       // C: snapshot congelato alla chiusura
+  const profiloId = manutenzione.slaProfiloSnapshot ||  // C: snapshot congelato alla chiusura
     clienti.find(c => c.id === manutenzione.clienteId)?.slaProfilo_id; // D: runtime per attive
   const contenitore = profiloId
     ? slaProfili.find(p => p.id === profiloId)
