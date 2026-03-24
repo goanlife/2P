@@ -114,6 +114,12 @@ export function ModalCliente({ini, onClose, onSalva, userId, tenantId=null}) {
       </div>
       <Field label="Indirizzo"><input value={f.ind} onChange={e=>s("ind",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Note"><textarea value={f.note} onChange={e=>s("note",e.target.value)} rows={2} style={{width:"100%",resize:"vertical"}} /></Field>
+      {tenantId && (
+        <Field label="⏱ Contenitore SLA">
+          <SelectSLAProfilo tenantId={tenantId} value={f.slaProfilo_id}
+            onChange={v=>s("slaProfilo_id",v?Number(v):null)} />
+        </Field>
+      )}
       {ini?.id&&<PannelloAllegati entitaTipo="cliente" entitaId={ini.id} userId={userId||""} />}
     </Modal>
   );
