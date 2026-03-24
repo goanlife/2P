@@ -53,3 +53,4 @@ alter table template_ricambi disable row level security;
 -- 5. Collega piani ai template (opzionale: un piano può essere generato da un template)
 alter table piani add column if not exists template_id bigint references asset_tipo_template(id) on delete set null;
 alter table piani add column if not exists stima_costo numeric(10,2) default null;
+-- trigger workflow Tue Mar 24 09:41:57 UTC 2026
