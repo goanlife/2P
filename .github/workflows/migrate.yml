@@ -243,6 +243,42 @@ jobs:
             "alter table manutenzioni add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
 
           # ──────────────────────────────────────────────────
+          # 012 — Piano voci flessibili (scope asset|area|generale)
+          # ──────────────────────────────────────────────────
+          run_sql "012 piano_assegnazioni: titolo" \
+            "alter table piano_assegnazioni add column if not exists titolo text;"
+
+          run_sql "012 piano_assegnazioni: scope" \
+            "alter table piano_assegnazioni add column if not exists scope text default 'asset' check (scope in ('asset','area','generale'));"
+
+          run_sql "012 piano_assegnazioni: area_nome" \
+            "alter table piano_assegnazioni add column if not exists area_nome text;"
+
+          run_sql "012 piano_assegnazioni: frequenza" \
+            "alter table piano_assegnazioni add column if not exists frequenza text;"
+
+          run_sql "012 piano_assegnazioni: durata" \
+            "alter table piano_assegnazioni add column if not exists durata int;"
+
+          run_sql "012 piano_assegnazioni: tipo" \
+            "alter table piano_assegnazioni add column if not exists tipo text;"
+
+          run_sql "012 piano_assegnazioni: priorita" \
+            "alter table piano_assegnazioni add column if not exists priorita text;"
+
+          run_sql "012 piano_assegnazioni: note" \
+            "alter table piano_assegnazioni add column if not exists note text;"
+
+          run_sql "012 piani: cliente_id" \
+            "alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;"
+
+          run_sql "012 piani: data_inizio" \
+            "alter table piani add column if not exists data_inizio date;"
+
+          run_sql "012 piani: data_fine" \
+            "alter table piani add column if not exists data_fine date;"
+
+          # ──────────────────────────────────────────────────
           # 006 — Proposta B (se non già applicata)
           # ──────────────────────────────────────────────────
           run_sql "006 attivita_commenti" \

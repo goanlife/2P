@@ -535,13 +535,29 @@ export default function App() {
     if(pErr){console.error(pErr);notify("Errore creazione piano: "+pErr.message);return null;}
     const np=mapP(pianoRow); sPi(p=>[...p,np]);
     // Notifica solo se chiamata manuale (non da template wizard)
-    if(!f.template_id) notify("Piano creato. Ora aggiungi un'assegnazione per generare le attività.", "success");
+    if(!f.template_id) notify("Piano creato. Ora aggiungi le attività.", "success");
     return pianoRow; // il chiamante (ModalApplicaTemplate) ha bisogno dell'ID
   };
 
   // Crea assegnazione piano → asset e genera occorrenze
   // pianoOverride: se passato, usa questo piano direttamente (evita race condition React 18 batching)
   const aggAssegnazione = async (f, pianoOverride=null) => {
+    // Se _soloGenera: la voce esiste già, genera solo le occorrenze mancanti
+    if (f._soloGenera) {
+      const piano = pianoOverride || piani.find(p=>p.id===f.pianoId);
+      if (!piano || !f.dataInizio) return;
+      const pianoCfg = {...piano, frequenza:f.frequenza||piano.frequenza, durata:f.durata||piano.durata};
+      const completati = manutenzioni.filter(m=>m.assegnazioneId===f.id&&m.stato==="completata").length;
+      const occ = generaOccorrenze(pianoCfg, f.dataInizio, 12, true);
+      if (!occ.length) return;
+      let saved=[];
+      for(let i=0;i<occ.length;i+=BATCH){
+        const {data:chunk}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,f,d,completati+i+j+1))).select();
+        if(chunk) saved=[...saved,...chunk.map(mapM)];
+      }
+      if(saved.length) sMan(p=>[...p,...saved]);
+      return;
+    }
     const ass={...f,pianoId:Number(f.pianoId),assetId:f.assetId?Number(f.assetId):null,clienteId:f.clienteId?Number(f.clienteId):null,operatoreId:f.operatoreId?Number(f.operatoreId):null};
     const {data:assRow,error:aErr}=await supabase.from("piano_assegnazioni").insert(toDbAss(ass,uid())).select().single();
     if(aErr){console.error(aErr);notify("Errore assegnazione: "+aErr.message);return;}
