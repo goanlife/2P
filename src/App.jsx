@@ -60,8 +60,8 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null, slaProfiloSnapshot:r.sla_profilo_id||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, codice:r.codice||"", piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"", slaProfilo_id:r.sla_profilo_id||null });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"", ore_utilizzo:r.ore_utilizzo||0, soglia_ore:r.soglia_ore||null, costo_acquisto:r.costo_acquisto||null, garanzia_al:r.garanzia_al||null, vita_utile_anni:r.vita_utile_anni||null, specifiche_json:r.specifiche_json||null });
-const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"" });
-const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"" });
+const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"", clienteId:r.cliente_id||null, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"" });
+const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"", titolo:r.titolo||null, scope:r.scope||"asset", area_nome:r.area_nome||null, frequenza:r.frequenza||null, durata:r.durata||null, tipo:r.tipo||null, priorita:r.priorita||null, note:r.note||"" });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy", tariffa_ora:r.tariffa_ora||null });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
 const mapGruppo = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||'', col:r.col||'#378ADD' });
@@ -72,8 +72,8 @@ const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mi
 const toDbM  = (f,uid,tid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato, priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbC  = (f,uid,tid) => ({ rs:f.rs, codice:f.codice||null, sla_profilo_id:f.slaProfilo_id?Number(f.slaProfilo_id):null, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, ore_utilizzo:f.ore_utilizzo?Number(f.ore_utilizzo):0, soglia_ore:f.soglia_ore?Number(f.soglia_ore):null, costo_acquisto:f.costo_acquisto?Number(f.costo_acquisto):null, garanzia_al:f.garanzia_al||null, vita_utile_anni:f.vita_utile_anni?Number(f.vita_utile_anni):null, specifiche_json:f.specifiche_json||null, ...(tid&&{tenant_id:tid}) });
-const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
-const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, ...(tid&&{tenant_id:tid}) });
+const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, cliente_id:f.clienteId?Number(f.clienteId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, ...(tid&&{tenant_id:tid}) });
+const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, titolo:f.titolo||null, scope:f.scope||"asset", area_nome:f.area_nome||null, frequenza:f.frequenza||null, durata:f.durata?Number(f.durata):null, tipo:f.tipo||null, priorita:f.priorita||null, note:f.note||null, ...(tid&&{tenant_id:tid}) });
 const toDbOp    = (f,uid,tid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", email:f.email||"", tariffa_ora:f.tariffa_ora?Number(f.tariffa_ora):null, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbGruppo = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid, ...(tid&&{tenant_id:tid}) });
 
@@ -386,7 +386,22 @@ export default function App() {
   };
   const UID = session?.user?.id || "";
   const BATCH = 50;
-  const buildRowM = (piano, ass, data, nIntervento=1) => ({ titolo:piano.nome, tipo:piano.tipo||"ordinaria", stato:"pianificata", priorita:piano.priorita||"media", operatore_id:ass?.operatoreId||null, cliente_id:ass?.clienteId||null, asset_id:ass?.assetId||null, piano_id:piano.id, assegnazione_id:ass?.id||null, data, durata:Number(piano.durata)||60, note:piano.descrizione||"", user_id:uid(), numero_intervento:nIntervento, ...(tenant?.id&&{tenant_id:tenant.id}) });
+  const buildRowM = (piano, ass, data, nIntervento=1) => ({
+    // Voce ha priorità: titolo/frequenza/durata/tipo/priorita propri, fallback al piano
+    titolo:       ass?.titolo       || piano.nome,
+    tipo:         ass?.tipo         || piano.tipo        || "ordinaria",
+    priorita:     ass?.priorita     || piano.priorita    || "media",
+    durata:       Number(ass?.durata|| piano.durata)     || 60,
+    note:         ass?.note         || piano.descrizione || "",
+    stato:        "pianificata",
+    operatore_id: ass?.operatoreId  || null,
+    cliente_id:   ass?.clienteId    || null,
+    asset_id:     (ass?.scope==='asset' ? ass?.assetId : null) || null,
+    piano_id:     piano.id,
+    assegnazione_id: ass?.id        || null,
+    data, user_id: uid(), numero_intervento: nIntervento,
+    ...(tenant?.id&&{tenant_id:tenant.id}),
+  });
 
   const aggM = async f => {
     const fWithDefaults = {...f, stato: f.stato||"pianificata"};
@@ -534,7 +549,9 @@ export default function App() {
     // Genera occorrenze: usa pianoOverride se passato (evita race condition con sPi batching)
     const piano=pianoOverride || piani.find(p=>p.id===na.pianoId);
     if(!piano||!na.dataInizio)return;
-    const occ=generaOccorrenze(piano,na.dataInizio,12); if(!occ.length)return;
+    // La voce ha la sua frequenza (override rispetto al piano)
+    const pianoCfg={...piano, frequenza:na.frequenza||piano.frequenza, durata:na.durata||piano.durata};
+    const occ=generaOccorrenze(pianoCfg,na.dataInizio,12); if(!occ.length)return;
     let saved=[];
     for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,na,d,i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
     if(saved.length){sMan(p=>[...p,...saved]);notify(`${saved.length} attività generate!`,"success");}
@@ -557,7 +574,8 @@ export default function App() {
       .update({data_inizio:nuovaInizio, data_fine:nuovaFine, attivo:true}).eq("id",assId).select().single();
     if(error){notify("Errore rinnovo: "+error.message);return;}
     const na = mapAss(assRow); sAss(p=>p.map(x=>x.id===assId?na:x));
-    const occ = generaOccorrenze(piano, nuovaInizio, 12);
+    const pianoCfgRin={...piano, frequenza:a.frequenza||piano.frequenza, durata:a.durata||piano.durata};
+    const occ = generaOccorrenze(pianoCfgRin, nuovaInizio, 12);
     if(!occ.length) return;
     const completati = man.filter(m=>m.assegnazioneId===assId&&m.stato==="completata").length;
     let saved=[];
@@ -584,7 +602,8 @@ export default function App() {
     sMan(prev=>prev.map(m=>m.assegnazioneId===upd.id&&m.stato==="inCorso"
       ? {...m, operatoreId:upd.operatoreId, clienteId:upd.clienteId, assetId:upd.assetId} : m));
     const dp=upd.dataInizio>oggi?upd.dataInizio:oggi;
-    const occ=generaOccorrenze(piano,dp,12); if(!occ.length)return;
+    const pianoCfgMod={...piano, frequenza:upd.frequenza||piano.frequenza, durata:upd.durata||piano.durata};
+    const occ=generaOccorrenze(pianoCfgMod,dp,12); if(!occ.length)return;
     const completati=man.filter(m=>m.assegnazioneId===upd.id&&m.stato==="completata").length;
     let saved=[];
     for(let i=0;i<occ.length;i+=BATCH){const {data:chunk,error:e}=await supabase.from("manutenzioni").insert(occ.slice(i,i+BATCH).map((d,j)=>buildRowM(piano,upd,d,completati+i+j+1))).select();if(e){console.error(e);break;}if(chunk)saved=[...saved,...(chunk||[]).map(mapM)];}
