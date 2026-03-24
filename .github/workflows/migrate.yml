@@ -16,39 +16,244 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply migrations via Supabase Management API
+      - name: Apply all pending migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           PROJECT_REF="nnsylkjahuhttwajuxls"
           API="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
 
-          echo "🔍 Migration da applicare:"
-          ls supabase/migrations/*.sql | sort
-
-          for f in $(ls supabase/migrations/*.sql | sort); do
+          run_sql() {
+            local label="$1"
+            local sql="$2"
             echo ""
-            echo "▶ Applying: $f"
-
-            # Leggi SQL e invialo via Management API (HTTPS - no psql)
-            RESPONSE=$(curl -s -w "\n%{http_code}" \
+            echo "▶ $label"
+            RESP=$(curl -s -w "\n%{http_code}" \
               -X POST "$API" \
               -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
               -H "Content-Type: application/json" \
-              -d "{\"query\": $(cat "$f" | jq -Rs .)}")
-
-            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-            BODY=$(echo "$RESPONSE" | head -n -1)
-
-            if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
-              echo "✅ OK: $f"
+              -d "{\"query\": $(echo "$sql" | jq -Rs .)}")
+            CODE=$(echo "$RESP" | tail -1)
+            BODY=$(echo "$RESP" | head -n -1)
+            if [ "$CODE" = "200" ] || [ "$CODE" = "201" ] || [ "$CODE" = "204" ]; then
+              echo "   ✅ OK"
             else
-              # Molti errori sono "già esiste" (idempotenti) — warning non bloccante
-              echo "⚠️  HTTP $HTTP_CODE per $f"
-              echo "   Risposta: $BODY"
-              echo "   (Se è 'already exists' o 'duplicate', è normale — già applicata)"
+              echo "   ℹ️  HTTP $CODE — $BODY"
+              echo "   (Se è 'already exists' è normale)"
             fi
-          done
+          }
+
+          # ── 006: Proposta B ──────────────────────────────────────
+          run_sql "006 attivita_commenti" "
+            create table if not exists attivita_commenti (
+              id              bigserial primary key,
+              manutenzione_id bigint references manutenzioni(id) on delete cascade,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              autore_id       bigint references operatori(id) on delete set null,
+              autore_nome     text not null,
+              testo           text not null,
+              tipo            text default 'nota' check (tipo in ('nota','approvazione','rifiuto','richiesta')),
+              created_at      timestamptz default now()
+            );
+            create index if not exists idx_commenti_man on attivita_commenti(manutenzione_id);
+            alter table attivita_commenti disable row level security;
+          "
+
+          run_sql "006 sla_config" "
+            create table if not exists sla_config (
+              id              bigserial primary key,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              priorita        text not null check (priorita in ('bassa','media','alta','urgente')),
+              ore_risposta    int default 24,
+              ore_risoluzione int default 72,
+              created_at      timestamptz default now(),
+              unique(tenant_id, priorita)
+            );
+            alter table sla_config disable row level security;
+          "
+
+          run_sql "006 init_sla_defaults function" "
+            create or replace function init_sla_defaults(p_tenant_id uuid)
+            returns void language plpgsql as \$\$
+            begin
+              insert into sla_config (tenant_id, priorita, ore_risposta, ore_risoluzione) values
+                (p_tenant_id, 'bassa',   72, 168),
+                (p_tenant_id, 'media',   24, 72),
+                (p_tenant_id, 'alta',    8,  24),
+                (p_tenant_id, 'urgente', 2,  8)
+              on conflict (tenant_id, priorita) do nothing;
+            end;
+            \$\$;
+          "
+
+          run_sql "006 ordini_acquisto" "
+            create table if not exists ordini_acquisto (
+              id          bigserial primary key,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              numero      text,
+              fornitore   text,
+              stato       text default 'bozza' check (stato in ('bozza','inviato','confermato','ricevuto','annullato')),
+              note        text,
+              data_ordine date,
+              data_attesa date,
+              totale      numeric(10,2),
+              created_by  bigint references operatori(id) on delete set null,
+              created_at  timestamptz default now(),
+              updated_at  timestamptz default now()
+            );
+            create table if not exists ordini_acquisto_righe (
+              id              bigserial primary key,
+              ordine_id       bigint references ordini_acquisto(id) on delete cascade,
+              ricambio_id     bigint references ricambi(id) on delete set null,
+              nome_libero     text,
+              quantita        numeric(10,2) default 1,
+              prezzo_unitario numeric(10,2),
+              note            text
+            );
+            create index if not exists idx_ordini_tenant on ordini_acquisto(tenant_id);
+            alter table ordini_acquisto disable row level security;
+            alter table ordini_acquisto_righe disable row level security;
+          "
+
+          run_sql "006 colonne ricambi e operatori" "
+            alter table ricambi   add column if not exists soglia_minima  int           default 0;
+            alter table ricambi   add column if not exists quantita_stock int           default 0;
+            alter table operatori add column if not exists tariffa_ora    numeric(10,2) default 0;
+          "
+
+          # ── 007: Proposta A — Asset Health Card ──────────────────
+          run_sql "007 assets colonne estese" "
+            alter table assets add column if not exists ore_utilizzo    numeric(10,1) default 0;
+            alter table assets add column if not exists soglia_ore      numeric(10,1) default null;
+            alter table assets add column if not exists costo_acquisto  numeric(12,2) default null;
+            alter table assets add column if not exists garanzia_al     date          default null;
+            alter table assets add column if not exists vita_utile_anni int           default null;
+            alter table assets add column if not exists specifiche_json jsonb         default null;
+          "
+
+          run_sql "007 asset_tipo_template" "
+            create table if not exists asset_tipo_template (
+              id            bigserial primary key,
+              tenant_id     uuid references tenants(id) on delete cascade,
+              tipo_asset    text not null,
+              nome          text not null,
+              descrizione   text,
+              tipo_attivita text default 'ordinaria' check (tipo_attivita in ('ordinaria','straordinaria')),
+              frequenza     text default 'mensile',
+              durata        int  default 60,
+              priorita      text default 'media',
+              stima_costo   numeric(10,2) default null,
+              attivo        boolean default true,
+              created_at    timestamptz default now()
+            );
+            create index if not exists idx_template_tenant on asset_tipo_template(tenant_id);
+            create index if not exists idx_template_tipo   on asset_tipo_template(tipo_asset);
+            alter table asset_tipo_template disable row level security;
+          "
+
+          run_sql "007 template_checklist_steps + template_ricambi" "
+            create table if not exists template_checklist_steps (
+              id          bigserial primary key,
+              template_id bigint references asset_tipo_template(id) on delete cascade,
+              testo       text not null,
+              obbligatorio boolean default false,
+              ordine      int  default 0
+            );
+            alter table template_checklist_steps disable row level security;
+            create table if not exists template_ricambi (
+              id          bigserial primary key,
+              template_id bigint references asset_tipo_template(id) on delete cascade,
+              ricambio_id bigint references ricambi(id) on delete set null,
+              nome_libero text,
+              quantita    numeric(10,2) default 1,
+              note        text
+            );
+            alter table template_ricambi disable row level security;
+          "
+
+          run_sql "007 piani colonne template" "
+            alter table piani add column if not exists template_id bigint references asset_tipo_template(id) on delete set null;
+            alter table piani add column if not exists stima_costo numeric(10,2) default null;
+          "
+
+          # ── 008: Codice cliente ───────────────────────────────────
+          run_sql "008 clienti.codice" "
+            alter table clienti add column if not exists codice text default null;
+            update clienti
+            set codice = upper(regexp_replace(left(rs, 4), '[^A-Za-z0-9]', '', 'g')) || id::text
+            where codice is null;
+          "
+
+          # ── 009: SLA Profili ──────────────────────────────────────
+          run_sql "009 sla_profili" "
+            create table if not exists sla_profili (
+              id          bigserial primary key,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              nome        text not null,
+              descrizione text,
+              colore      text default '#3B82F6',
+              is_default  boolean default false,
+              created_at  timestamptz default now()
+            );
+            create index if not exists idx_sla_profili_tenant on sla_profili(tenant_id);
+            alter table sla_profili disable row level security;
+          "
+
+          run_sql "009 sla_profilo_config" "
+            create table if not exists sla_profilo_config (
+              id              bigserial primary key,
+              profilo_id      bigint references sla_profili(id) on delete cascade,
+              priorita        text not null check (priorita in ('bassa','media','alta','urgente')),
+              ore_risposta    int default 24,
+              ore_risoluzione int default 72,
+              unique(profilo_id, priorita)
+            );
+            alter table sla_profilo_config disable row level security;
+          "
+
+          run_sql "009 clienti.sla_profilo_id" "
+            alter table clienti add column if not exists sla_profilo_id bigint
+              references sla_profili(id) on delete set null;
+          "
+
+          run_sql "009 migrazione sla_config → sla_profili" "
+            insert into sla_profili (tenant_id, nome, descrizione, is_default)
+              select distinct tenant_id, 'Standard', 'Profilo SLA predefinito', true
+              from sla_config where tenant_id is not null
+              on conflict do nothing;
+            insert into sla_profilo_config (profilo_id, priorita, ore_risposta, ore_risoluzione)
+              select p.id, s.priorita, s.ore_risposta, s.ore_risoluzione
+              from sla_config s
+              join sla_profili p on p.tenant_id = s.tenant_id and p.is_default = true
+              on conflict (profilo_id, priorita) do nothing;
+          "
+
+          # ── 010: SLA voci custom ──────────────────────────────────
+          run_sql "010 sla_profilo_config voci custom" "
+            alter table sla_profilo_config add column if not exists nome  text;
+            alter table sla_profilo_config add column if not exists note  text;
+            alter table sla_profilo_config add column if not exists ordine int default 0;
+          "
+
+          run_sql "010 priorita opzionale" "
+            alter table sla_profilo_config alter column priorita drop not null;
+            alter table sla_profilo_config drop constraint if exists sla_profilo_config_profilo_id_priorita_key;
+            create unique index if not exists idx_sla_config_priorita_unica
+              on sla_profilo_config(profilo_id, priorita)
+              where priorita is not null;
+          "
+
+          run_sql "010 popola nome voci esistenti" "
+            update sla_profilo_config
+            set nome = case priorita
+              when 'urgente' then 'Urgente'
+              when 'alta'    then 'Alta priorità'
+              when 'media'   then 'Media priorità'
+              when 'bassa'   then 'Bassa priorità'
+              else 'SLA generico'
+            end
+            where nome is null;
+          "
 
           echo ""
-          echo "🎉 Processo completato!"
+          echo "🎉 Tutte le migration applicate!"
