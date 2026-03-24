@@ -941,7 +941,7 @@ export default function App() {
           onClose={()=>setTemplateAsset(null)}
         />
       )}
-      {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} />}
+      {confirmDlg&&<ConfirmDialog msg={confirmDlg.msg} onConfirm={confirmDlg.onConfirm} onCancel={()=>setConfirmDlg(null)} title={confirmDlg.title} confirmLabel={confirmDlg.confirmLabel} confirmColor={confirmDlg.confirmColor} icon={confirmDlg.icon} />}
 
       <MobileNav vista={vista} sV={sVWithReset} tabs={tabsVisibili} />
 

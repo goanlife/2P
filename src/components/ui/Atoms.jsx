@@ -57,16 +57,17 @@ export function Overlay({ children, zIndex=1000 }) {
   return <div className="overlay" style={{zIndex}}>{children}</div>;
 }
 
-export function ConfirmDialog({ msg, onConfirm, onCancel }) {
+export function ConfirmDialog({ msg, onConfirm, onCancel, title=null, confirmLabel=null, confirmColor=null, icon=null }) {
+  const isInfo = confirmColor && confirmColor !== "#EF4444";
   return (
     <Overlay zIndex={2000}>
-      <div style={{background:"var(--surface)",borderRadius:"var(--radius-xl)",padding:"28px 32px",width:"min(380px,94vw)",boxShadow:"0 8px 40px rgba(0,0,0,.25)"}}>
-        <div style={{fontSize:20,marginBottom:12,textAlign:"center"}}>⚠️</div>
-        <div style={{fontWeight:700,fontSize:15,marginBottom:8,textAlign:"center"}}>Conferma eliminazione</div>
-        <div style={{fontSize:13,color:"var(--text-2)",marginBottom:20,textAlign:"center",lineHeight:1.5}}>{msg}</div>
+      <div style={{background:"var(--surface)",borderRadius:"var(--radius-xl)",padding:"28px 32px",width:"min(440px,94vw)",boxShadow:"0 8px 40px rgba(0,0,0,.25)"}}>
+        <div style={{fontSize:20,marginBottom:12,textAlign:"center"}}>{icon || (isInfo ? "ℹ️" : "⚠️")}</div>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:8,textAlign:"center"}}>{title || "Conferma eliminazione"}</div>
+        <div style={{fontSize:13,color:"var(--text-2)",marginBottom:20,textAlign:"center",lineHeight:1.6,whiteSpace:"pre-line"}}>{msg}</div>
         <div style={{display:"flex",gap:10,justifyContent:"center"}}>
           <button onClick={onCancel} style={{padding:"9px 24px",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",background:"var(--surface)",cursor:"pointer",fontSize:13,fontWeight:600}}>Annulla</button>
-          <button onClick={onConfirm} style={{padding:"9px 24px",border:"none",borderRadius:"var(--radius-sm)",background:"#EF4444",color:"white",cursor:"pointer",fontSize:13,fontWeight:700}}>Elimina</button>
+          <button onClick={()=>{onConfirm();onCancel();}} style={{padding:"9px 24px",border:"none",borderRadius:"var(--radius-sm)",background:confirmColor||"#EF4444",color:"white",cursor:"pointer",fontSize:13,fontWeight:700}}>{confirmLabel||"Elimina"}</button>
         </div>
       </div>
     </Overlay>
