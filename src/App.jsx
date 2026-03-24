@@ -16,6 +16,7 @@ import { ModalRipianifica, PopupGiorno, Calendario } from "./components/Calendar
 import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGruppo, ModalAssegnaGruppo, GestioneGruppi, ModalCreaAccesso } from "./components/GestioneUtenti";
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
+import { GestioneOdL } from "./components/GestioneOdL";
 import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
@@ -879,6 +880,7 @@ export default function App() {
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
+        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
         {vista==="richieste" && (
           isCliente
