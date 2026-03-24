@@ -179,6 +179,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
                   {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡ Urgente</span>}
                   {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
+                  {m.odlId&&<span style={{fontSize:10,fontWeight:700,color:"#4338CA",background:"#EEF2FF",padding:"2px 6px",borderRadius:4}}>📋 OdL</span>}
                   <SLABadge manutenzione={m} slaConfig={slaConfig} clienti={clienti} slaProfili={slaProfili} />
                   {m.pianoId&&m.stato!=="completata"&&<ChecklistBadge manutenzioneId={m.id} pianoId={m.pianoId} numeroIntervento={m.numeroIntervento} />}
                 </div>

@@ -1,3 +1,4 @@
+import { ModalGeneraOdL } from "./GeneraOdL";
 import React, { useState, useMemo, useCallback } from "react";
 import { supabase } from "../supabase";
 import { Field, Modal, Overlay, ConfirmDialog } from "./ui/Atoms";
