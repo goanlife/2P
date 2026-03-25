@@ -157,7 +157,7 @@ export function iconaFile(mime) {
   return "📄";
 }
 
-export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
+export function GestoreAllegati({ entitaTipo, entitaId, userId, tenantId=null }) {
   const [allegati,   setAllegati]  = useState([]);
   const [loading,    setLoading]   = useState(true);
   const [uploading,  setUploading] = useState(false);
@@ -209,7 +209,7 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9.\-_]/g, "_");
-      const path = `${uid}/${entitaTipo}/${entitaId}/${Date.now()}_${safeName}`;
+      const path = `${entitaTipo}/${String(entitaId)}/${Date.now()}_${safeName}`;
 
       // Upload storage
       const { error: upErr } = await supabase.storage
@@ -217,12 +217,15 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
         .upload(path, file, { upsert: false });
 
       if (upErr) {
-        if (upErr.message?.includes("Bucket") || upErr.message?.includes("bucket") || upErr.message?.includes("not found")) {
-          setErrore("⚠ Bucket storage 'allegati' non trovato. Vai su Supabase → Storage → Crea bucket 'allegati'.");
-        } else if (upErr.message?.includes("row-level") || upErr.message?.includes("policy")) {
-          setErrore("⚠ Policy storage mancante. Esegui l'SQL della policy su Supabase.");
+        const msg = upErr.message || "";
+        if (msg.includes("Bucket") || msg.includes("bucket") || msg.includes("not found") || msg.includes("404")) {
+          setErrore("⚠ Bucket storage 'allegati' non trovato. Esegui le migration dal workflow GitHub.");
+        } else if (msg.includes("row-level") || msg.includes("policy") || msg.includes("403") || msg.includes("Unauthorized")) {
+          setErrore("⚠ Permessi storage mancanti. Esegui le migration dal workflow GitHub.");
+        } else if (msg.includes("auth") || msg.includes("JWT") || msg.includes("token")) {
+          setErrore("⚠ Sessione scaduta. Ricarica la pagina e riprova.");
         } else {
-          setErrore("Errore upload: " + upErr.message);
+          setErrore("Errore upload: " + msg);
         }
         continue;
       }
@@ -237,7 +240,8 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
           storage_path: path,
           mime_type:    file.type || "",
           dimensione:   file.size,
-          user_id:      uid,
+          user_id:      uid || null,
+          ...(tenantId && { tenant_id: tenantId }),
         })
         .select()
         .single();
@@ -267,7 +271,7 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
   const apri = async (a) => {
     const { data, error } = await supabase.storage
       .from("allegati")
-      .createSignedUrl(a.storagePath, 120);
+      .createSignedUrl(a.storagePath, 3600);
     if (error) { setErrore("Impossibile aprire: " + error.message); return; }
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   };
@@ -393,7 +397,7 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId }) {
 }
 
 // ─── Pannello allegati collassabile ──────────────────────────────────────
-export function PannelloAllegati({ entitaTipo, entitaId, userId }) {
+export function PannelloAllegati({ entitaTipo, entitaId, userId, tenantId=null }) {
   const [aperto, setAperto] = useState(false);
   const [count, setCount] = useState(null);
 
@@ -415,7 +419,7 @@ export function PannelloAllegati({ entitaTipo, entitaId, userId }) {
       </button>
       {aperto&&(
         <div style={{marginTop:10}} onClick={e=>e.stopPropagation()}>
-          <GestoreAllegati entitaTipo={entitaTipo} entitaId={entitaId} userId={userId} />
+          <GestoreAllegati entitaTipo={entitaTipo} entitaId={entitaId} userId={userId} tenantId={tenantId} />
         </div>
       )}
     </div>

@@ -83,6 +83,7 @@ function PieChart({ slices, size = 140 }) {
 export function Statistiche({man=[], clienti=[], assets=[], piani=[], operatori=[]}) {
   const isParziale = man.length >= 200; // dati parziali se paginati
   const [periodo, setPeriodo] = useState(6); // ultimi N mesi
+  const [tabAttiva, setTabAttiva] = useState("globale"); // globale | cliente | piano
 
   // oggi come useMemo per evitare stale reference a mezzanotte
   const da = useMemo(() => {
