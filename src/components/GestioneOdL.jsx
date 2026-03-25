@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
+import { emailOdlAssegnato, emailInterventoCompletato } from "../notifiche-email";
 import { Overlay, Field } from "./ui/Atoms";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
@@ -244,7 +245,7 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenant
 
 // ─── Vista principale OdL ─────────────────────────────────────────────────
 export function GestioneOdL({
-  manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="",
+  manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="", emailConfig={},
   onAggiornaManutenzioni,
 }) {
   const [odl,     setOdl]    = useState([]);
@@ -304,13 +305,39 @@ export function GestioneOdL({
   // Aggiorna stato OdL
   const statoOdl = async (id, stato) => {
     await supabase.from("ordini_lavoro").update({ stato }).eq("id", id);
+    const odlObj = odl.find(o=>o.id===id);
     setOdl(prev=>prev.map(o=>o.id===id?{...o,stato}:o));
-    // Se completato → completa anche tutte le attività pianificate
-    if (stato==="completato") {
-      await supabase.from("manutenzioni")
-        .update({ stato:"completata", chiuso_at: new Date().toISOString() })
-        .eq("odl_id", id).in("stato",["pianificata","inCorso"]);
-      onAggiornaManutenzioni?.();
+
+    // Email automatiche (solo se configurate)
+    if (odlObj) {
+      const op = operatori.find(o=>o.id===odlObj.operatore_id);
+      const cl = clienti.find(c=>c.id===odlObj.cliente_id);
+
+      // OdL confermato → email al tecnico
+      if (stato==="confermato" && emailConfig.odlAssegnato !== false) {
+        const att = manutenzioni.filter(m=>m.odlId===id);
+        emailOdlAssegnato(op, {...odlObj, n_attivita: att.length}, cl);
+      }
+
+      // OdL completato → email al cliente + completa attività
+      if (stato==="completato") {
+        await supabase.from("manutenzioni")
+          .update({ stato:"completata", chiuso_at: new Date().toISOString() })
+          .eq("odl_id", id).in("stato",["pianificata","inCorso"]);
+        onAggiornaManutenzioni?.();
+
+        if (emailConfig.completamento !== false && cl?.email) {
+          // Usa il primo tecnico con ore effettive come "tecnico principale"
+          const attPrinc = manutenzioni.filter(m=>m.odlId===id && m.oreEffettive);
+          const tecPrinc = attPrinc.length ? operatori.find(o=>o.id===attPrinc[0].operatoreId) : op;
+          emailInterventoCompletato(cl, {
+            titolo: odlObj.titolo,
+            chiusoAt: new Date().toISOString(),
+            oreEffettive: attPrinc.reduce((s,a)=>s+a.oreEffettive,0) || null,
+            noteChiusura: odlObj.note || "",
+          }, tecPrinc);
+        }
+      }
     }
   };
 

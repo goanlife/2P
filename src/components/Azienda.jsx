@@ -7,7 +7,123 @@ import { GestioneSLAProfili } from "./GestioneSLAProfili"
 import { OrdiniAcquisto } from "./OrdiniAcquisto"
 import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
-export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[], clienti=[]}) {
+
+// ─── Tab configurazione email ─────────────────────────────────────────────
+function TabEmail({ emailConfig={}, onSalva }) {
+  const [cfg, setCfg] = useState({
+    abilitato:    emailConfig.abilitato    ?? false,
+    odlAssegnato: emailConfig.odlAssegnato ?? true,
+    completamento:emailConfig.completamento?? true,
+    slaAlert:     emailConfig.slaAlert     ?? true,
+    scadenzeNorm: emailConfig.scadenzeNorm ?? true,
+    mittente:     emailConfig.mittente     || "",
+  });
+  const s = (k,v) => setCfg(p=>({...p,[k]:v}));
+  const [salvato, setSalvato] = useState(false);
+
+  const salva = () => {
+    onSalva?.(cfg);
+    setSalvato(true);
+    setTimeout(()=>setSalvato(false), 2000);
+  };
+
+  const Toggle = ({label, sub, k}) => (
+    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+      gap:12, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:13, fontWeight:600 }}>{label}</div>
+        {sub && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>{sub}</div>}
+      </div>
+      <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
+        opacity: !cfg.abilitato && k!=="abilitato" ? 0.4 : 1 }}>
+        <div style={{ position:"relative", width:40, height:22 }}>
+          <input type="checkbox" checked={cfg[k]}
+            disabled={!cfg.abilitato && k!=="abilitato"}
+            onChange={e=>s(k,e.target.checked)}
+            style={{ position:"absolute", opacity:0, width:"100%", height:"100%", cursor:"pointer", margin:0 }} />
+          <div style={{ width:40, height:22, borderRadius:11,
+            background: cfg[k] ? "#059669" : "var(--border)",
+            transition:"background .2s", position:"relative" }}>
+            <div style={{ position:"absolute", top:2,
+              left: cfg[k] ? 20 : 2,
+              width:18, height:18, borderRadius:"50%", background:"white",
+              transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
+          </div>
+        </div>
+      </label>
+    </div>
+  );
+
+  return (
+    <div style={{ display:"grid", gap:16 }}>
+
+      {/* Setup banner */}
+      <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
+        borderRadius:10, padding:"16px 18px" }}>
+        <div style={{ fontWeight:700, fontSize:14, color:"#1E40AF", marginBottom:8 }}>
+          📧 Come funziona l'invio email
+        </div>
+        <div style={{ fontSize:12, color:"#1E40AF", lineHeight:1.7 }}>
+          ManuMan usa <strong>Resend</strong> (gratuito fino a 3.000 email/mese) come provider email.<br/>
+          Per attivare l'invio devi:
+        </div>
+        <ol style={{ fontSize:12, color:"#1E40AF", lineHeight:2, marginLeft:18, marginTop:8 }}>
+          <li>Crea un account gratuito su <strong>resend.com</strong></li>
+          <li>Genera una API Key dal dashboard Resend</li>
+          <li>Vai su <strong>Supabase → Edge Functions → notifica-email → Secrets</strong></li>
+          <li>Aggiungi il segreto <code style={{background:"#DBEAFE",padding:"1px 5px",borderRadius:4}}>RESEND_API_KEY</code> con il valore della tua API Key</li>
+          <li>Assicurati che le email di operatori e clienti siano compilate in ManuMan</li>
+        </ol>
+      </div>
+
+      {/* Toggles */}
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+        borderRadius:10, padding:"16px 18px" }}>
+        <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Notifiche automatiche</div>
+        <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:12 }}>
+          Le email vengono inviate solo se l'indirizzo email è configurato sull'operatore o sul cliente.
+        </div>
+
+        <Toggle k="abilitato"
+          label="Abilita invio email"
+          sub="Attiva o disattiva tutte le notifiche email" />
+        <Toggle k="odlAssegnato"
+          label="OdL confermato → email al tecnico"
+          sub="Quando un OdL passa a 'Confermato', il tecnico assegnato riceve l'email con i dettagli" />
+        <Toggle k="completamento"
+          label="OdL completato → email al cliente"
+          sub="Quando un OdL viene chiuso, il cliente riceve la conferma di avvenuto intervento" />
+        <Toggle k="slaAlert"
+          label="Avviso SLA in scadenza"
+          sub="Email al responsabile quando un'attività urgente sta per superare l'SLA" />
+        <Toggle k="scadenzeNorm"
+          label="Scadenze normative in avvicinarsi"
+          sub="Email di promemoria per adempimenti normativi in scadenza nei prossimi 30 giorni" />
+      </div>
+
+      {/* Mittente personalizzato */}
+      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
+        borderRadius:10, padding:"16px 18px" }}>
+        <div style={{ fontWeight:700, fontSize:14, marginBottom:8 }}>Mittente personalizzato</div>
+        <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:10 }}>
+          Lascia vuoto per usare il mittente predefinito (noreply@manutenzioni.app).<br/>
+          Per usare il tuo dominio devi verificarlo su Resend.
+        </div>
+        <input value={cfg.mittente} onChange={e=>s("mittente",e.target.value)}
+          style={{ width:"100%" }} type="email"
+          placeholder="manutenzioni@tua-azienda.it" />
+      </div>
+
+      {/* Salva */}
+      <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
+        {salvato && <span style={{ fontSize:13, color:"#059669", alignSelf:"center" }}>✅ Salvato!</span>}
+        <button className="btn-primary" onClick={salva}>Salva configurazione</button>
+      </div>
+    </div>
+  );
+}
+
+export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[], clienti=[], emailConfig={}, onEmailConfig }) {
   const [tab, setTab] = useState("info")
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState(null)
@@ -156,7 +272,7 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
 
       {/* Tabs */}
       <div style={st.tabs}>
-        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"], ["sla","⏱ SLA"], ["menu","🎛 Menu"]].map(([id, label]) =>
+        {[["info","📋 Informazioni"], ["logo","🖼 Logo"], ["invito","🔗 Invito"], ["membri","👥 Membri"], ["ricambi","🔩 Ricambi"], ["sla","⏱ SLA"], ["menu","🎛 Menu"], ["email","📧 Email"]].map(([id, label]) =>
           <button key={id} style={st.tab(tab===id)} onClick={() => setTab(id)}>{label}</button>
         )}
       </div>
@@ -334,6 +450,11 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
           </div>
         </div>
       )}
+
+      {tab === "email" && (
+        <TabEmail emailConfig={emailConfig} onSalva={onEmailConfig} />
+      )}
+
     </div>
   )
 }

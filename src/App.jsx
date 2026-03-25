@@ -161,7 +161,15 @@ export default function App() {
   const [menuConfig, setMenuConfig] = useState({});
   const [slaConfig, setSlaConfig] = useState([]);
   const [slaProfili, setSlaProfili] = useState([]); // profili SLA con config per cliente
-  const [confirmDlg, setConfirmDlg] = useState(null); // {msg, onConfirm}
+  const [confirmDlg, setConfirmDlg] = useState(null);
+  const [emailConfig, setEmailConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("manuMan_emailConfig") || "{}"); }
+    catch { return {}; }
+  });
+  const salvaEmailConfig = (cfg) => {
+    setEmailConfig(cfg);
+    localStorage.setItem("manuMan_emailConfig", JSON.stringify(cfg));
+  }; // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
   // Wrapper per operazioni DB con gestione errori uniforme
@@ -948,7 +956,7 @@ export default function App() {
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
-        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
+        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
         {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
         {vista==="richieste" && (
@@ -971,7 +979,7 @@ export default function App() {
                 />
               </div>
         )}
-        {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} />}
+        {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} emailConfig={emailConfig} onEmailConfig={salvaEmailConfig} />}
       </main>
 
       {chiudiModal && (
