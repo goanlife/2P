@@ -141,7 +141,12 @@ function TestEmail() {
         }
       }
     } catch(e) {
-      setRis({ ok:false, msg:`❌ Errore di rete: ${e.message}` });
+      const msg = e.message || "";
+      if (msg.includes("offline") || msg.includes("not valid JSON") || msg.includes("Failed to fetch")) {
+        setRis({ ok:false, tipo:"not_deployed", msg:"❌ Edge Function non ancora deployata su Supabase." });
+      } else {
+        setRis({ ok:false, msg:`❌ Errore: ${msg}` });
+      }
     } finally {
       setLoading(false);
     }
@@ -201,9 +206,28 @@ function TestEmail() {
               </ol>
             </div>
           )}
-          {!risultato.ok && risultato.msg.includes("Edge Function") && (
-            <div style={{ marginTop:8, fontSize:12 }}>
-              La funzione va deployata. Contatta il supporto tecnico.
+          {!risultato.ok && (risultato.msg.includes("Edge Function") || risultato.tipo==="not_deployed") && (
+            <div style={{ marginTop:10, fontSize:12, lineHeight:1.8 }}>
+              <strong>La funzione non è deployata. Per farlo:</strong>
+              <ol style={{ marginLeft:16, marginTop:6, lineHeight:2.2 }}>
+                <li>
+                  Vai su{" "}
+                  <a href="https://supabase.com/dashboard/project/nnsylkjahuhttwajuxls/functions"
+                    target="_blank" style={{color:"#DC2626",fontWeight:600}}>
+                    Supabase → Edge Functions
+                  </a>
+                </li>
+                <li>Clicca <strong>"Deploy a new function"</strong> o <strong>"Via editor"</strong></li>
+                <li>Nome funzione: <code style={{background:"#FEE2E2",padding:"2px 6px",borderRadius:3}}>notifica-email</code></li>
+                <li>Copia il codice dal file <code style={{background:"#FEE2E2",padding:"2px 6px",borderRadius:3}}>supabase/functions/notifica-email/index.ts</code> nel repo GitHub</li>
+                <li>Clicca <strong>Deploy</strong></li>
+                <li>Poi aggiungi il secret <code style={{background:"#FEE2E2",padding:"2px 6px",borderRadius:3}}>RESEND_API_KEY</code> in <strong>Project Settings → Edge Functions</strong></li>
+              </ol>
+              <div style={{marginTop:8, padding:"8px 10px", background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:6}}>
+                💡 <strong>Alternativa più rapida:</strong> aggiungi{" "}
+                <code style={{background:"#FEE2E2",padding:"2px 5px",borderRadius:3}}>SUPABASE_ACCESS_TOKEN</code>{" "}
+                nei secrets di GitHub e il workflow automatico la deplyerà ad ogni push.
+              </div>
             </div>
           )}
         </div>
