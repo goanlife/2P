@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
+import { stampaRapportoOdL } from "../utils/features";
 import { Overlay, Field } from "./ui/Atoms";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 }
 
 // ─── Card OdL espandibile ─────────────────────────────────────────────────
-function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], onStato, onMod, onDel }) {
+function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", onStato, onMod, onDel, onPdf }) {
   const [aperto, setAperto] = useState(false);
   const st  = statoOdl(odl.stato);
   const op  = operatori.find(o=>o.id===(odl.operatore_id||odl.operatoreId));
@@ -190,6 +191,8 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], onStat
           )}
 
           <div style={{display:"flex", gap:4}}>
+            <button className="btn-sm btn-icon" title="Stampa rapporto PDF"
+              onClick={()=>onPdf(odl)}>🖨</button>
             <button className="btn-sm btn-icon" onClick={()=>onMod(odl)}>✏</button>
             <button className="btn-sm btn-icon btn-danger" onClick={()=>onDel(odl.id)}>✕</button>
           </div>
@@ -241,7 +244,7 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], onStat
 
 // ─── Vista principale OdL ─────────────────────────────────────────────────
 export function GestioneOdL({
-  manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId,
+  manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="",
   onAggiornaManutenzioni,
 }) {
   const [odl,     setOdl]    = useState([]);
@@ -328,6 +331,14 @@ export function GestioneOdL({
     setInMod(null);
   };
 
+  // Stampa rapporto OdL
+  const stampaOdl = (odl) => {
+    const att     = manutenzioni.filter(m => m.odlId === odl.id);
+    const cliente = clienti.find(c => c.id === (odl.cliente_id || odl.clienteId));
+    const operatore = operatori.find(o => o.id === (odl.operatore_id || odl.operatoreId));
+    stampaRapportoOdL(odl, att, cliente, operatore, assets, tenantNome);
+  };
+
   // Elimina OdL
   const delOdl = async (id) => {
     if (!confirm("Eliminare questo OdL? Le attività collegate rimarranno ma perderanno il collegamento.")) return;
@@ -407,9 +418,11 @@ export function GestioneOdL({
               operatori={operatori}
               clienti={clienti}
               assets={assets}
+              tenantNome={tenantNome}
               onStato={statoOdl}
               onMod={setInMod}
               onDel={delOdl}
+              onPdf={stampaOdl}
             />
           ))}
         </div>

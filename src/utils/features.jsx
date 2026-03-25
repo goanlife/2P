@@ -272,3 +272,225 @@ export function LogAttivita({ entitaTipo, entitaId, sb }) {
     </div>
   );
 }
+
+// ─── Feature 11: Rapporto OdL PDF ────────────────────────────────────────────
+export function stampaRapportoOdL(odl, attivita=[], cliente, operatore, assets=[], tenantNome="") {
+  const win = window.open("", "_blank");
+  if (!win) { alert("Popup bloccato. Consenti i popup per questo sito."); return; }
+
+  const now     = new Date();
+  const dataStampa = now.toLocaleDateString("it-IT");
+  const oraStampa  = now.toLocaleTimeString("it-IT", {hour:"2-digit",minute:"2-digit"});
+  const fmtD = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
+  const fmtDT= d => d ? new Date(d).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+  const fmtH = min => {
+    if (!min) return "—";
+    const h = Math.floor(min/60), m = min%60;
+    return h>0 ? `${h}h${m>0?m+"m":""}` : `${m}m`;
+  };
+
+  const attComp  = attivita.filter(a=>a.stato==="completata");
+  const attPend  = attivita.filter(a=>a.stato!=="completata");
+  const oreStimate = attivita.reduce((s,a)=>s+(a.durata||0),0);
+  const oreEffettive = attivita.reduce((s,a)=>s+(a.oreEffettive||0)*60,0); // in minuti
+  const noteChiusura = attivita.filter(a=>a.noteChiusura).map(a=>a.noteChiusura).join("\n");
+  const partiUsate   = attivita.filter(a=>a.partiUsate).map(a=>a.partiUsate).join("\n");
+  const firmaSvg     = attivita.find(a=>a.firmaSvg)?.firmaSvg || null;
+
+  const STATO_BADGE = {
+    completata: {bg:"#ECFDF5",col:"#065F46",bd:"#A7F3D0",l:"Completata"},
+    inCorso:    {bg:"#FEF3C7",col:"#92400E",bd:"#FDE68A",l:"In corso"},
+    pianificata:{bg:"#EFF6FF",col:"#1E40AF",bd:"#BFDBFE",l:"Pianificata"},
+    scaduta:    {bg:"#FEF2F2",col:"#991B1B",bd:"#FECACA",l:"Scaduta"},
+  };
+  const ODL_STATO = {
+    completato: {bg:"#ECFDF5",col:"#065F46",l:"Completato"},
+    in_corso:   {bg:"#FEF3C7",col:"#92400E",l:"In corso"},
+    confermato: {bg:"#EFF6FF",col:"#1E40AF",l:"Confermato"},
+    bozza:      {bg:"#F9FAFB",col:"#374151",l:"Bozza"},
+  };
+  const stato = ODL_STATO[odl.stato] || ODL_STATO.bozza;
+
+  const attivitaRows = attivita.map(a => {
+    const asset = assets.find(x=>x.id===a.assetId);
+    const sb    = STATO_BADGE[a.stato] || STATO_BADGE.pianificata;
+    return `
+      <tr>
+        <td style="padding:8px 10px;font-weight:600">${a.titolo||"—"}</td>
+        <td style="padding:8px 10px;color:#555">${asset?.nome||"—"}</td>
+        <td style="padding:8px 10px;text-align:center">
+          <span style="background:${sb.bg};color:${sb.col};border:1px solid ${sb.bd};
+            padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${sb.l}</span>
+        </td>
+        <td style="padding:8px 10px;text-align:right">${fmtH(a.durata)}</td>
+        <td style="padding:8px 10px;text-align:right;font-weight:600;color:${a.oreEffettive?"#059669":"#999"}">${a.oreEffettive?a.oreEffettive+"h":"—"}</td>
+        <td style="padding:8px 10px;color:#555;font-size:11px">${a.noteChiusura||""}</td>
+      </tr>`;
+  }).join("");
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Rapporto OdL ${odl.numero||"#"+odl.id}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Segoe UI',Arial,sans-serif; font-size:13px; color:#1a1a1a; padding:32px 36px; max-width:860px; margin:0 auto; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:18px; border-bottom:3px solid #0D1B2A; margin-bottom:24px; }
+    .logo { font-size:24px; font-weight:800; color:#0D1B2A; letter-spacing:-.02em; }
+    .logo span { color:#F59E0B; }
+    .meta { text-align:right; font-size:11px; color:#666; line-height:1.8; }
+    .odl-num { font-size:22px; font-weight:800; color:#0D1B2A; margin-bottom:4px; }
+    .odl-title { font-size:16px; font-weight:600; margin-bottom:10px; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:99px; font-size:12px; font-weight:700; margin-right:8px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0; }
+    .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin:20px 0; }
+    .box { background:#F8F6F1; border:1px solid #E2DDD4; border-radius:8px; padding:14px 16px; }
+    .box-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:10px; }
+    .row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #EEE; font-size:12px; }
+    .row:last-child { border-bottom:none; }
+    .row label { color:#666; }
+    .kpi { text-align:center; padding:14px; background:#F8F6F1; border:1px solid #E2DDD4; border-radius:8px; }
+    .kpi-val { font-size:28px; font-weight:800; color:#0D1B2A; line-height:1; }
+    .kpi-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-top:6px; }
+    table { width:100%; border-collapse:collapse; margin-top:8px; }
+    thead tr { background:#0D1B2A; color:white; }
+    thead th { padding:9px 10px; text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    tbody tr { border-bottom:1px solid #EEE; }
+    tbody tr:hover { background:#FAFAF9; }
+    .note-box { background:#F8F6F1; border:1px solid #E2DDD4; border-radius:8px; padding:14px 16px; margin:8px 0; white-space:pre-wrap; font-size:12px; min-height:60px; }
+    .firma-box { border:2px solid #E2DDD4; border-radius:8px; min-height:90px; display:flex; align-items:center; justify-content:center; background:white; }
+    .footer { margin-top:32px; padding-top:14px; border-top:1px solid #E2DDD4; font-size:10px; color:#aaa; display:flex; justify-content:space-between; }
+    .print-btn { text-align:center; margin-top:28px; }
+    @media print {
+      body { padding:16px; }
+      .print-btn { display:none; }
+      .footer { position:fixed; bottom:16px; left:36px; right:36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div>
+      <div class="logo">Manu<span>Man</span></div>
+      <div style="font-size:11px;color:#888;margin-top:3px">${tenantNome||"Gestione Manutenzioni"}</div>
+    </div>
+    <div class="meta">
+      <div style="font-weight:700;font-size:13px">Rapporto Ordine di Lavoro</div>
+      <div>Stampato il: ${dataStampa} ore ${oraStampa}</div>
+    </div>
+  </div>
+
+  <!-- TITOLO OdL -->
+  <div class="odl-num">${odl.numero||"OdL #"+odl.id}</div>
+  <div class="odl-title">${odl.titolo||""}</div>
+  <div style="margin-bottom:20px">
+    <span class="badge" style="background:${stato.bg};color:${stato.col}">${stato.l}</span>
+    ${odl.data_fine && odl.data_fine!==odl.data_inizio
+      ? `<span style="font-size:12px;color:#555">Intervento multi-giorno: ${fmtD(odl.data_inizio)} → ${fmtD(odl.data_fine)}</span>`
+      : `<span style="font-size:12px;color:#555">Data intervento: ${fmtD(odl.data_inizio)}</span>`}
+  </div>
+
+  <!-- KPI -->
+  <div class="grid3">
+    <div class="kpi">
+      <div class="kpi-val">${attivita.length}</div>
+      <div class="kpi-label">Attività totali</div>
+    </div>
+    <div class="kpi" style="background:${attComp.length===attivita.length&&attivita.length>0?"#ECFDF5":"#F8F6F1"}">
+      <div class="kpi-val" style="color:${attComp.length===attivita.length&&attivita.length>0?"#059669":"#0D1B2A"}">${attComp.length}</div>
+      <div class="kpi-label">Completate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-val">${oreEffettive>0?fmtH(oreEffettive):fmtH(oreStimate)}</div>
+      <div class="kpi-label">${oreEffettive>0?"Ore effettive":"Ore stimate"}</div>
+    </div>
+  </div>
+
+  <!-- INFO SITO + OPERATORE -->
+  <div class="grid2">
+    <div class="box">
+      <div class="box-title">Cliente / Sito</div>
+      ${cliente
+        ? `<div class="row"><label>Ragione sociale</label><span style="font-weight:600">${cliente.rs}</span></div>
+           ${cliente.ind?`<div class="row"><label>Indirizzo</label><span>${cliente.ind}</span></div>`:""}
+           ${cliente.tel?`<div class="row"><label>Telefono</label><span>${cliente.tel}</span></div>`:""}
+           ${cliente.contatto?`<div class="row"><label>Contatto</label><span>${cliente.contatto}</span></div>`:""}`
+        : '<div style="color:#999;font-size:12px">Cliente non specificato</div>'}
+    </div>
+    <div class="box">
+      <div class="box-title">Operatore / Tecnico</div>
+      ${operatore
+        ? `<div class="row"><label>Nome</label><span style="font-weight:600">${operatore.nome}</span></div>
+           ${operatore.spec?`<div class="row"><label>Specializzazione</label><span>${operatore.spec}</span></div>`:""}
+           ${operatore.email?`<div class="row"><label>Email</label><span>${operatore.email}</span></div>`:""}`
+        : '<div style="color:#999;font-size:12px">Operatore non assegnato</div>'}
+      ${odl.durata_stimata?`<div class="row"><label>Durata stimata</label><span>${fmtH(odl.durata_stimata)}</span></div>`:""}
+    </div>
+  </div>
+
+  <!-- TABELLA ATTIVITÀ -->
+  <div class="box-title" style="margin-top:8px">Dettaglio attività</div>
+  ${attivita.length===0
+    ? '<div style="color:#999;font-size:12px;padding:12px 0">Nessuna attività collegata a questo OdL.</div>'
+    : `<table>
+        <thead>
+          <tr>
+            <th>Attività</th>
+            <th>Asset / Zona</th>
+            <th style="text-align:center">Stato</th>
+            <th style="text-align:right">Stimata</th>
+            <th style="text-align:right">Effettiva</th>
+            <th>Note chiusura</th>
+          </tr>
+        </thead>
+        <tbody>${attivitaRows}</tbody>
+      </table>`}
+
+  <!-- NOTE + MATERIALI -->
+  ${odl.note?`<div class="box-title" style="margin-top:20px">Note generali OdL</div><div class="note-box">${odl.note}</div>`:""}
+  ${noteChiusura?`<div class="box-title" style="margin-top:16px">Note tecniche dalle attività</div><div class="note-box">${noteChiusura}</div>`:""}
+  ${partiUsate?`<div class="box-title" style="margin-top:16px">Materiali e ricambi utilizzati</div><div class="note-box">${partiUsate}</div>`:""}
+
+  <!-- FIRME -->
+  <div class="grid2" style="margin-top:24px">
+    <div>
+      <div class="box-title">Firma tecnico</div>
+      <div class="firma-box">
+        ${firmaSvg
+          ? `<img src="${firmaSvg}" style="max-width:100%;max-height:90px;object-fit:contain" />`
+          : '<span style="color:#ccc;font-size:12px">Non firmato</span>'}
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:6px;text-align:center">${operatore?.nome||""}</div>
+    </div>
+    <div>
+      <div class="box-title">Firma e accettazione cliente</div>
+      <div class="firma-box"><span style="color:#ccc;font-size:12px">__________________________</span></div>
+      <div style="font-size:11px;color:#666;margin-top:6px;text-align:center">${cliente?.contatto||cliente?.rs||""}</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>ManuMan — Rapporto generato automaticamente il ${dataStampa}</span>
+    <span>${odl.numero||"OdL #"+odl.id}</span>
+  </div>
+
+  <!-- STAMPA BUTTON -->
+  <div class="print-btn">
+    <button onclick="window.print()"
+      style="padding:11px 28px;background:#0D1B2A;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-right:12px">
+      🖨 Stampa / Salva PDF
+    </button>
+    <button onclick="window.close()"
+      style="padding:11px 20px;background:#F1F5F9;color:#374151;border:none;border-radius:8px;font-size:14px;cursor:pointer">
+      Chiudi
+    </button>
+  </div>
+
+</body>
+</html>`);
+  win.document.close();
+}
