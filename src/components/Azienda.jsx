@@ -91,6 +91,127 @@ function BannerMTGuida({ isAdmin }) {
 }
 
 // ─── Tab configurazione email ─────────────────────────────────────────────
+
+// ─── Componente test email ────────────────────────────────────────────────
+function TestEmail() {
+  const [email,   setEmail]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [risultato, setRis]   = useState(null); // {ok, msg}
+
+  const invia = async () => {
+    if (!email.trim()) return;
+    setLoading(true); setRis(null);
+    try {
+      const SUPA_URL  = import.meta.env.VITE_SUPABASE_URL;
+      const ANON_KEY  = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { data: { session } } = await (await import("../supabase")).supabase.auth.getSession();
+      const token = session?.access_token || ANON_KEY;
+
+      const res = await fetch(`${SUPA_URL}/functions/v1/notifica-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          tipo: "odl_assegnato",
+          destinatario: email.trim(),
+          dati: {
+            numero: "OdL-TEST-001",
+            titolo: "Email di prova da ManuMan",
+            cliente: "Cliente di esempio",
+            data_inizio: new Date().toLocaleDateString("it-IT"),
+            n_attivita: 3,
+            durata_ore: 2.5,
+            url: window.location.origin,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setRis({ ok:true, msg:`✅ Email inviata a ${email}! Controlla la casella (anche spam).` });
+      } else {
+        const errMsg = data.error || data.message || `HTTP ${res.status}`;
+        if (errMsg.includes("RESEND_API_KEY")) {
+          setRis({ ok:false, msg:"❌ RESEND_API_KEY non configurata. Segui i passi sotto per aggiungerla a Supabase." });
+        } else if (errMsg.includes("not found") || res.status === 404) {
+          setRis({ ok:false, msg:"❌ Edge Function 'notifica-email' non trovata. Va deployata su Supabase (vedi istruzioni)." });
+        } else {
+          setRis({ ok:false, msg:`❌ Errore: ${errMsg}` });
+        }
+      }
+    } catch(e) {
+      setRis({ ok:false, msg:`❌ Errore di rete: ${e.message}` });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ background:"var(--surface)", border:"2px solid var(--amber)",
+      borderRadius:10, padding:"16px 18px" }}>
+      <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>
+        🧪 Testa invio email
+      </div>
+      <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:12 }}>
+        Inserisci la tua email e clicca Invia per verificare che tutto funzioni correttamente.
+      </div>
+      <div style={{ display:"flex", gap:8 }}>
+        <input
+          type="email"
+          value={email}
+          onChange={e=>setEmail(e.target.value)}
+          placeholder="tua@email.it"
+          style={{ flex:1 }}
+          onKeyDown={e=>e.key==="Enter" && !loading && email.trim() && invia()}
+        />
+        <button
+          onClick={invia}
+          disabled={loading || !email.trim()}
+          style={{
+            padding:"8px 18px", borderRadius:7, fontWeight:700, fontSize:13,
+            background: loading ? "var(--surface-3)" : "#059669",
+            color: loading ? "var(--text-3)" : "white",
+            border:"none", cursor: loading || !email.trim() ? "default" : "pointer",
+            whiteSpace:"nowrap", flexShrink:0,
+          }}>
+          {loading ? "⏳ Invio..." : "📨 Invia prova"}
+        </button>
+      </div>
+
+      {risultato && (
+        <div style={{
+          marginTop:10, padding:"10px 14px", borderRadius:7, fontSize:13,
+          background: risultato.ok ? "#ECFDF5" : "#FEF2F2",
+          border: `1px solid ${risultato.ok ? "#A7F3D0" : "#FECACA"}`,
+          color: risultato.ok ? "#065F46" : "#991B1B",
+          lineHeight:1.5,
+        }}>
+          {risultato.msg}
+          {!risultato.ok && risultato.msg.includes("RESEND_API_KEY") && (
+            <div style={{ marginTop:8, fontSize:12 }}>
+              <strong>Come aggiungere la chiave:</strong>
+              <ol style={{ marginLeft:16, marginTop:6, lineHeight:2 }}>
+                <li>Vai su <a href="https://resend.com" target="_blank" style={{color:"#DC2626"}}>resend.com</a> → crea account gratuito</li>
+                <li>Dashboard Resend → <strong>API Keys</strong> → Create API Key → copia il valore <code style={{background:"#FEE2E2",padding:"1px 4px",borderRadius:3}}>re_xxxx...</code></li>
+                <li>Vai su <a href="https://supabase.com/dashboard/project/nnsylkjahuhttwajuxls/settings/functions" target="_blank" style={{color:"#DC2626"}}>Supabase → Project Settings → Edge Functions</a></li>
+                <li>Sezione <strong>"Edge Function Secrets"</strong> → Add secret</li>
+                <li>Nome: <code style={{background:"#FEE2E2",padding:"1px 4px",borderRadius:3}}>RESEND_API_KEY</code> · Valore: la tua chiave copiata</li>
+                <li>Clicca <strong>Save</strong> e riprova qui</li>
+              </ol>
+            </div>
+          )}
+          {!risultato.ok && risultato.msg.includes("Edge Function") && (
+            <div style={{ marginTop:8, fontSize:12 }}>
+              La funzione va deployata. Contatta il supporto tecnico.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabEmail({ emailConfig={}, onSalva }) {
   const [cfg, setCfg] = useState({
     abilitato:    emailConfig.abilitato    ?? false,
@@ -152,7 +273,7 @@ function TabEmail({ emailConfig={}, onSalva }) {
         <ol style={{ fontSize:12, color:"#1E40AF", lineHeight:2, marginLeft:18, marginTop:8 }}>
           <li>Crea un account gratuito su <strong>resend.com</strong></li>
           <li>Genera una API Key dal dashboard Resend</li>
-          <li>Vai su <strong>Supabase → Edge Functions → notifica-email → Secrets</strong></li>
+          <li>Vai su <a href="https://supabase.com/dashboard/project/nnsylkjahuhttwajuxls/settings/functions" target="_blank" style={{color:"#1D4ED8"}}>Supabase → Project Settings → Edge Functions</a></li>
           <li>Aggiungi il segreto <code style={{background:"#DBEAFE",padding:"1px 5px",borderRadius:4}}>RESEND_API_KEY</code> con il valore della tua API Key</li>
           <li>Assicurati che le email di operatori e clienti siano compilate in ManuMan</li>
         </ol>
@@ -195,6 +316,9 @@ function TabEmail({ emailConfig={}, onSalva }) {
           style={{ width:"100%" }} type="email"
           placeholder="manutenzioni@tua-azienda.it" />
       </div>
+
+      {/* Test email */}
+      <TestEmail />
 
       {/* Salva */}
       <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
