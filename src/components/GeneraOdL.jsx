@@ -71,21 +71,27 @@ function costruisciOdL(voci, piano, operatori, assets, da, a) {
 
 // ── Modal Anteprima OdL ───────────────────────────────────────────────────
 export function ModalGeneraOdL({
-  piano, voci=[], operatori=[], assets=[], clienti=[],
+  piano, voci=[], pianoSito=null, operatori=[], assets=[], clienti=[],
   tenantId, uid,
   onClose, onGenera,
 }) {
   const oggi   = isoDate(new Date());
   const treMesi = addMonths(oggi, 3);
 
-  const [da, setDa]       = useState(piano.dataInizio || oggi);
-  const [a,  setA]        = useState(piano.dataFine   || treMesi);
+  // Usa le date del sito se disponibile
+  const sitoInizio = pianoSito?.dataInizio || piano.dataInizio || oggi;
+  const sitoFine   = pianoSito?.dataFine   || piano.dataFine   || treMesi;
+
+  const [da, setDa]       = useState(sitoInizio);
+  const [a,  setA]        = useState(sitoFine);
   const [aggreg, setAggr] = useState("visita"); // visita | singola | unico
   const [confermando, setConfermando] = useState(false);
   const [step, setStep]   = useState("anteprima"); // anteprima | conferma | fatto
   const [risultato, setRisultato] = useState(null);
 
-  const cliente = clienti.find(c=>c.id===piano.clienteId);
+  const clienteId = pianoSito?.clienteId || piano.clienteId;
+  const cliente = clienti.find(c=>c.id===clienteId);
+  const opDefault = pianoSito?.operatoreId || null;
 
   // Calcola OdL in anteprima
   const odlAnteprima = useMemo(()=>{

@@ -62,7 +62,16 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 const mapM  = r => ({ id:r.id, titolo:r.titolo, tipo:r.tipo, stato:r.stato, priorita:r.priorita, operatoreId:r.operatore_id, clienteId:r.cliente_id, assetId:r.asset_id, pianoId:r.piano_id, assegnazioneId:r.assegnazione_id||null, data:r.data, durata:r.durata, note:r.note||"", userId:r.user_id||"", noteChiusura:r.note_chiusura||"", oreEffettive:r.ore_effettive||null, partiUsate:r.parti_usate||"", firmaSvg:r.firma_svg||"", chiusoAt:r.chiuso_at||null, numeroIntervento:r.numero_intervento||1, createdAt:r.created_at||null, slaProfiloSnapshot:r.sla_profilo_id||null, odlId:r.odl_id||null });
 const mapC  = r => ({ id:r.id, rs:r.rs, codice:r.codice||"", piva:r.piva||"", contatto:r.contatto||"", tel:r.tel||"", email:r.email||"", ind:r.ind||"", settore:r.settore||"", note:r.note||"", userId:r.user_id||"", slaProfilo_id:r.sla_profilo_id||null });
 const mapA  = r => ({ id:r.id, nome:r.nome, tipo:r.tipo||"", clienteId:r.cliente_id, ubicazione:r.ubicazione||"", matricola:r.matricola||"", marca:r.marca||"", modello:r.modello||"", dataInst:r.data_inst||"", stato:r.stato||"attivo", note:r.note||"", userId:r.user_id||"", ore_utilizzo:r.ore_utilizzo||0, soglia_ore:r.soglia_ore||null, costo_acquisto:r.costo_acquisto||null, garanzia_al:r.garanzia_al||null, vita_utile_anni:r.vita_utile_anni||null, specifiche_json:r.specifiche_json||null });
-const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"", clienteId:r.cliente_id||null, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"" });
+const mapP  = r => ({ id:r.id, nome:r.nome, descrizione:r.descrizione||"", tipo:r.tipo||"ordinaria", frequenza:r.frequenza||"mensile", durata:r.durata||60, priorita:r.priorita||"media", attivo:r.attivo, userId:r.user_id||"", clienteId:r.cliente_id||null, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", aggregazioneOdl:r.aggregazione_odl||"per_visita" });
+
+// piano_voci: attività template di un piano
+const mapVoce = r => ({ id:r.id, pianoId:r.piano_id, titolo:r.titolo, frequenza:r.frequenza||"mensile", durata:r.durata||60, tipo:r.tipo||"ordinaria", priorita:r.priorita||"media", note:r.note||"", categoria:r.categoria||null, ordine:r.ordine||0, attivo:r.attivo!==false });
+const toDbVoce = (f,uid,tid) => ({ piano_id:Number(f.pianoId), titolo:f.titolo, frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, tipo:f.tipo||"ordinaria", priorita:f.priorita||"media", note:f.note||null, categoria:f.categoria||null, ordine:Number(f.ordine)||0, attivo:f.attivo!==false, ...(uid&&{user_id:uid}), ...(tid&&{tenant_id:tid}) });
+
+// piano_siti: applicazione di un piano a un sito/cliente
+const mapPSito = r => ({ id:r.id, pianoId:r.piano_id, clienteId:r.cliente_id, operatoreId:r.operatore_id||null, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo!==false, note:r.note||"" });
+const toDbPSito = (f,uid,tid) => ({ piano_id:Number(f.pianoId), cliente_id:Number(f.clienteId), operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, note:f.note||null, ...(uid&&{user_id:uid}), ...(tid&&{tenant_id:tid}) });
+
 const mapAss = r => ({ id:r.id, pianoId:r.piano_id, assetId:r.asset_id, clienteId:r.cliente_id, operatoreId:r.operatore_id, dataInizio:r.data_inizio||"", dataFine:r.data_fine||"", attivo:r.attivo, userId:r.user_id||"", titolo:r.titolo||null, scope:r.scope||"asset", area_nome:r.area_nome||null, frequenza:r.frequenza||null, durata:r.durata||null, tipo:r.tipo||null, priorita:r.priorita||null, note:r.note||"" });
 const mapOp = r => ({ id:r.id, nome:r.nome, spec:r.spec||"", col:r.col||"#378ADD", tipo:r.tipo||"fornitore", email:r.email||"", authUserId:r.auth_user_id||null, tema:r.tema||"navy", tariffa_ora:r.tariffa_ora||null });
 const mapSito   = r => ({ id:r.id, operatoreId:r.operatore_id, clienteId:r.cliente_id });
@@ -74,7 +83,7 @@ const mapAllegato = r => ({ id:r.id, nome:r.nome, storagePath:r.storage_path, mi
 const toDbM  = (f,uid,tid) => ({ titolo:f.titolo, tipo:f.tipo||"ordinaria", stato:f.stato, priorita:f.priorita||"media", operatore_id:f.operatoreId?Number(f.operatoreId):null, cliente_id:f.clienteId?Number(f.clienteId):null, asset_id:f.assetId?Number(f.assetId):null, piano_id:f.pianoId?Number(f.pianoId):null, data:f.data, durata:Number(f.durata)||60, note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbC  = (f,uid,tid) => ({ rs:f.rs, codice:f.codice||null, sla_profilo_id:f.slaProfilo_id?Number(f.slaProfilo_id):null, piva:f.piva||"", contatto:f.contatto||"", tel:f.tel||"", email:f.email||"", ind:f.ind||"", settore:f.settore||"", note:f.note||"", user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbA  = (f,uid,tid) => ({ nome:f.nome, tipo:f.tipo||"", cliente_id:f.clienteId?Number(f.clienteId):null, ubicazione:f.ubicazione||"", matricola:f.matricola||"", marca:f.marca||"", modello:f.modello||"", data_inst:f.dataInst||null, stato:f.stato||"attivo", note:f.note||"", user_id:uid, ore_utilizzo:f.ore_utilizzo?Number(f.ore_utilizzo):0, soglia_ore:f.soglia_ore?Number(f.soglia_ore):null, costo_acquisto:f.costo_acquisto?Number(f.costo_acquisto):null, garanzia_al:f.garanzia_al||null, vita_utile_anni:f.vita_utile_anni?Number(f.vita_utile_anni):null, specifiche_json:f.specifiche_json||null, ...(tid&&{tenant_id:tid}) });
-const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, cliente_id:f.clienteId?Number(f.clienteId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, ...(tid&&{tenant_id:tid}) });
+const toDbP  = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", tipo:f.tipo||"ordinaria", frequenza:f.frequenza||"mensile", durata:Number(f.durata)||60, priorita:f.priorita||"media", attivo:f.attivo!==false, user_id:uid, aggregazione_odl:f.aggregazioneOdl||"per_visita", ...(tid&&{tenant_id:tid}) });
 const toDbAss = (f,uid,tid) => ({ piano_id:Number(f.pianoId), asset_id:f.assetId?Number(f.assetId):null, cliente_id:f.clienteId?Number(f.clienteId):null, operatore_id:f.operatoreId?Number(f.operatoreId):null, data_inizio:f.dataInizio||null, data_fine:f.dataFine||null, attivo:f.attivo!==false, user_id:uid, titolo:f.titolo||null, scope:f.scope||"asset", area_nome:f.area_nome||null, frequenza:f.frequenza||null, durata:f.durata?Number(f.durata):null, tipo:f.tipo||null, priorita:f.priorita||null, note:f.note||null, ...(tid&&{tenant_id:tid}) });
 const toDbOp    = (f,uid,tid) => ({ nome:f.nome, spec:f.spec||"", col:f.col||"#378ADD", tipo:f.tipo||"fornitore", email:f.email||"", tariffa_ora:f.tariffa_ora?Number(f.tariffa_ora):null, user_id:uid, ...(tid&&{tenant_id:tid}) });
 const toDbGruppo = (f,uid,tid) => ({ nome:f.nome, descrizione:f.descrizione||"", col:f.col||"#378ADD", user_id:uid, ...(tid&&{tenant_id:tid}) });
@@ -126,6 +135,8 @@ export default function App() {
   const [piani,    sPi]   = useState([]);
   const [operatori,sOp]   = useState([]);
   const [assegnazioni, sAss] = useState([]);
+  const [pianoVoci,    sPVoci] = useState([]);   // attività template dei piani
+  const [pianoSiti,    sPSiti] = useState([]);   // applicazioni piano→sito
   const [siti,     sSiti] = useState([]);
   const [gruppi,   sGruppi]= useState([]);
   const [gOps,     sGOps]  = useState([]);
@@ -363,6 +374,10 @@ export default function App() {
       // Carica assegnazioni separatamente (tabella nuova - non blocca se fallisce)
       supabase.from("piano_assegnazioni").select("*").order("created_at")
         .then(({data,error}) => { if(!error && data) sAss(data.map(mapAss)); });
+      supabase.from("piano_voci").select("*").order("ordine")
+        .then(({data,error}) => { if(!error && data) sPVoci(data.map(mapVoce)); });
+      supabase.from("piano_siti").select("*").order("created_at")
+        .then(({data,error}) => { if(!error && data) sPSiti(data.map(mapPSito)); });
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
@@ -675,23 +690,59 @@ export default function App() {
     notify("Piano aggiornato — " + totSaved + " attività future rigenerate su " + assDelPiano.length + " assegnazioni","success");
   };
   const delPiano = async id => {
-    // Elimina solo le attività NON completate — preserva lo storico degli interventi
-    await supabase.from("manutenzioni").delete()
-      .eq("piano_id",id).in("stato",["pianificata","scaduta"]);
-    // Disassocia (non elimina) le completate/inCorso dal piano — restano nello storico
-    await supabase.from("manutenzioni").update({piano_id:null, assegnazione_id:null})
-      .eq("piano_id",id).in("stato",["completata","inCorso"]);
+    await supabase.from("manutenzioni").delete().eq("piano_id",id).in("stato",["pianificata","scaduta"]);
+    await supabase.from("manutenzioni").update({piano_id:null}).eq("piano_id",id);
     await supabase.from("piano_assegnazioni").delete().eq("piano_id",id);
+    await supabase.from("piano_voci").delete().eq("piano_id",id);
+    await supabase.from("piano_siti").delete().eq("piano_id",id);
     await supabase.from("piani").delete().eq("id",id);
-    sPi(p=>p.filter(pi=>pi.id!==id));
+    sPi(p=>p.filter(x=>x.id!==id));
+    sMan(p=>p.filter(m=>m.pianoId!==id||m.stato==="completata"));
     sAss(p=>p.filter(a=>a.pianoId!==id));
-    // Mantieni le completate/inCorso in stato ma senza piano
-    sMan(p=>p.map(m=>m.pianoId===id&&(m.stato==="completata"||m.stato==="inCorso")
-      ? {...m, pianoId:null, assegnazioneId:null}
-      : m).filter(m=>m.pianoId!==id||(m.stato==="completata"||m.stato==="inCorso")));
-    notify("Piano eliminato. Lo storico interventi completati è stato preservato.","success");
-  };
+    sPVoci(p=>p.filter(v=>v.pianoId!==id));
+    sPSiti(p=>p.filter(s=>s.pianoId!==id));
+  };;
   const attivaDisattiva = async (id,attivo) => { await supabase.from("piano_assegnazioni").update({attivo}).eq("id",id); sAss(p=>p.map(a=>a.id===id?{...a,attivo}:a)); };
+
+  // ── CRUD piano_voci (attività template) ──────────────────────────────
+  const aggVoce = async f => {
+    const {data,error} = await supabase.from("piano_voci").insert(toDbVoce(f,uid(),tenant?.id)).select().single();
+    if(error){notify("Errore aggiunta attività: "+error.message);return;}
+    sPVoci(p=>[...p,mapVoce(data)]);
+    notify("Attività aggiunta al piano","success");
+  };
+  const modVoce = async f => {
+    const {error} = await supabase.from("piano_voci").update(toDbVoce(f,uid(),tenant?.id)).eq("id",f.id);
+    if(error){notify("Errore modifica: "+error.message);return;}
+    sPVoci(p=>p.map(v=>v.id===f.id?{...v,...f}:v));
+  };
+  const delVoce = async id => {
+    await supabase.from("piano_voci").delete().eq("id",id);
+    sPVoci(p=>p.filter(v=>v.id!==id));
+  };
+
+  // ── CRUD piano_siti (applicazioni piano→sito) ─────────────────────────
+  const aggSito = async f => {
+    const {data,error} = await supabase.from("piano_siti").insert(toDbPSito(f,uid(),tenant?.id)).select().single();
+    if(error){notify("Errore applicazione piano: "+error.message);return;}
+    sPSiti(p=>[...p,mapPSito(data)]);
+    notify("Piano applicato al sito ✅","success");
+    return data;
+  };
+  const modSito = async f => {
+    const {error} = await supabase.from("piano_siti").update(toDbPSito(f,uid(),tenant?.id)).eq("id",f.id);
+    if(error){notify("Errore modifica sito: "+error.message);return;}
+    sPSiti(p=>p.map(s=>s.id===f.id?{...s,...f}:s));
+  };
+  const delSito = async id => {
+    if(!confirm("Rimuovere questo sito dal piano? Le attività già generate rimarranno.")) return;
+    await supabase.from("piano_siti").delete().eq("id",id);
+    sPSiti(p=>p.filter(s=>s.id!==id));
+  };
+  const attivaDisattivaSito = async (id,attivo) => {
+    await supabase.from("piano_siti").update({attivo}).eq("id",id);
+    sPSiti(p=>p.map(s=>s.id===id?{...s,attivo}:s));
+  };
 
   const apriConData = d => { sDD(d); siMM(null); sMM(true); };
 
@@ -878,7 +929,17 @@ export default function App() {
           onChiudi={m=>setChiudiModal(m)}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
-        {vista==="piani"        && <GestionePiani piani={piani} assegnazioni={assegnazioni} clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori} templates={[]} ricambi={[]} uid={uid()} tenantId={tenant?.id||""} onAgg={aggPiano} onMod={modPiano} onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche tutte le assegnazioni e le attività pianificate.",()=>delPiano(id))} onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare questa assegnazione? Verranno eliminate le attività pianificate future.",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione} />}
+        {vista==="piani" && <GestionePiani
+  piani={piani} assegnazioni={assegnazioni}
+  pianoVoci={pianoVoci} pianoSiti={pianoSiti}
+  clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
+  uid={uid()} tenantId={tenant?.id||""}
+  onAgg={aggPiano} onMod={modPiano}
+  onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche le attività pianificate.",()=>delPiano(id))}
+  onAggVoce={aggVoce} onModVoce={modVoce} onDelVoce={delVoce}
+  onAggSito={aggSito} onModSito={modSito} onDelSito={delSito} onToggleSito={attivaDisattivaSito}
+  onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare?",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione}
+/>}
         {vista==="calendario"   && <Calendario   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
         {vista==="assets"       && <GestioneAssets assets={assetsView} clienti={clientiView} manutenzioni={man} assegnazioni={assegnazioni} piani={piani} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} onApplicaTemplate={a=>setTemplateAsset(a)} />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}

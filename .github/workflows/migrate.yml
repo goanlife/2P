@@ -207,6 +207,57 @@ jobs:
             where nome is null;"
 
           # ──────────────────────────────────────────────────
+          # 015 — Piano voci (attività template) + piano_siti (applicazione a sito)
+          # ──────────────────────────────────────────────────
+          run_sql "015 piano_voci: tabella attività template" \
+            "create table if not exists piano_voci (
+              id          bigserial primary key,
+              piano_id    bigint references piani(id) on delete cascade,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              titolo      text not null,
+              frequenza   text default 'mensile'
+                check (frequenza in ('settimanale','mensile','bimestrale','trimestrale','semestrale','annuale')),
+              durata      int  default 60,
+              tipo        text default 'ordinaria',
+              priorita    text default 'media',
+              note        text,
+              categoria   text,
+              ordine      int  default 0,
+              attivo      boolean default true,
+              created_at  timestamptz default now()
+            );
+            create index if not exists idx_piano_voci_piano on piano_voci(piano_id);
+            alter table piano_voci disable row level security;"
+
+          run_sql "015 piano_siti: applicazione piano a sito" \
+            "create table if not exists piano_siti (
+              id            bigserial primary key,
+              piano_id      bigint references piani(id) on delete cascade,
+              cliente_id    bigint references clienti(id) on delete cascade,
+              tenant_id     uuid references tenants(id) on delete cascade,
+              operatore_id  bigint references operatori(id) on delete set null,
+              data_inizio   date,
+              data_fine     date,
+              attivo        boolean default true,
+              note          text,
+              created_at    timestamptz default now()
+            );
+            create index if not exists idx_piano_siti_piano   on piano_siti(piano_id);
+            create index if not exists idx_piano_siti_cliente on piano_siti(cliente_id);
+            alter table piano_siti disable row level security;"
+
+          run_sql "015 piani: aggregazione_odl" \
+            "alter table piani add column if not exists aggregazione_odl text default 'per_visita'
+             check (aggregazione_odl in ('per_visita','per_attivita','per_mese','per_categoria'));
+             alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;
+             alter table piani add column if not exists data_inizio date;
+             alter table piani add column if not exists data_fine date;"
+
+          run_sql "015 manutenzioni: piano_sito_id" \
+            "alter table manutenzioni add column if not exists piano_sito_id bigint references piano_siti(id) on delete set null;
+             alter table manutenzioni add column if not exists piano_voce_id bigint references piano_voci(id) on delete set null;"
+
+          # ──────────────────────────────────────────────────
           # 000 — Tabella allegati + bucket storage
           # ──────────────────────────────────────────────────
           run_sql "000 allegati: crea tabella" \
