@@ -23,13 +23,18 @@ export function CommentiAttivita({ manutenzioneId, meOperatore, onStatoChange })
 
   const carica = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("attivita_commenti")
-      .select("*")
-      .eq("manutenzione_id", manutenzioneId)
-      .order("created_at");
-    setCommenti(data || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from("attivita_commenti")
+        .select("*")
+        .eq("manutenzione_id", manutenzioneId)
+        .order("created_at");
+      setCommenti(data || []);
+    } catch(e) {
+      console.error("Errore caricamento commenti:", e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const invia = async () => {

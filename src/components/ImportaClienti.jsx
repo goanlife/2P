@@ -175,7 +175,7 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
 
           {errors.length > 0 && (
             <div style={{ marginTop: 12, background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px" }}>
-              {errors.map((e, i) => <div key={i} style={{ fontSize: 12, color: "#DC2626" }}>❌ {e}</div>)}
+              {errors.map((e, i) => <div key={`err-${i}-${e.slice(0,20)}`} style={{ fontSize: 12, color: "#DC2626" }}>❌ {e}</div>)}
             </div>
           )}
         </>
@@ -213,7 +213,7 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
 
           {errors.length > 0 && (
             <div style={{ marginBottom: 10, background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 6, padding: "8px 12px" }}>
-              {errors.slice(0, 5).map((e, i) => <div key={i} style={{ fontSize: 11, color: "#92400E" }}>⚠ {e}</div>)}
+              {errors.slice(0, 5).map((e, i) => <div key={`err5-${i}`} style={{ fontSize: 11, color: "#92400E" }}>⚠ {e}</div>)}
               {errors.length > 5 && <div style={{ fontSize: 11, color: "#92400E" }}>...e altri {errors.length - 5} avvisi</div>}
             </div>
           )}

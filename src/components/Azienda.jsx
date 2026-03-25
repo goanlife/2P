@@ -11,7 +11,7 @@ import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
 // ─── Banner guida multi-tenant ────────────────────────────────────────────
 function BannerMTGuida({ isAdmin }) {
-  const [vis, setVis] = useState(!localStorage.getItem("manuMan_mt_guide_ok"));
+  const [vis, setVis] = useState(() => { try { return !localStorage.getItem("manuMan_mt_guide_ok"); } catch { return true; } });
   if (!vis || !isAdmin) return null;
 
   return (
@@ -19,7 +19,7 @@ function BannerMTGuida({ isAdmin }) {
       background:"#0D1B2A", borderRadius:12, padding:"20px 22px",
       color:"white", position:"relative",
     }}>
-      <button onClick={()=>{ localStorage.setItem("manuMan_mt_guide_ok","1"); setVis(false); }}
+      <button onClick={()=>{ try { localStorage.setItem("manuMan_mt_guide_ok","1"); } catch {} setVis(false); }}
         style={{ position:"absolute", top:12, right:12, background:"none", border:"none",
           color:"#8899aa", cursor:"pointer", fontSize:16 }}>✕</button>
 

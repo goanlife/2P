@@ -280,10 +280,14 @@ export function GestoreAllegati({ entitaTipo, entitaId, userId, tenantId=null })
     const a = allegati.find(x => x.id === id);
     if (!a) return;
     setConfirmDel(null);
-    const { error: stErr } = await supabase.storage.from("allegati").remove([a.storagePath]);
-    const { error: dbErr } = await supabase.from("allegati").delete().eq("id", id);
-    if (dbErr) { setErrore("Errore eliminazione: " + dbErr.message); return; }
-    setAllegati(prev => prev.filter(x => x.id !== id));
+    try {
+      await supabase.storage.from("allegati").remove([a.storagePath]);
+      const { error: dbErr } = await supabase.from("allegati").delete().eq("id", id);
+      if (dbErr) { setErrore("Errore eliminazione: " + dbErr.message); return; }
+      setAllegati(prev => prev.filter(x => x.id !== id));
+    } catch(e) {
+      setErrore("Errore rete durante eliminazione: " + e.message);
+    }
   };
 
   if (!entitaId) return (

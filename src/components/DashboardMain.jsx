@@ -53,7 +53,7 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
                 {confMap.slice(0,10).map((g,i)=>{
                   const op=operatori.find(o=>o.id===g[0].operatoreId);
                   return(
-                    <div key={i} style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8,alignItems:"center",padding:"6px 0",borderBottom:"1px solid var(--border-dim)"}}>
+                    <div key={k.label||k.l||k.v} style={{display:"grid",gridTemplateColumns:"1fr auto",gap:8,alignItems:"center",padding:"6px 0",borderBottom:"1px solid var(--border-dim)"}}>
                       <div>
                         <div style={{fontSize:12,fontWeight:600}}>{op?.nome||"—"}</div>
                         <div style={{fontSize:11,color:"var(--text-3)"}}>{g.map(m=>m.titolo).join(" · ")}</div>

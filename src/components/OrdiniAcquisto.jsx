@@ -152,6 +152,7 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
   useEffect(() => { carica(); }, [tenantId]);
 
   const carica = async () => {
+    try {
     if (!tenantId) { setLoading(false); return; }
     setLoading(true);
     const { data } = await supabase
@@ -161,9 +162,11 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
       .order("created_at", { ascending: false });
     setOrdini((data||[]).map(o => ({ ...o, righe: o.ordini_acquisto_righe||[] })));
     setLoading(false);
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const salvaOrdine = async (f) => {
+    try {
     const { righe, ...ordineData } = f;
     if (f.id) {
       // Update
@@ -187,9 +190,11 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
       })));
     }
     carica();
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const cambiaStato = async (id, stato) => {
+    try {
     await supabase.from("ordini_acquisto").update({ stato, updated_at:new Date().toISOString() }).eq("id",id);
     setOrdini(p => p.map(o => o.id===id ? {...o,stato} : o));
     // Se ricevuto, aggiorna stock ricambi
@@ -206,6 +211,7 @@ export function OrdiniAcquisto({ tenantId, ricambi=[], meOperatore }) {
         }
       }
     }
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const filtrati = filtroStato==="tutti" ? ordini : ordini.filter(o=>o.stato===filtroStato);

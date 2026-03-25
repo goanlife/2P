@@ -157,6 +157,13 @@ export default function App() {
   const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
   const [toast,   sToast] = useState(null);
   const notify = (msg,type="error") => sToast({msg,type});
+  
+  // Handler globale per errori non catchati nei componenti
+  const handleError = (e, contesto="") => {
+    console.error("[ManuMan]", contesto, e);
+    const msg = e?.message || String(e) || "Errore imprevisto";
+    notify(`${contesto ? contesto+": " : ""}${msg}`, "error");
+  };
   const [sidebarOpen, setSidebar] = useState(false);
   const [menuConfig, setMenuConfig] = useState({});
   const [slaConfig, setSlaConfig] = useState([]);
@@ -168,7 +175,7 @@ export default function App() {
   });
   const salvaEmailConfig = (cfg) => {
     setEmailConfig(cfg);
-    localStorage.setItem("manuMan_emailConfig", JSON.stringify(cfg));
+    try { localStorage.setItem("manuMan_emailConfig", JSON.stringify(cfg)); } catch {}
   }; // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
@@ -230,6 +237,7 @@ export default function App() {
     // Aggiorna in batch nel DB
     supabase.from("manutenzioni")
       .update({ stato: "scaduta" })
+      .eq("tenant_id", tenant?.id)
       .eq("stato", "pianificata")
       .lt("data", oggi)
       .then(() => {
@@ -347,18 +355,20 @@ export default function App() {
       return; // aspetta che setTenant scatti il prossimo useEffect
     }
     setLoad(true);
+    const tid = tenant.id;
     Promise.all([
-      supabase.from("operatori").select("*").order("created_at"),
-      supabase.from("clienti").select("*").order("created_at"),
-      supabase.from("assets").select("*").order("created_at"),
-      supabase.from("piani").select("*").order("created_at"),
+      supabase.from("operatori").select("*").eq("tenant_id", tid).order("created_at"),
+      supabase.from("clienti").select("*").eq("tenant_id", tid).order("created_at"),
+      supabase.from("assets").select("*").eq("tenant_id", tid).order("created_at"),
+      supabase.from("piani").select("*").eq("tenant_id", tid).order("created_at"),
       supabase.from("manutenzioni").select("*")
+        .eq("tenant_id", tid)
         .gte("data", new Date(Date.now()-180*24*60*60*1000).toISOString().split("T")[0])
         .order("data", {ascending:false})
         .limit(500),
-      supabase.from("manutenzioni").select("id", {count:"exact",head:true}), // count totale
+      supabase.from("manutenzioni").select("id", {count:"exact",head:true}).eq("tenant_id", tid),
       supabase.from("operatore_siti").select("*").order("created_at"),
-      supabase.from("gruppi").select("*").order("created_at"),
+      supabase.from("gruppi").select("*").eq("tenant_id", tid).order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
       supabase.from("gruppo_siti").select("*").order("created_at"),
     ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs, rmCount]) => {
@@ -382,9 +392,9 @@ export default function App() {
       // Carica assegnazioni separatamente (tabella nuova - non blocca se fallisce)
       supabase.from("piano_assegnazioni").select("*").order("created_at")
         .then(({data,error}) => { if(!error && data) sAss(data.map(mapAss)); });
-      supabase.from("piano_voci").select("*").order("ordine")
+      supabase.from("piano_voci").select("*").eq("tenant_id", tid).order("ordine")
         .then(({data,error}) => { if(!error && data) sPVoci(data.map(mapVoce)); });
-      supabase.from("piano_siti").select("*").order("created_at")
+      supabase.from("piano_siti").select("*").eq("tenant_id", tid).order("created_at")
         .then(({data,error}) => { if(!error && data) sPSiti(data.map(mapPSito)); });
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
@@ -404,9 +414,11 @@ export default function App() {
     return fn();
   };
   const caricaTutteLeManut = async () => {
+    if (!tenant?.id) return;
     setManCaricaTutto(true);
     setManTotale(null); // nascondi banner
-    const {data} = await supabase.from("manutenzioni").select("*").order("data",{ascending:false});
+    const {data} = await supabase.from("manutenzioni").select("*")
+      .eq("tenant_id", tenant.id).order("data",{ascending:false});
     if(data) sMan(data.map(mapM));
   };
   const UID = session?.user?.id || "";
@@ -1011,7 +1023,7 @@ export default function App() {
               <SelettoreTema value={temaCorrente} onChange={async t=>{
   setTemaCorrente(t);
   applyTheme(t);
-  try { localStorage.setItem("manumanTema", t); } catch(e) {}
+  try { try { localStorage.setItem("manumanTema", t); } catch {} } catch(e) {}
   const meOpTema = operatori.find(o=>o.email===session?.user?.email);
   if(meOpTema) await supabase.from("operatori").update({tema:t}).eq("id",meOpTema.id);
 }} />
@@ -1020,7 +1032,7 @@ export default function App() {
                   <div key={t.id} onClick={async()=>{
   setTemaCorrente(t.id);
   applyTheme(t.id);
-  try { localStorage.setItem("manumanTema", t.id); } catch(e) {}
+  try { try { localStorage.setItem("manumanTema", t.id); } catch {} } catch(e) {}
   const meOp2 = operatori.find(o=>o.email===session?.user?.email);
   if(meOp2) await supabase.from("operatori").update({tema:t.id}).eq("id",meOp2.id);
 }}

@@ -179,17 +179,21 @@ export function ScadenzarioNormativo({ tenantId, clienti=[], assets=[], operator
 
   const carica = async () => {
     setLoading(true);
-    const { data } = await supabase.from("scadenze_normative")
-      .select("*").eq("tenant_id", tenantId)
-      .order("scadenza");
-    // Aggiorna automaticamente stato "scaduto"
-    const oggi_ = oggi();
-    const aggiornate = (data||[]).map(s => ({
-      ...s,
-      stato: s.stato !== "completato" && s.scadenza < oggi_ ? "scaduto" : s.stato,
-    }));
-    setScadenze(aggiornate);
-    setLoading(false);
+    try {
+      const { data } = await supabase.from("scadenze_normative")
+        .select("*").eq("tenant_id", tenantId)
+        .order("scadenza");
+      const oggi_ = oggi();
+      const aggiornate = (data||[]).map(s => ({
+        ...s,
+        stato: s.stato !== "completato" && s.scadenza < oggi_ ? "scaduto" : s.stato,
+      }));
+      setScadenze(aggiornate);
+    } catch(e) {
+      console.error("Errore scadenzario:", e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const salva = async (f) => {

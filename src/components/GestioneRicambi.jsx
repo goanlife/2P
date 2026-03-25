@@ -28,6 +28,7 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
   };
 
   const aggiungi = async () => {
+    try {
     const rc = catalogo.find(c => String(c.id) === nuova.ricambioId);
     const qty = Number(nuova.quantita) || 1;
     const { data } = await supabase.from("intervento_ricambi").insert({
@@ -51,9 +52,11 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
         }
       }
     }
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const rimuovi = async (id) => {
+    try {
     const riga = righe.find(r => r.id === id);
     await supabase.from("intervento_ricambi").delete().eq("id", id);
     setRighe(p => p.filter(r => r.id !== id));
@@ -66,6 +69,7 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
         setCatalogo(p => p.map(c => c.id === riga.ricambio_id ? { ...c, quantita_stock: ripristinato } : c));
       }
     }
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const totale = righe.reduce((s, r) => s + (r.quantita || 1) * (r.prezzo_unitario || 0), 0);
@@ -153,12 +157,15 @@ export function CatalogoRicambi({ tenantId }) {
   useEffect(() => { carica(); }, []);
 
   const carica = async () => {
+    try {
     const { data } = await supabase.from("ricambi").select("*").order("nome");
     setRicambi(data || []);
     setLoading(false);
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const salva = async () => {
+    try {
     if (!form.nome.trim()) return;
     const { data } = await supabase.from("ricambi").insert({
       nome: form.nome.trim(), codice: form.codice || null,
@@ -166,11 +173,14 @@ export function CatalogoRicambi({ tenantId }) {
       categoria: form.categoria || null, note: form.note || null, tenant_id: tenantId,
     }).select().single();
     if (data) { setRicambi(p => [...p, data]); setForm({ nome: "", codice: "", unita: "pz", prezzo: "", categoria: "", note: "" }); setMostraForm(false); }
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const elimina = async (id) => {
+    try {
     await supabase.from("ricambi").delete().eq("id", id);
     setRicambi(p => p.filter(r => r.id !== id));
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const UNITA = ["pz", "m", "m²", "kg", "l", "h", "conf."];

@@ -38,15 +38,20 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
   const aggiungi = async () => {
     if (!nuovoTesto.trim() || !pianoId) return;
     setLoading(true);
-    const { data } = await supabase.from("piano_checklist").insert({
-      piano_id: pianoId,
-      testo: nuovoTesto.trim(),
-      ordine: steps.length,
-      obbligatorio: true,
-    }).select().single();
-    if (data) setSteps(p => [...p, data]);
-    setNuovoTesto("");
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.from("piano_checklist").insert({
+        piano_id: pianoId,
+        testo: nuovoTesto.trim(),
+        ordine: steps.length,
+        obbligatorio: true,
+      }).select().single();
+      if (!error && data) setSteps(p => [...p, data]);
+      setNuovoTesto("");
+    } catch(e) {
+      console.error("Errore checklist:", e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const rimuovi = async (id) => {

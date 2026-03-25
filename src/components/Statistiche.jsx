@@ -11,7 +11,7 @@ function BarChart({ data, colore = "#3B82F6", height = 160, label }) {
     <div>
       {label && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>{label}</div>}
       <svg width="100%" height={height} style={{ overflow: "visible" }}>
-        {data.map((d, i) => {
+        {data.map((d) => {
           const barH = (d.v / max) * (height - 30);
           const x = i * w;
           return (
@@ -63,12 +63,12 @@ function PieChart({ slices, size = 140 }) {
           const sweep = (s.v / total) * 360;
           const path = arc(angle, angle + sweep);
           angle += sweep;
-          return <path key={i} d={path} fill={s.col} stroke="var(--surface)" strokeWidth={2} />;
+          return <path key={s.l} d={path} fill={s.col} stroke="var(--surface)" strokeWidth={2} />;
         })}
       </svg>
       <div style={{ display: "grid", gap: 6 }}>
-        {slices.filter(s => s.v > 0).map((s, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+        {slices.filter(s => s.v > 0).map((s) => (
+          <div key={s.l} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
             <span style={{ width: 12, height: 12, borderRadius: 3, background: s.col, flexShrink: 0, display: "inline-block" }} />
             <span style={{ color: "var(--text-2)", fontWeight: 500 }}>{s.l}</span>
             <span style={{ fontFamily: "var(--font-head)", fontWeight: 700, marginLeft: "auto", minWidth: 24, textAlign: "right" }}>{s.v}</span>

@@ -77,7 +77,7 @@ export function QRCodeAsset({ asset, onClose }) {
         </div>
         <img src={url} alt="QR Code" width={size} height={size} style={{ margin: "0 auto 16px", display: "block", border: "1px solid var(--border)", borderRadius: 8, padding: 8, background: "white" }} />
         <div style={{ fontSize: 11, color: "var(--text-3)", marginBottom: 16, lineHeight: 1.5 }}>
-          {testo.split("\n").map((l, i) => <div key={i}>{l}</div>)}
+          {testo.split("\n").map((l, i) => <div key={`line-${i}`}>{l}</div>)}
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={stampa} style={{ flex: 1, padding: "10px", background: "var(--navy)", color: "white", border: "none", borderRadius: "var(--radius-sm)", fontWeight: 700, cursor: "pointer" }}>

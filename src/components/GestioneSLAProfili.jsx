@@ -189,8 +189,8 @@ function ModalContenitore({ ini, tenantId, onClose, onSalva }) {
                 display:"grid",gridTemplateColumns:"1fr 120px 80px 80px 24px",
                 gap:8,padding:"0 12px",marginBottom:4,
               }}>
-                {["Nome voce SLA","Priorità (opt.)","Risposta","Risoluzione",""].map((h,i)=>(
-                  <div key={i} style={{fontSize:10,fontWeight:700,color:"var(--text-3)",
+                {["Nome voce SLA","Priorità (opt.)","Risposta","Risoluzione",""].map((h)=>(
+                  <div key={h} style={{fontSize:10,fontWeight:700,color:"var(--text-3)",
                     textTransform:"uppercase",letterSpacing:".04em"}}>{h}</div>
                 ))}
               </div>
@@ -240,6 +240,7 @@ export function GestioneSLAProfili({ tenantId, clienti=[] }) {
   useEffect(()=>{ if(tenantId) carica(); },[tenantId]);
 
   const carica = async () => {
+    try {
     setLoading(true);
     const {data} = await supabase.from("sla_profili")
       .select("*, sla_profilo_config(*)")
@@ -253,9 +254,11 @@ export function GestioneSLAProfili({ tenantId, clienti=[] }) {
     }));
     setProfili(norm);
     setLoading(false);
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const elimina = async (id) => {
+    try {
     const usato = clienti.filter(c=>c.slaProfilo_id===id);
     if (usato.length > 0) {
       alert(`Impossibile eliminare: associato a ${usato.length} cliente/i.\nRiassegna prima un altro contenitore.`);
@@ -263,6 +266,7 @@ export function GestioneSLAProfili({ tenantId, clienti=[] }) {
     }
     await supabase.from("sla_profili").delete().eq("id",id);
     setProfili(p=>p.filter(x=>x.id!==id));
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const onSalva = async ()=>{ await carica(); setShowM(false); setInMod(null); };

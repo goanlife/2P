@@ -34,6 +34,7 @@ export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
   useEffect(() => { carica(); }, [tenantId]);
 
   const carica = async () => {
+    try {
     setLoading(true);
     const { data } = await supabase
       .from("menu_config")
@@ -48,6 +49,7 @@ export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
     });
     setConfigs(map);
     setLoading(false);
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const toggleTab = (gruppoId, tabId) => {
@@ -63,6 +65,7 @@ export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
   };
 
   const salva = async () => {
+    try {
     setSaving(true);
     // Cancella e riscrive per il gruppo selezionato
     await supabase.from("menu_config")
@@ -85,6 +88,7 @@ export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+      } catch(e) { console.error("DB error:", e.message); }
   };
 
   const attivaTabGruppo = (gruppoId) => configs[gruppoId] ?? new Set(ALL_TABS.map(t => t.id));

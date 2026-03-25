@@ -83,7 +83,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
       const stepsNew = steps.filter(s => s._new);
       if (stepsNew.length) {
         await supabase.from("template_checklist_steps").insert(
-          stepsNew.map((s, i) => ({ template_id: templateId, testo: s.testo, obbligatorio: s.obbligatorio, ordine: i }))
+          stepsNew.map((s, idx) => ({ template_id: templateId, testo: s.testo, obbligatorio: s.obbligatorio, ordine: i }))
         );
       }
 
@@ -175,7 +175,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
               <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:4 }}>
                 Definisci i passi specifici per questo tipo di asset. Verranno precompilati in ogni intervento generato da questo template.
               </div>
-              {steps.map((step, i) => (
+              {steps.map((step, idx) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:8,
                   background:"var(--surface-2)", borderRadius:6, padding:"8px 12px" }}>
                   <input type="checkbox" checked={step.obbligatorio}
@@ -207,7 +207,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
               <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:4 }}>
                 Ricambi tipicamente necessari per questo intervento. Il sistema avviserà se lo stock è basso prima dell'intervento.
               </div>
-              {ricambi.map((r, i) => (
+              {ricambi.map((r, idx) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:10,
                   background:"var(--surface-2)", borderRadius:6, padding:"8px 12px" }}>
                   <span style={{ fontSize:18 }}>📦</span>

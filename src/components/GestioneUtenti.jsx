@@ -450,7 +450,7 @@ export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg
   const filtrati=useMemo(()=>operatori.filter(o=>filtroTipo==="tutti"||o.tipo===filtroTipo),[operatori,filtroTipo]);
 
   const chiudiGuida = () => {
-    localStorage.setItem("manuMan_guidaUtentiDismissed","1");
+    try { localStorage.setItem("manuMan_guidaUtentiDismissed","1"); } catch {}
     setShowGuida(false);
   };
 

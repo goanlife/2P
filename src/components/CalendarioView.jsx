@@ -179,7 +179,7 @@ export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipia
             const isDrop=drop===g&&!!drag;const hasConf=g&&giorniConflitto.has(g);const att=g?(attPerG[g]||[]):[];
             let cls="cal-cell";if(!g)cls+=" empty";else if(isDrop)cls+=" drop-target";else if(hasConf)cls+=" conflict";
             return (
-              <div key={i} className={cls}
+              <div key={g||`empty-${i}`} className={cls}
                 style={isSelected?{outline:"2px solid var(--amber)",outlineOffset:"-2px"}:{}}
                 onDragOver={e=>{if(!g||!drag)return;e.preventDefault();sDrop(g);}}
                 onDragLeave={()=>sDrop(null)}

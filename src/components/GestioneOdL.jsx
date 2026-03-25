@@ -304,58 +304,64 @@ export function GestioneOdL({
 
   // Aggiorna stato OdL
   const statoOdl = async (id, stato) => {
-    await supabase.from("ordini_lavoro").update({ stato }).eq("id", id);
-    const odlObj = odl.find(o=>o.id===id);
-    setOdl(prev=>prev.map(o=>o.id===id?{...o,stato}:o));
+    try {
+      await supabase.from("ordini_lavoro").update({ stato }).eq("id", id);
+      const odlObj = odl.find(o=>o.id===id);
+      setOdl(prev=>prev.map(o=>o.id===id?{...o,stato}:o));
 
-    // Email automatiche (solo se configurate)
-    if (odlObj) {
-      const op = operatori.find(o=>o.id===odlObj.operatore_id);
-      const cl = clienti.find(c=>c.id===odlObj.cliente_id);
+      if (odlObj) {
+        const op = operatori.find(o=>o.id===odlObj.operatore_id);
+        const cl = clienti.find(c=>c.id===odlObj.cliente_id);
 
-      // OdL confermato → email al tecnico
-      if (stato==="confermato" && emailConfig.odlAssegnato !== false) {
-        const att = manutenzioni.filter(m=>m.odlId===id);
-        emailOdlAssegnato(op, {...odlObj, n_attivita: att.length}, cl);
-      }
+        if (stato==="confermato" && emailConfig.odlAssegnato !== false) {
+          const att = manutenzioni.filter(m=>m.odlId===id);
+          emailOdlAssegnato(op, {...odlObj, n_attivita: att.length}, cl);
+        }
 
-      // OdL completato → email al cliente + completa attività
-      if (stato==="completato") {
-        await supabase.from("manutenzioni")
-          .update({ stato:"completata", chiuso_at: new Date().toISOString() })
-          .eq("odl_id", id).in("stato",["pianificata","inCorso"]);
-        onAggiornaManutenzioni?.();
+        if (stato==="completato") {
+          await supabase.from("manutenzioni")
+            .update({ stato:"completata", chiuso_at: new Date().toISOString() })
+            .eq("odl_id", id).in("stato",["pianificata","inCorso"]);
+          onAggiornaManutenzioni?.();
 
-        if (emailConfig.completamento !== false && cl?.email) {
-          // Usa il primo tecnico con ore effettive come "tecnico principale"
-          const attPrinc = manutenzioni.filter(m=>m.odlId===id && m.oreEffettive);
-          const tecPrinc = attPrinc.length ? operatori.find(o=>o.id===attPrinc[0].operatoreId) : op;
-          emailInterventoCompletato(cl, {
-            titolo: odlObj.titolo,
-            chiusoAt: new Date().toISOString(),
-            oreEffettive: attPrinc.reduce((s,a)=>s+a.oreEffettive,0) || null,
-            noteChiusura: odlObj.note || "",
-          }, tecPrinc);
+          if (emailConfig.completamento !== false && cl?.email) {
+            const attPrinc = manutenzioni.filter(m=>m.odlId===id && m.oreEffettive);
+            const tecPrinc = attPrinc.length ? operatori.find(o=>o.id===attPrinc[0].operatoreId) : op;
+            emailInterventoCompletato(cl, {
+              titolo: odlObj.titolo,
+              chiusoAt: new Date().toISOString(),
+              oreEffettive: attPrinc.reduce((s,a)=>s+a.oreEffettive,0) || null,
+              noteChiusura: odlObj.note || "",
+            }, tecPrinc);
+          }
         }
       }
+    } catch(e) {
+      console.error("Errore aggiornamento stato OdL:", e.message);
     }
   };
 
   // Salva modifiche OdL
   const salvaOdl = async (f) => {
-    const { data } = await supabase.from("ordini_lavoro")
-      .update({
-        titolo:       f.titolo,
-        data_inizio:  f.data_inizio,
-        data_fine:    f.data_fine || f.data_inizio,
-        operatore_id: f.operatore_id,
-        stato:        f.stato,
-        note:         f.note || null,
-      })
-      .eq("id", inMod.id)
-      .select().single();
-    if (data) setOdl(prev=>prev.map(o=>o.id===inMod.id?data:o));
-    setInMod(null);
+    try {
+      const { data, error } = await supabase.from("ordini_lavoro")
+        .update({
+          titolo:       f.titolo,
+          data_inizio:  f.data_inizio,
+          data_fine:    f.data_fine || f.data_inizio,
+          operatore_id: f.operatore_id,
+          stato:        f.stato,
+          note:         f.note || null,
+        })
+        .eq("id", inMod.id)
+        .select().single();
+      if (error) { console.error("Errore salvataggio OdL:", error.message); return; }
+      if (data) setOdl(prev=>prev.map(o=>o.id===inMod.id?data:o));
+    } catch(e) {
+      console.error("Errore rete:", e.message);
+    } finally {
+      setInMod(null);
+    }
   };
 
   // Stampa rapporto OdL
@@ -368,9 +374,14 @@ export function GestioneOdL({
 
   // Elimina OdL
   const delOdl = async (id) => {
-    if (!confirm("Eliminare questo OdL? Le attività collegate rimarranno ma perderanno il collegamento.")) return;
-    await supabase.from("ordini_lavoro").delete().eq("id", id);
-    setOdl(prev=>prev.filter(o=>o.id!==id));
+    if (!window.confirm("Eliminare questo OdL? Le attività collegate rimarranno ma perderanno il collegamento.")) return;
+    try {
+      const { error } = await supabase.from("ordini_lavoro").delete().eq("id", id);
+      if (error) { console.error("Errore eliminazione OdL:", error.message); return; }
+      setOdl(prev=>prev.filter(o=>o.id!==id));
+    } catch(e) {
+      console.error("Errore rete:", e.message);
+    }
   };
 
   if (loading) return (

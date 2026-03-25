@@ -186,7 +186,7 @@ export function ImportaRicambi({ tenantId, onDone }) {
 
           {errors.length > 0 && (
             <div style={{ marginTop: 12, background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px" }}>
-              {errors.map((e, i) => <div key={i} style={{ fontSize: 12, color: "#DC2626" }}>❌ {e}</div>)}
+              {errors.map((e, i) => <div key={`err-${i}`} style={{ fontSize: 12, color: "#DC2626" }}>❌ {e}</div>)}
             </div>
           )}
         </>
@@ -214,7 +214,7 @@ export function ImportaRicambi({ tenantId, onDone }) {
 
           {errors.length > 0 && (
             <div style={{ marginBottom: 10, background: "#FEF3C7", border: "1px solid #FDE68A", borderRadius: 6, padding: "8px 12px" }}>
-              {errors.map((e, i) => <div key={i} style={{ fontSize: 11, color: "#92400E" }}>⚠ {e}</div>)}
+              {errors.map((e, i) => <div key={`err-${i}`} style={{ fontSize: 11, color: "#92400E" }}>⚠ {e}</div>)}
             </div>
           )}
 

@@ -65,7 +65,7 @@ export function ModalApplicaTemplate({
       // 2. Copia checklist steps del template nel nuovo piano
       if (steps.length > 0) {
         await supabase.from("piano_checklist").insert(
-          steps.sort((a,b) => a.ordine - b.ordine).map((s, i) => ({
+          steps.sort((a,b) => a.ordine - b.ordine).map((s, idx) => ({
             piano_id:     pianoRow.id,
             testo:        s.testo,
             obbligatorio: s.obbligatorio,
@@ -250,7 +250,7 @@ export function ModalApplicaTemplate({
                     📦 Ricambi previsti per ogni intervento
                   </div>
                   <div style={{ display:"grid", gap:6 }}>
-                    {templateScelto.template_ricambi.map((r,i) => {
+                    {templateScelto.template_ricambi.map((r, idx) => {
                       const stock = r.ricambi?.quantita_stock ?? null;
                       const scarso = stock !== null && stock < r.quantita;
                       return (
@@ -286,7 +286,7 @@ export function ModalApplicaTemplate({
                     {templateScelto.template_checklist_steps
                       .sort((a,b)=>a.ordine-b.ordine)
                       .slice(0,4)
-                      .map((s,i) => (
+                      .map((s, idx) => (
                         <div key={i} style={{ fontSize:12, color:"var(--text-2)",
                           display:"flex", gap:6, alignItems:"flex-start" }}>
                           <span>{s.obbligatorio ? "🔴" : "⬜"}</span>
