@@ -338,16 +338,140 @@ export function ModalCreaAccesso({operatore, onClose, onSuccess}) {
   );
 }
 
+
+// ─── Pannello guida configurazione utenti ────────────────────────────────
+function GuidaSetup({ operatori=[], onCrea, onClose }) {
+  const haTecnici  = operatori.some(o => o.tipo === "fornitore"  && o.authUserId);
+  const haClienti  = operatori.some(o => o.tipo === "cliente"    && o.authUserId);
+  const totUtenti  = operatori.filter(o => o.authUserId).length;
+  const totAnag    = operatori.length;
+
+  const Step = ({ num, done, title, sub, action, actionLabel }) => (
+    <div style={{
+      display:"flex", gap:14, padding:"14px 16px",
+      background: done ? "#ECFDF5" : "var(--surface)",
+      border:`1px solid ${done ? "#A7F3D0" : "var(--border)"}`,
+      borderRadius:10, marginBottom:8,
+    }}>
+      <div style={{
+        width:32, height:32, borderRadius:"50%", flexShrink:0,
+        background: done ? "#059669" : "var(--navy)",
+        color:"white", display:"flex", alignItems:"center",
+        justifyContent:"center", fontWeight:700, fontSize:13,
+      }}>
+        {done ? "✓" : num}
+      </div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontWeight:700, fontSize:13, color: done ? "#065F46" : "var(--text-1)" }}>
+          {title}
+        </div>
+        <div style={{ fontSize:12, color: done ? "#059669" : "var(--text-3)", marginTop:3, lineHeight:1.5 }}>
+          {sub}
+        </div>
+      </div>
+      {!done && action && (
+        <button onClick={action} className="btn-primary"
+          style={{ fontSize:12, padding:"6px 14px", flexShrink:0, alignSelf:"center" }}>
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{
+      background:"var(--surface)", border:"1px solid var(--amber)",
+      borderRadius:12, padding:"18px 20px", marginBottom:16,
+    }}>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+        <div>
+          <div style={{ fontWeight:700, fontSize:15 }}>🚀 Guida configurazione utenti</div>
+          <div style={{ fontSize:12, color:"var(--text-3)", marginTop:3 }}>
+            Segui questi passi per configurare chi può accedere all'app
+          </div>
+        </div>
+        <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer",
+          color:"var(--text-3)", fontSize:16, padding:"4px 8px" }}>✕</button>
+      </div>
+
+      <Step
+        num={1} done={totAnag > 0}
+        title="Aggiungi i tuoi tecnici / fornitori"
+        sub={totAnag > 0
+          ? `✅ ${totAnag} operatori in anagrafica`
+          : "Crea i profili dei tecnici e fornitori che eseguono le manutenzioni. Non hanno ancora accesso all'app — servono solo per assegnare le attività."}
+        action={onCrea} actionLabel="+ Aggiungi tecnico"
+      />
+
+      <Step
+        num={2} done={haTecnici}
+        title="Crea l'accesso login ai tecnici"
+        sub={haTecnici
+          ? "✅ Almeno un tecnico ha le credenziali di accesso"
+          : "Opzionale ma consigliato: clicca 🔑 sulla card del tecnico per creare email+password. Il tecnico vedrà solo le sue attività assegnate."}
+      />
+
+      <Step
+        num={3} done={haClienti}
+        title="Aggiungi i tuoi clienti come utenti (opzionale)"
+        sub={haClienti
+          ? "✅ Almeno un cliente ha accesso al portale"
+          : "Crea un operatore di tipo 'Cliente' e collegalo al cliente in anagrafica. Vedrà solo le attività del suo sito in sola lettura."}
+      />
+
+      <div style={{
+        background:"#EFF6FF", border:"1px solid #BFDBFE",
+        borderRadius:8, padding:"12px 14px", marginTop:4,
+      }}>
+        <div style={{ fontWeight:700, fontSize:12, color:"#1E40AF", marginBottom:6 }}>
+          💡 Come funziona il multi-tenant
+        </div>
+        <div style={{ fontSize:12, color:"#1E40AF", lineHeight:1.7 }}>
+          <strong>Ogni azienda cliente è un tenant separato</strong> — i dati sono completamente isolati.<br/>
+          Quando vendi ManuMan a una nuova azienda, il loro admin fa login, crea la propria azienda
+          e gestisce autonomamente i propri utenti.<br/>
+          Tu (il fornitore ManuMan) non vedi i dati degli altri tenant.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg, onMod, onDel, onSaveSiti, onCreaAccesso}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
   const [accessoModal,setAccessoModal]=useState(null);
   const [filtroTipo,setFiltroTipo]=useState("tutti");
+  const [showGuida, setShowGuida]=useState(()=>{
+    // Mostra la guida la prima volta o se non ci sono utenti con accesso
+    return !localStorage.getItem("manuMan_guidaUtentiDismissed");
+  });
   const assets=[];// passed through but not needed here
   const filtrati=useMemo(()=>operatori.filter(o=>filtroTipo==="tutti"||o.tipo===filtroTipo),[operatori,filtroTipo]);
 
+  const chiudiGuida = () => {
+    localStorage.setItem("manuMan_guidaUtentiDismissed","1");
+    setShowGuida(false);
+  };
+
   return (
     <div style={{display:"grid",gap:12}}>
+      {/* Guida setup */}
+      {showGuida && (
+        <GuidaSetup
+          operatori={operatori}
+          onCrea={()=>{ siM(null); ssM(true); }}
+          onClose={chiudiGuida}
+        />
+      )}
+      {!showGuida && (
+        <button onClick={()=>setShowGuida(true)}
+          style={{textAlign:"left", background:"none", border:"none", cursor:"pointer",
+            fontSize:12, color:"var(--text-3)", padding:"0 0 4px" }}>
+          ❓ Mostra guida configurazione utenti
+        </button>
+      )}
+
       {/* Toolbar */}
       <div className="filters">
         <div style={{display:"flex",gap:6}}>

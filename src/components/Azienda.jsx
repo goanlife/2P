@@ -8,6 +8,88 @@ import { OrdiniAcquisto } from "./OrdiniAcquisto"
 import { ConfigurazioneMenu } from "./ConfigurazioneMenu"
 
 
+
+// ─── Banner guida multi-tenant ────────────────────────────────────────────
+function BannerMTGuida({ isAdmin }) {
+  const [vis, setVis] = useState(!localStorage.getItem("manuMan_mt_guide_ok"));
+  if (!vis || !isAdmin) return null;
+
+  return (
+    <div style={{
+      background:"#0D1B2A", borderRadius:12, padding:"20px 22px",
+      color:"white", position:"relative",
+    }}>
+      <button onClick={()=>{ localStorage.setItem("manuMan_mt_guide_ok","1"); setVis(false); }}
+        style={{ position:"absolute", top:12, right:12, background:"none", border:"none",
+          color:"#8899aa", cursor:"pointer", fontSize:16 }}>✕</button>
+
+      <div style={{ fontWeight:800, fontSize:16, color:"#F59E0B", marginBottom:4 }}>
+        ⚙ ManuMan — Come funziona per più aziende
+      </div>
+      <div style={{ fontSize:12, color:"#8899aa", marginBottom:16 }}>
+        Sei l'amministratore di questo tenant. Ecco il modello completo.
+      </div>
+
+      {/* Schema visivo */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr auto 1fr", gap:8,
+        alignItems:"center", marginBottom:16 }}>
+
+        {/* TU */}
+        <div style={{ background:"#1a2a3a", borderRadius:8, padding:"12px 14px", textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:4 }}>🏭</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"#F59E0B" }}>Tu (fornitore)</div>
+          <div style={{ fontSize:10, color:"#8899aa", marginTop:3, lineHeight:1.4 }}>
+            Vendi ManuMan a<br/>N aziende clienti
+          </div>
+        </div>
+
+        <div style={{ color:"#F59E0B", fontSize:18, textAlign:"center" }}>→</div>
+
+        {/* TENANT */}
+        <div style={{ background:"#1a2a3a", borderRadius:8, padding:"12px 14px", textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:4 }}>🏢</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"white" }}>Ogni azienda</div>
+          <div style={{ fontSize:10, color:"#8899aa", marginTop:3, lineHeight:1.4 }}>
+            = un Tenant separato<br/>con dati isolati
+          </div>
+          <div style={{ marginTop:6, display:"flex", flexDirection:"column", gap:3 }}>
+            {["Azienda A","Azienda B","Azienda C"].map(a=>(
+              <div key={a} style={{ fontSize:10, background:"#253545", borderRadius:4,
+                padding:"2px 6px", color:"#aabbcc" }}>{a}</div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ color:"#F59E0B", fontSize:18, textAlign:"center" }}>→</div>
+
+        {/* UTENTI */}
+        <div style={{ background:"#1a2a3a", borderRadius:8, padding:"12px 14px", textAlign:"center" }}>
+          <div style={{ fontSize:20, marginBottom:4 }}>👥</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"white" }}>Utenti per tenant</div>
+          <div style={{ fontSize:10, color:"#8899aa", marginTop:3, lineHeight:1.5 }}>
+            <span style={{color:"#F59E0B"}}>👑 Admin</span> → gestisce tutto<br/>
+            <span style={{color:"#7EC8E3"}}>🔧 Tecnico</span> → sue attività<br/>
+            <span style={{color:"#A8D8A8"}}>🏢 Cliente</span> → solo lettura
+          </div>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div style={{ fontSize:12, color:"#8899aa", lineHeight:2 }}>
+        <span style={{ color:"#F59E0B", fontWeight:700 }}>Come vendere a una nuova azienda:</span>
+        {"  "}<span style={{ background:"#253545", borderRadius:4, padding:"1px 6px", margin:"0 2px" }}>1</span>
+        L'admin dell'azienda cliente si registra su ManuMan
+        {"  "}<span style={{ background:"#253545", borderRadius:4, padding:"1px 6px", margin:"0 2px" }}>2</span>
+        Crea la sua azienda (tenant) al primo accesso
+        {"  "}<span style={{ background:"#253545", borderRadius:4, padding:"1px 6px", margin:"0 2px" }}>3</span>
+        Invita i propri tecnici via codice (tab Invito)
+        {"  "}<span style={{ background:"#253545", borderRadius:4, padding:"1px 6px", margin:"0 2px" }}>4</span>
+        Oppure crea direttamente le credenziali dai Utenti → 🔑
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab configurazione email ─────────────────────────────────────────────
 function TabEmail({ emailConfig={}, onSalva }) {
   const [cfg, setCfg] = useState({
@@ -282,6 +364,11 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
 
       {/* Tab Info */}
       {tab === "info" && (
+        <div style={{display:"grid",gap:16}}>
+
+        {/* Banner guida multi-tenant — mostrato solo una volta */}
+        <BannerMTGuida isAdmin={isAdmin} />
+
         <div style={st.card}>
           <div style={st.head}>Anagrafica azienda</div>
           <div style={{ display:"grid", gap:14 }}>
@@ -329,6 +416,7 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
               </button>
             )}
           </div>
+        </div>
         </div>
       )}
 
