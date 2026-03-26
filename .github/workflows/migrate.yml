@@ -224,6 +224,7 @@ jobs:
               categoria   text,
               ordine      int  default 0,
               attivo      boolean default true,
+              user_id     uuid,
               created_at  timestamptz default now()
             );
             create index if not exists idx_piano_voci_piano on piano_voci(piano_id);
@@ -240,6 +241,7 @@ jobs:
               data_fine     date,
               attivo        boolean default true,
               note          text,
+              user_id       uuid,
               created_at    timestamptz default now()
             );
             create index if not exists idx_piano_siti_piano   on piano_siti(piano_id);
@@ -551,6 +553,7 @@ jobs:
                id          bigserial primary key,
                nome        text not null,
                descrizione text,
+               col         text default '#3B82F6',
                tenant_id   uuid references tenants(id) on delete cascade,
                created_at  timestamptz default now()
              );
@@ -657,6 +660,54 @@ jobs:
                unique(tenant_id, user_id)
              );
              alter table tenant_membri disable row level security;"
+
+          # ──────────────────────────────────────────────────
+          # 019 — Patch colonne su tabelle esistenti (safe)
+          # ──────────────────────────────────────────────────
+          run_sql "019 piano_voci: user_id" \
+            "alter table piano_voci add column if not exists user_id uuid;"
+
+          run_sql "019 piano_siti: user_id" \
+            "alter table piano_siti add column if not exists user_id uuid;"
+
+          run_sql "019 gruppi: col" \
+            "alter table gruppi add column if not exists col text default '#3B82F6';"
+
+          run_sql "019 piano_assegnazioni: scope e area_nome" \
+            "alter table piano_assegnazioni add column if not exists scope text default 'asset';
+             alter table piano_assegnazioni add column if not exists area_nome text;
+             alter table piano_assegnazioni add column if not exists frequenza text;
+             alter table piano_assegnazioni add column if not exists durata int;
+             alter table piano_assegnazioni add column if not exists tipo text;
+             alter table piano_assegnazioni add column if not exists priorita text;
+             alter table piano_assegnazioni add column if not exists titolo text;"
+
+          run_sql "019 manutenzioni: ore_effettive e chiusura" \
+            "alter table manutenzioni add column if not exists ore_effettive numeric(6,2);
+             alter table manutenzioni add column if not exists parti_usate text;
+             alter table manutenzioni add column if not exists firma_svg text;
+             alter table manutenzioni add column if not exists chiuso_at timestamptz;
+             alter table manutenzioni add column if not exists note_chiusura text;"
+
+          run_sql "019 manutenzioni: odl_id" \
+            "alter table manutenzioni add column if not exists odl_id bigint references ordini_lavoro(id) on delete set null;"
+
+          run_sql "019 ordini_lavoro: colonne mancanti" \
+            "alter table ordini_lavoro add column if not exists numero text;
+             alter table ordini_lavoro add column if not exists n_attivita int default 0;
+             alter table ordini_lavoro add column if not exists durata_stimata int default 0;
+             alter table ordini_lavoro add column if not exists note text;
+             alter table ordini_lavoro add column if not exists completato_at timestamptz;"
+
+          run_sql "019 operatori: email" \
+            "alter table operatori add column if not exists email text;"
+
+          run_sql "019 attivita_commenti: tipo" \
+            "alter table attivita_commenti add column if not exists tipo text default 'commento';"
+
+          run_sql "019 scadenze_normative: giorni_rimanenti computed" \
+            "alter table scadenze_normative add column if not exists giorni_rimanenti int
+               generated always as (extract(day from scadenza::timestamp - now()::timestamp)::int) stored;"
 
           echo ""
           echo "🎉 Tutte le migration applicate!"
