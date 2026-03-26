@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n/index.jsx";
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { SelettoreTema, TEMI} from "./AllegatiTemi";
@@ -29,6 +30,7 @@ const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395
 
 // ─── Modal Siti Cliente ───────────────────────────────────────────────────
 export function ModalSitiCliente({operatore, clienti=[], siti=[], onClose, onSave}) {
+  const { t } = useI18n();
   // siti = array di {operatoreId, clienteId} già salvati per questo operatore
   const mieiSiti = useMemo(()=>siti.filter(s=>s.operatoreId===operatore.id).map(s=>s.clienteId),[siti,operatore.id]);
   const [sel, setSel] = useState(new Set(mieiSiti));
@@ -437,7 +439,8 @@ function GuidaSetup({ operatori=[], onCrea, onClose }) {
   );
 }
 
-export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg, onMod, onDel, onSaveSiti, onCreaAccesso}) {
+export function GestioneUtenti({
+  operatori=[], man=[], clienti=[], siti=[], onAgg, onMod, onDel, onSaveSiti, onCreaAccesso}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
   const [accessoModal,setAccessoModal]=useState(null);
@@ -475,10 +478,10 @@ export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg
       {/* Toolbar */}
       <div className="filters">
         <div style={{display:"flex",gap:6}}>
-          {["tutti","fornitore","cliente","interno"].map(t=>{
-            const label={tutti:"Tutti",fornitore:"Fornitori",cliente:"Clienti",interno:"Interni"}[t];
-            const count=t==="tutti"?operatori.length:operatori.filter(o=>o.tipo===t).length;
-            return <button key={t} onClick={()=>setFiltroTipo(t)} style={{fontWeight:filtroTipo===t?700:400,background:filtroTipo===t?"var(--navy)":"var(--surface)",color:filtroTipo===t?"white":"var(--text-2)",borderColor:filtroTipo===t?"var(--navy)":"var(--border)",fontSize:12,padding:"5px 12px"}}>{label} <span style={{opacity:.6}}>({count})</span></button>;
+          {["tutti","fornitore","cliente","interno"].map(tipo=>{
+            const label={tutti:t("actions.all"),fornitore:"Fornitori",cliente:t("nav.clienti"),interno:"Interni"}[tipo];
+            const count=tipo==="tutti"?operatori.length:operatori.filter(o=>o.tipo===tipo).length;
+            return <button key={tipo} onClick={()=>setFiltroTipo(tipo)} style={{fontWeight:filtroTipo===tipo?700:400,background:filtroTipo===tipo?"var(--navy)":"var(--surface)",color:filtroTipo===tipo?"white":"var(--text-2)",borderColor:filtroTipo===tipo?"var(--navy)":"var(--border)",fontSize:12,padding:"5px 12px"}}>{label} <span style={{opacity:.6}}>({count})</span></button>;
           })}
         </div>
         <span style={{flex:1}} />
@@ -523,7 +526,7 @@ export function GestioneUtenti({operatori=[], man=[], clienti=[], siti=[], onAgg
               {/* Stats (solo fornitori/interni hanno senso) */}
               {op.tipo!=="cliente"&&(
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-                  {[{v:att.length,l:"Attive",c:op.col},{v:sue.filter(m=>m.stato==="completata").length,l:"Completate",c:"#059669"},{v:ore+"h",l:"Ore"}].map(({v,l,c})=>(
+                  {[{v:att.length,l:t("utenti.active_tasks"),c:op.col},{v:sue.filter(m=>m.stato==="completata").length,l:t("stati.completata"),c:"#059669"},{v:ore+"h",l:t("utenti.hours")}].map(({v,l,c})=>(
                     <div key={l} className="stat-mini"><div className="stat-mini-value" style={{color:c}}>{v}</div><div className="stat-mini-label">{l}</div></div>
                   ))}
                 </div>

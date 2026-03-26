@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { supabase } from "../supabase"
+import { useI18n } from "../i18n/index.jsx"
 
 export default function Onboarding({ session, onTenantReady }) {
+  const { t } = useI18n();
   const [step, setStep] = useState("scelta") // scelta | crea | unisci
   const [nome, setNome] = useState("")
   const [codice, setCodice] = useState("")

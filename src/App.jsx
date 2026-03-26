@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { HelpButton } from "./components/HelpPanel";
+import { LanguageSwitcher } from "./components/LanguageSwitcher";
+import { useI18n } from "./i18n/index.jsx";
 import { Reportistica } from "./components/Reportistica";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
@@ -267,6 +269,7 @@ export default function App() {
   }, [tenant?.id, gOps.length]);
 
   // Ruolo utente corrente - DEVE stare prima di tabsVisibili
+  const { t, lang } = useI18n();
   const meOperatore = useMemo(() => operatori.find(o => o.email === session?.user?.email), [operatori, session]);
   const ruolo = meOperatore?.tipo || "admin";
   const isCliente = ruolo === "cliente";
@@ -883,11 +886,11 @@ export default function App() {
 
         {/* ── Nav ── */}
         <nav className="sb-nav">
-          {tabsVisibili.map(t=>(
-            <button key={t.id} className={"sb-item"+(vista===t.id?" active":"")}
-              onClick={()=>{ sVWithReset(t.id); setSidebar(false); }}>
-              <span className="sb-icon">{t.icon}</span>
-              <span className="sb-label">{t.l}</span>
+          {tabsVisibili.map(tab=>(
+            <button key={tab.id} className={"sb-item"+(vista===tab.id?" active":"")}
+              onClick={()=>{ sVWithReset(tab.id); setSidebar(false); }}>
+              <span className="sb-icon">{tab.icon}</span>
+              <span className="sb-label">{t(`nav.${tab.id}`) || tab.l}</span>
             </button>
           ))}
         </nav>

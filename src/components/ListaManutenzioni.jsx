@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n/index.jsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
@@ -13,7 +14,7 @@ function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta") };
 
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
@@ -99,6 +100,7 @@ export function ChecklistBadge({manutenzioneId, pianoId, numeroIntervento}) {
 }
 
 export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato, onDel, onMod, onDup, initialFilters, onChiudi, onVerbale, readOnly=false, slaConfig=[], slaProfili=[]}) {
+  const { t } = useI18n();
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
   const [fC,sfC]=useState("tutti");
@@ -175,7 +177,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
                   {haConf&&<span style={{fontSize:12}}>⚠️</span>}
                   <span style={{fontSize:11,fontWeight:700,color:"var(--text-3)",fontFamily:"var(--font-head)",background:"var(--surface-2)",border:"1px solid var(--border)",padding:"1px 7px",borderRadius:99,flexShrink:0}}>{fmtNumero(m)}</span>
                   <span style={{fontWeight:600,fontSize:14}}>{m.titolo}</span>
-                  <span className={"badge "+(m.tipo==="ordinaria"?"badge-ordinaria":"badge-straord")}>{m.tipo==="ordinaria"?"Ordinaria":"Straord."}</span>
+                  <span className={"badge "+(m.tipo==="ordinaria"?"badge-ordinaria":"badge-straord")}>{m.tipo==="ordinaria"?t("tipi.ordinaria"):"Straord."}</span>
                   <span className={"badge badge-"+m.stato}>{STATO_LABEL[m.stato]}</span>
                   {m.priorita==="urgente"&&<span className="badge badge-urgente">⚡ Urgente</span>}
                   {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}

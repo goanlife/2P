@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Overlay, Field } from "./ui/Atoms";
 import { ModalGeneraOdL } from "./GeneraOdL";
+import { useI18n } from "../i18n/index.jsx";
 import { HelpButton } from "./HelpPanel";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
@@ -496,6 +497,7 @@ export function GestionePiani({
   // retrocompatibilità
   onAggAss, onModAss, onDelAss, onAttivaDisattiva, onRinnova,
 }) {
+  const { t } = useI18n();
   const [pianoSelId, setPianoSelId] = useState(null);
   const [showNuovo,  setShowNuovo]  = useState(false);
   const [inMod,      setInMod]      = useState(null);
@@ -548,7 +550,7 @@ export function GestionePiani({
 
         {pianiView.length === 0 && (
           <div style={{ textAlign:"center", padding:"24px 8px", color:"var(--text-3)", fontSize:12 }}>
-            {piani.length===0 ? "Nessun piano" : "Nessun risultato"}
+            {piani.length===0 ? t("piani.no_plans") : "Nessun risultato"}
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useI18n } from "../i18n/index.jsx";
 import { AvatarComp } from "./ui/Atoms";
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
@@ -8,10 +9,11 @@ const TIPO_OP = {
   cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
   interno:   { label:"Interno",   cls:"badge", style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
 };
-const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:"In corso", completata:t("stati.completata"), scaduta:"Scaduta" };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
 export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[], onNavigate, manTotale=null, manCaricaTutto=false}) {
+  const { t } = useI18n();
   const stats=useMemo(()=>({tot:man.length,pi:man.filter(m=>m.stato==="pianificata").length,ic:man.filter(m=>m.stato==="inCorso").length,sc:man.filter(m=>m.stato==="scaduta").length,ur:man.filter(m=>m.priorita==="urgente"&&m.stato!=="completata").length,rq:man.filter(m=>m.stato==="richiesta").length}),[man]);
   const prossime=useMemo(()=>man.filter(m=>m.stato==="pianificata").sort((a,b)=>a.data.localeCompare(b.data)).slice(0,6),[man]);
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);

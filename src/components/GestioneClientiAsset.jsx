@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n/index.jsx";
 import React, { useState, useMemo } from "react";
 import { AssetSaluteBadge } from "./TemplateAsset";
 import { PianiAsset } from "./ApplicaTemplate";
@@ -125,6 +126,7 @@ function EsportaMenu({ onEsportaTutti, onEsportaFiltrati, nFiltrati, nTotali }) 
 
 
 export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnazioni=[], piani=[], onAgg, onMod, onDel, onQR, onApplicaTemplate, tenantId="", userId="", onImportDone}) {
+  const { t } = useI18n();
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const [showImport,setShowImport]=useState(false);
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
@@ -186,7 +188,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
     URL.revokeObjectURL(a.href);
   };
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
-  const STATO_ASSET={attivo:{cls:"badge badge-attivo",l:"Attivo"},manutenzione:{cls:"badge badge-inCorso",l:"In manutenzione"},inattivo:{cls:"badge badge-scaduta",l:"Inattivo"}};
+  const STATO_ASSET={attivo:{cls:"badge badge-attivo",l:t("assets.active")},manutenzione:{cls:"badge badge-inCorso",l:t("assets.maintenance")},inattivo:{cls:"badge badge-scaduta",l:t("assets.inactive")}};
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
@@ -343,6 +345,7 @@ function EsportaMenuClienti({ onEsportaTutti, onEsportaFiltrati, nFiltrati, nTot
 
 
 export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, onMod, onDel, tenantId, userId, onImportDone}) {
+  const { t } = useI18n();
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [showImport,setShowImport]=useState(false);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useI18n } from "../i18n/index.jsx";
 import { supabase } from "../supabase";
 
 // Definizione completa di tutti i tab con etichette e descrizioni
@@ -26,6 +27,7 @@ export const ALL_TABS = [
 const ADMIN_ONLY = ["azienda", "gruppi", "utenti"];
 
 export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
+  const { t } = useI18n();
   const [configs, setConfigs]     = useState({}); // gruppoId → Set<tabId> visibili
   const [loading, setLoading]     = useState(true);
   const [saving, setSaving]       = useState(false);

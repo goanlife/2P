@@ -1,3 +1,4 @@
+import { useI18n } from "../i18n/index.jsx";
 import React, { useState, useMemo } from "react";
 import { HelpButton } from "./HelpPanel";
 
@@ -71,10 +72,10 @@ const CATALOGO = [
 ];
 
 const CAT_LABEL = {
-  cliente:   { l:"Per il Cliente",     bg:"#EFF6FF", col:"#1E40AF", brd:"#BFDBFE" },
-  costi:     { l:"Gestione Costi",     bg:"#ECFDF5", col:"#065F46", brd:"#A7F3D0" },
-  admin:     { l:"Amministrazione",    bg:"#F5F3FF", col:"#4C1D95", brd:"#DDD6FE" },
-  operativo: { l:"Operativi",          bg:"#FEF3C7", col:"#92400E", brd:"#FDE68A" },
+  cliente:   { l:"Per il Cliente",              bg:"#EFF6FF", col:"#1E40AF", brd:"#BFDBFE" },
+  costi:     { l:"Gestione Costi",            bg:"#ECFDF5", col:"#065F46", brd:"#A7F3D0" },
+  admin:     { l:"Amministrazione",          bg:"#F5F3FF", col:"#4C1D95", brd:"#DDD6FE" },
+  operativo: { l:"Operativi",                         bg:"#FEF3C7", col:"#92400E", brd:"#FDE68A" },
 };
 
 // ── Generatori HTML per window.print() ────────────────────────────────────
@@ -408,6 +409,7 @@ ${oreAlert.length?`<div class="section" style="color:#D97706">⚙ Ore utilizzo v
 
 // ── Componente principale ──────────────────────────────────────────────────
 export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], piani=[], tenantNome="" }) {
+  const { t } = useI18n();
   const [filtroCat, setFiltroCat] = useState("tutti");
   const [params,    setParams]    = useState({
     clienteId: "",
@@ -480,10 +482,10 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
         </div>
         <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
           {[
-            ["Mese corrente",  ()=>{ s("da",meseInizio()); s("a",oggi()); }],
-            ["Mese precedente",()=>{ const d=new Date(); d.setDate(0); const ini=new Date(d.getFullYear(),d.getMonth(),1); s("da",ini.toISOString().split("T")[0]); s("a",d.toISOString().split("T")[0]); }],
-            ["Trimestre",      ()=>{ const d=new Date(); d.setMonth(d.getMonth()-3); s("da",d.toISOString().split("T")[0]); s("a",oggi()); }],
-            ["Anno corrente",  ()=>{ s("da",`${new Date().getFullYear()}-01-01`); s("a",oggi()); }],
+            [t("report.this_month"),  ()=>{ s("da",meseInizio()); s("a",oggi()); }],
+            [t("report.last_month"),()=>{ const d=new Date(); d.setDate(0); const ini=new Date(d.getFullYear(),d.getMonth(),1); s("da",ini.toISOString().split("T")[0]); s("a",d.toISOString().split("T")[0]); }],
+            [t("report.quarter"),      ()=>{ const d=new Date(); d.setMonth(d.getMonth()-3); s("da",d.toISOString().split("T")[0]); s("a",oggi()); }],
+            [t("report.this_year"),  ()=>{ s("da",`${new Date().getFullYear()}-01-01`); s("a",oggi()); }],
           ].map(([l,fn])=>(
             <button key={l} onClick={fn}
               style={{ fontSize:11, padding:"5px 12px", borderRadius:6,
@@ -505,7 +507,7 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
               background: filtroCat===c ? "var(--navy)" : "var(--surface)",
               color: filtroCat===c ? "white" : "var(--text-2)",
             }}>
-            {c==="tutti" ? "Tutti" : CAT_LABEL[c]?.l}
+            {c==="tutti" ? t("actions.all") : CAT_LABEL[c]?.l}
           </button>
         ))}
       </div>
@@ -560,7 +562,7 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
                   border:"none", cursor: disabled ? "default" : "pointer",
                   display:"flex", alignItems:"center", justifyContent:"center", gap:8,
                 }}>
-                {r.id==="registro_interventi" ? "⬇ Esporta CSV" : "🖨 Genera PDF"}
+                {r.id==="registro_interventi" ? t("report.export_csv") : t("report.generate_pdf")}
               </button>
             </div>
           );

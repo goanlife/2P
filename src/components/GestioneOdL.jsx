@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useI18n } from "../i18n/index.jsx";
 import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
 import { PannelloRipianifica } from "./RipianificaOdL";
@@ -8,14 +9,14 @@ import { Overlay, Field } from "./ui/Atoms";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
 const STATI_ODL = [
-  { v:"bozza",      l:"Bozza",       col:"#94A3B8", bg:"#F8FAFC" },
-  { v:"confermato", l:"Confermato",  col:"#3B82F6", bg:"#EFF6FF" },
-  { v:"in_corso",   l:"In corso",    col:"#F59E0B", bg:"#FEF3C7" },
-  { v:"completato", l:"Completato",  col:"#059669", bg:"#ECFDF5" },
+  { v:"bozza",      l:t("stati.bozza"),       col:"#94A3B8", bg:"#F8FAFC" },
+  { v:"confermato", l:t("stati.confermato"),  col:"#3B82F6", bg:"#EFF6FF" },
+  { v:"in_corso",   l:t("stati.in_corso"),    col:"#F59E0B", bg:"#FEF3C7" },
+  { v:"completato", l:t("stati.completato"),  col:"#059669", bg:"#ECFDF5" },
   { v:"annullato",  l:"Annullato",   col:"#EF4444", bg:"#FEF2F2" },
 ];
 const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-const STATO_LABEL = { richiesta:"Richiesta", pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
+const STATO_LABEL = { richiesta:"Richiesta", pianificata:"Pianificata", inCorso:t("stati.in_corso"), completata:"Completata", scaduta:"Scaduta" };
 
 const fmtData   = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}) : "—";
 const fmtOre    = min => min >= 60 ? `${Math.round(min/60*10)/10}h` : `${min}min`;
@@ -250,6 +251,7 @@ export function GestioneOdL({
   manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="", emailConfig={},
   onAggiornaManutenzioni,
 }) {
+  const { t } = useI18n();
   const [odl,     setOdl]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [inMod,   setInMod]  = useState(null);
@@ -410,10 +412,10 @@ export function GestioneOdL({
       {/* Stat header */}
       <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10}}>
         {[
-          { l:"Totali",     v:stats.tot,        col:"var(--text-2)" },
-          { l:"Bozza",      v:stats.bozza,      col:"#94A3B8" },
-          { l:"In corso",   v:stats.inCorso,    col:"#F59E0B" },
-          { l:"Completati", v:stats.completati, col:"#059669" },
+          { l:t("odl.total"),     v:stats.tot,        col:"var(--text-2)" },
+          { l:t("stati.bozza"),      v:stats.bozza,      col:"#94A3B8" },
+          { l:t("stati.in_corso"),   v:stats.inCorso,    col:"#F59E0B" },
+          { l:t("odl.completed"), v:stats.completati, col:"#059669" },
         ].map(s=>(
           <div key={s.l} style={{
             background:"var(--surface-2)", borderRadius:"var(--radius)",
