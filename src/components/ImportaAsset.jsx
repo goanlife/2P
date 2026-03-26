@@ -278,7 +278,7 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
         onDragOver={e=>{ e.preventDefault(); setDragOver(true); }}
         onDragLeave={()=>setDragOver(false)}
         onDrop={e=>{ e.preventDefault(); setDragOver(false); caricaFile(e.dataTransfer.files[0]); }}
-        onClick={()=>fileRef.current.click()}
+        onClick={()=>fileRef.current?.click()}
         style={{
           border:`2px dashed ${dragOver?"var(--amber)":"var(--border)"}`,
           borderRadius:12, padding:"36px 24px", textAlign:"center", cursor:"pointer",

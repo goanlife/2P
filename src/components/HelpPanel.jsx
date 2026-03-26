@@ -411,13 +411,22 @@ export function HelpPanel({ sezione, onClose }) {
     return () => window.removeEventListener("keydown", fn);
   }, [onClose]);
 
-  // Chiudi cliccando fuori
+  // Chiudi cliccando fuori — useCapture=false, cleanup corretto
   useEffect(() => {
+    let active = false;
     const fn = e => {
+      if (!active) return; // ignora il click che ha aperto il pannello
       if (panelRef.current && !panelRef.current.contains(e.target)) onClose();
     };
-    setTimeout(() => document.addEventListener("mousedown", fn), 100);
-    return () => document.removeEventListener("mousedown", fn);
+    // Piccolo delay per evitare chiusura immediata al click del bottone
+    const t = setTimeout(() => {
+      active = true;
+      document.addEventListener("mousedown", fn);
+    }, 150);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", fn);
+    };
   }, [onClose]);
 
   if (!content) return null;

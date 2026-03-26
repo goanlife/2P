@@ -226,7 +226,8 @@ export default function App() {
   // Apply default theme on mount - legge da localStorage per evitare flickering
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("manumanTema") || "navy";
+      let saved = "navy";
+      try { saved = localStorage.getItem("manumanTema") || "navy"; } catch {}
       applyTheme(saved);
       setTemaCorrente(saved);
     } catch(e) {
@@ -464,12 +465,16 @@ export default function App() {
       ...m,
       titolo: m.titolo + " (copia)",
       stato: "pianificata",
-      data: isoDate(new Date()),     // oggi come data di default
-      pianoId: null,                  // slegata dal piano
+      data: isoDate(new Date()),
+      pianoId: null,
       assegnazioneId: null,
+      // Reset campi chiusura e approvazione
+      noteChiusura: "", oreEffettive: null, partiUsate: "", firmaSvg: "",
+      approvataAt: null, approvataId: null, rifiutatoMotivo: "",
     }, uid(), tenant?.id);
-    delete nuova.note_chiusura; delete nuova.ore_effettive;
-    delete nuova.parti_usate;   delete nuova.firma_svg; delete nuova.chiuso_at;
+    // Rimuovi campi di chiusura dal record DB
+    ["note_chiusura","ore_effettive","parti_usate","firma_svg","chiuso_at",
+     "approvata_at","approvata_da","rifiutata_motivo"].forEach(k => delete nuova[k]);
     const { data, error } = await supabase.from("manutenzioni").insert(nuova).select().single();
     if (error) { notify("Errore duplicazione: " + error.message); return; }
     sMan(p => [...p, mapM(data)]);
@@ -479,7 +484,7 @@ export default function App() {
     const {error} = await supabase.from("manutenzioni").update({stato}).eq("id",id);
     if (error) { notify("Errore: "+error.message); return; }
     sMan(p=>p.map(m=>m.id===id?{...m,stato}:m));
-    const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta"};
+    const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta",richiesta:"📋 Richiesta inviata"};
     notify(label[stato]||"Stato aggiornato","success");
   };
   const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
@@ -800,7 +805,8 @@ export default function App() {
     notify("Intervento chiuso con successo ✅", "success");
     // Email al cliente (se ha email configurata)
     try {
-      const { emailInterventoCompletato } = await import("./notifiche-email.js");
+      const { emailInterventoCompletato } = await import("./notifiche-email.js").catch(() => ({ emailInterventoCompletato: null }));
+      if (!emailInterventoCompletato) throw new Error("modulo email non caricato");
       const tecnico = operatori.find(o=>o.id===manutenzione?.operatoreId);
       await emailInterventoCompletato(clienteM, {...manutenzione,...dati}, tecnico);
     } catch(e) { /* email non bloccante */ }

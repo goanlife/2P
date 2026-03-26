@@ -51,14 +51,22 @@ function ModalApprovazione({ richiesta, operatori=[], clienti=[], assets=[], onC
 
   const approva = async () => {
     setLoad(true);
-    await onConferma({ ...richiesta, operatoreId:Number(operatoreId)||null, data, durata:Number(durata), nota });
-    setLoad(false); onClose();
+    try {
+      await onConferma({ ...richiesta, operatoreId:Number(operatoreId)||null, data, durata:Number(durata), nota });
+      onClose();
+    } catch(e) {
+      alert("Errore durante l'approvazione: " + e.message);
+    } finally { setLoad(false); }
   };
   const rifiuta = async () => {
     if (!motRifiuto.trim()) return;
     setLoad(true);
-    await onRifiuta(richiesta, motRifiuto);
-    setLoad(false); onClose();
+    try {
+      await onRifiuta(richiesta, motRifiuto);
+      onClose();
+    } catch(e) {
+      alert("Errore durante il rifiuto: " + e.message);
+    } finally { setLoad(false); }
   };
 
   return (

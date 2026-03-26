@@ -510,7 +510,7 @@ function ImportaOdlCSV({ odl=[], operatori=[], clienti=[], tenantId, onClose, on
           onDragOver={e=>{e.preventDefault();setDragOver(true);}}
           onDragLeave={()=>setDragOver(false)}
           onDrop={e=>{e.preventDefault();setDragOver(false);caricaFile(e.dataTransfer.files[0]);}}
-          onClick={()=>fileRef.current.click()}
+          onClick={()=>fileRef.current?.click()}
           style={{
             border:`2px dashed ${dragOver?"var(--amber)":"var(--border)"}`,
             borderRadius:10, padding:"28px 20px", textAlign:"center", cursor:"pointer",
