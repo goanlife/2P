@@ -154,7 +154,7 @@ export function CatalogoRicambi({ tenantId }) {
   const [showImport, setShowImport] = useState(false);
   const s = k => v => setForm(p => ({ ...p, [k]: v }));
 
-  useEffect(() => { carica(); }, []);
+  useEffect(() => { carica(); }, [tenantId, manutenzioneId]);
 
   const carica = async () => {
     try {

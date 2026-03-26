@@ -37,12 +37,15 @@ function ModalOrdine({ ini, ricambi=[], tenantId, meOperatore, onClose, onSalva 
   };
 
   const salva = async () => {
+  try {
+
     if (!f.fornitore.trim() || !f.righe.length) return;
     setSaving(true);
     await onSalva({ ...f, totale });
     setSaving(false);
     onClose();
-  };
+    } catch(e) { console.error("salva:", e.message); }
+};
 
   const st = {
     inp: { padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:6, fontSize:13, width:"100%", background:"var(--surface)", color:"var(--text-1)", boxSizing:"border-box" },

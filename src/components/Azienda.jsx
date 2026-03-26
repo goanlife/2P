@@ -631,11 +631,13 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
   }
 
   const rigeneraInvito = async () => {
+  try {
     if (codiceInvito) await supabase.from("tenant_inviti").update({ usato: true }).eq("id", codiceInvito.id)
     await creaInvito()
     setMsg("Nuovo codice generato!")
     setTimeout(() => setMsg(null), 3000)
-  }
+  } catch(e) { console.error("rigeneraInvito:", e.message); }
+}
 
   const salvaInfo = async () => {
     setLoading(true); setErrore(null)

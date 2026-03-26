@@ -522,10 +522,12 @@ export default function App() {
     if(!error) sOp(p=>p.map(o=>o.id===f.id?{...o,...f}:o));
   };
   const creaAccesso = async (opId, email, authUserId) => {
+  try {
     await supabase.from("operatori").update({ email, auth_user_id: authUserId||null }).eq("id", opId);
     sOp(p=>p.map(o=>o.id===opId?{...o,email,authUserId:authUserId||null}:o));
     notify(`Accesso creato per ${email}`, "success");
-  };
+  } catch(e) { console.error("creaAccesso:", e.message); }
+};
   const delOp = async id => { await supabase.from("operatori").delete().eq("id",id); sOp(p=>p.filter(o=>o.id!==id)); sSiti(p=>p.filter(s=>s.operatoreId!==id)); };
 
   // Salva associazioni siti per un operatore cliente
@@ -735,7 +737,11 @@ export default function App() {
     sPVoci(p=>p.filter(v=>v.pianoId!==id));
     sPSiti(p=>p.filter(s=>s.pianoId!==id));
   };;
-  const attivaDisattiva = async (id,attivo) => { await supabase.from("piano_assegnazioni").update({attivo}).eq("id",id); sAss(p=>p.map(a=>a.id===id?{...a,attivo}:a)); };
+  const attivaDisattiva = async (id,attivo) => {
+  try {
+    await supabase.from("piano_assegnazioni").update({attivo}).eq("id",id); sAss(p=>p.map(a=>a.id===id?{...a,attivo}:a));
+  } catch(e) { console.error("attivaDisattiva:", e.message); }
+};
 
   // ── CRUD piano_voci (attività template) ──────────────────────────────
   const aggVoce = async f => {
@@ -773,9 +779,11 @@ export default function App() {
     sPSiti(p=>p.filter(s=>s.id!==id));
   };
   const attivaDisattivaSito = async (id,attivo) => {
+  try {
     await supabase.from("piano_siti").update({attivo}).eq("id",id);
     sPSiti(p=>p.map(s=>s.id===id?{...s,attivo}:s));
-  };
+  } catch(e) { console.error("attivaDisattivaSito:", e.message); }
+};
 
   const apriConData = d => { sDD(d); siMM(null); sMM(true); };
 

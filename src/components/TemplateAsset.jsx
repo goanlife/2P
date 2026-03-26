@@ -273,14 +273,20 @@ export function GestioneTemplateAsset({ tenantId, ricambi=[] }) {
   };
 
   const onSalva = async (t) => {
+  try {
+
     await carica();
     setShowM(false); setInMod(null);
-  };
+    } catch(e) { console.error("onSalva:", e.message); }
+};
 
   const delTemplate = async (id) => {
+  try {
+
     await supabase.from("asset_tipo_template").delete().eq("id", id);
     setTemplates(p => p.filter(t => t.id !== id));
-  };
+    } catch(e) { console.error("delTemplate:", e.message); }
+};
 
   const tipiDistinct = [...new Set(templates.map(t => t.tipo_asset))].sort();
   const filtrati = filtroTipo === "tutti" ? templates : templates.filter(t => t.tipo_asset === filtroTipo);

@@ -100,13 +100,15 @@ export function ConfigSLA({ tenantId }) {
   };
 
   const salva = async () => {
+  try {
     if (!tenantId) return;
     setSaving(true);
     for (const c of config) {
       await supabase.from("sla_config").upsert({ tenant_id: tenantId, priorita: c.priorita, ore_risposta: c.ore_risposta, ore_risoluzione: c.ore_risoluzione }, { onConflict: "tenant_id,priorita" });
     }
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000);
-  };
+  } catch(e) { console.error("salva:", e.message); }
+};
 
   const st = {
     inp: { padding: "6px 8px", border: "1px solid var(--border-dim)", borderRadius: 5, fontSize: 12, width: 70, textAlign: "center", background: "var(--surface)", color: "var(--text-1)" },

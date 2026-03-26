@@ -217,10 +217,12 @@ export function ScadenzarioNormativo({ tenantId, clienti=[], assets=[], operator
   };
 
   const del = async (id) => {
+  try {
     if (!confirm("Eliminare questa scadenza?")) return;
     await supabase.from("scadenze_normative").delete().eq("id",id);
     setScadenze(p=>p.filter(s=>s.id!==id));
-  };
+  } catch(e) { console.error("del:", e.message); }
+};
 
   const completaERinnova = async (s) => {
     const oggi_ = oggi();

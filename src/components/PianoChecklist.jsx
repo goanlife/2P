@@ -55,19 +55,25 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
   };
 
   const rimuovi = async (id) => {
+  try {
     await supabase.from("piano_checklist").delete().eq("id", id);
     setSteps(p => p.filter(s => s.id !== id));
-  };
+  } catch(e) { console.error("rimuovi:", e.message); }
+};
 
   const toggleObbligatorio = async (id, val) => {
+  try {
     await supabase.from("piano_checklist").update({ obbligatorio: val }).eq("id", id);
     setSteps(p => p.map(s => s.id === id ? { ...s, obbligatorio: val } : s));
-  };
+  } catch(e) { console.error("toggleObbligatorio:", e.message); }
+};
 
   const aggiornaOgniN = async (id, n) => {
+  try {
     await supabase.from("piano_checklist").update({ ogni_n_interventi: n }).eq("id", id);
     setSteps(p => p.map(s => s.id === id ? { ...s, ogni_n_interventi: n } : s));
-  };
+  } catch(e) { console.error("aggiornaOgniN:", e.message); }
+};
 
   const sposta = async (idx, dir) => {
     const newSteps = [...steps];

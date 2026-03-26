@@ -11,7 +11,8 @@ export function useBrowserNotifiche(notifiche) {
     if (!urgenti.length) return;
 
     const richiediEMostra = async () => {
-      if (Notification.permission === "default") {
+  try {
+    if (Notification.permission === "default") {
         const perm = await Notification.requestPermission();
         if (perm !== "granted") return;
       }
@@ -25,7 +26,8 @@ export function useBrowserNotifiche(notifiche) {
           });
         } catch(e) { /* browser può bloccare */ }
       });
-    };
+  } catch(e) { console.error("richiediEMostra:", e.message); }
+};
     // Delay per non bloccare il caricamento iniziale
     const t = setTimeout(richiediEMostra, 2000);
     return () => clearTimeout(t);
