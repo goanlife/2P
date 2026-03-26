@@ -1,3 +1,4 @@
+import { SottotipoBadge } from "./GestioneRichieste";
 import { useI18n } from "../i18n/index.jsx";
 import React, { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
@@ -14,7 +15,7 @@ function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta") };
+const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta"), richiesta:"📋 Richiesta", rifiutata:"✕ Rifiutata" };
 
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
@@ -149,7 +150,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
         </select>
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca manutenzione..." style={{flex:1,minWidth:140}} />
         <select value={fT} onChange={e=>sfT(e.target.value)}><option value="tutti">Tutti i tipi</option><option value="ordinaria">Ordinaria</option><option value="straordinaria">Straordinaria</option></select>
-        <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="richiesta">📋 Richiesta</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
+        <select value={fS} onChange={e=>sfS(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="richiesta">📋 Richiesta</option><option value="rifiutata">✕ Rifiutata</option><option value="pianificata">Pianificata</option><option value="inCorso">In corso</option><option value="completata">Completata</option><option value="scaduta">Scaduta</option></select>
         <select value={fC} onChange={e=>sfC(e.target.value)}><option value="tutti">Tutti i clienti</option>{clienti.map(c=><option key={c.id} value={c.id}>{c.rs}</option>)}</select>
         <select value={fPri} onChange={e=>sfPri(e.target.value)}><option value="tutti">Tutte le priorità</option><option value="urgente">⚡ Urgente</option><option value="alta">Alta</option><option value="media">Media</option><option value="bassa">Bassa</option></select>
         <span style={{fontSize:12,color:"var(--text-3)",alignSelf:"center",whiteSpace:"nowrap"}}>{filtrate.length} risultati{(fT!=="tutti"||fS!=="tutti"||fC!=="tutti"||fPri!=="tutti"||cerca)?" (filtri attivi)":""}</span>
@@ -183,6 +184,7 @@ export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato
                   {m.pianoId&&<span style={{fontSize:10,fontWeight:700,color:"var(--green)",background:"#ECFDF5",padding:"2px 6px",borderRadius:4}}>🔄 PIANO</span>}
                   {m.odlId&&<span style={{fontSize:10,fontWeight:700,color:"#4338CA",background:"#EEF2FF",padding:"2px 6px",borderRadius:4}}>📋 OdL</span>}
                   <SLABadge manutenzione={m} slaConfig={slaConfig} clienti={clienti} slaProfili={slaProfili} />
+                  {m.fermoImpianto&&<span style={{fontSize:10,fontWeight:700,background:"#FEF2F2",color:"#DC2626",padding:"1px 6px",borderRadius:99,border:"1px solid #FECACA"}}>⛔ Fermo</span>}
                   {m.pianoId&&m.stato!=="completata"&&<ChecklistBadge manutenzioneId={m.id} pianoId={m.pianoId} numeroIntervento={m.numeroIntervento} />}
                 </div>
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",fontSize:12,color:"var(--text-3)"}}>

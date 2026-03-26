@@ -484,5 +484,18 @@ jobs:
           run_sql "011 manutenzioni: sla_profilo_id (snapshot chiusura)" \
             "alter table manutenzioni add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
 
+          # ──────────────────────────────────────────────────
+          # 016 — Workflow B: ordinaria vs straordinaria
+          # ──────────────────────────────────────────────────
+          run_sql "016 manutenzioni: campi straordinaria" \
+            "alter table manutenzioni add column if not exists sottotipo text
+               check (sottotipo in ('preventiva','correttiva','urgente','miglioria','normativa'));
+             alter table manutenzioni add column if not exists causa_guasto text;
+             alter table manutenzioni add column if not exists fermo_impianto boolean default false;
+             alter table manutenzioni add column if not exists downtime_ore numeric(6,2);
+             alter table manutenzioni add column if not exists approvata_da bigint references operatori(id) on delete set null;
+             alter table manutenzioni add column if not exists approvata_at timestamptz;
+             alter table manutenzioni add column if not exists rifiutata_motivo text;"
+
           echo ""
           echo "🎉 Tutte le migration applicate!"
