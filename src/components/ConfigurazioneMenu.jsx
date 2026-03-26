@@ -19,6 +19,7 @@ export const ALL_TABS = [
   { id: "scadenzario",  l: "Scadenzario",  icon: "📅", desc: "Adempimenti normativi obbligatori" },
   { id: "richieste",    l: "Richieste",    icon: "📋", desc: "Richiedi un intervento (portale cliente)" },
   { id: "template",     l: "Template",     icon: "🔧", desc: "Template attività per tipo asset" },
+  { id: "report",       l: "Report",        icon: "📄", desc: "Reportistica per clienti, costi e amministrazione" },
 ];
 
 // Tab sempre visibili per admin (non modificabili)

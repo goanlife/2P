@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { HelpButton } from "./components/HelpPanel";
+import { Reportistica } from "./components/Reportistica";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";
@@ -978,6 +979,11 @@ export default function App() {
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={(id)=>confirmDel("Eliminare questo gruppo? L'operazione non è reversibile.",()=>delGruppo(id))} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").eq("tenant_id",tenant?.id).order("created_at");if(data)sCl(data.map(mapC));}} />}
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
+        {vista==="report" && <Reportistica
+          man={manView} clienti={clientiView} assets={assetsView}
+          operatori={operatori} piani={piani}
+          tenantNome={tenant?.nome||""}
+        />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
         {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
