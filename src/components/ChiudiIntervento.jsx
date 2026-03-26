@@ -161,8 +161,10 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: ".04em", display: "block", marginBottom: 5 }}>
                     Ore effettive *
                   </label>
-                  <input type="number" value={ore} onChange={e => setOre(e.target.value)} style={{borderColor: !ore || Number(ore)<=0 ? "#EF4444" : ""}}
-                    step=".5" min="0" style={{borderColor: !ore ? "#F59E0B" : undefined,
+                  <input type="number" value={ore} onChange={e => setOre(e.target.value)}
+                    step=".5" min="0"
+                    style={{
+                      borderColor: !ore || Number(ore)<=0 ? "#EF4444" : !ore ? "#F59E0B" : undefined,
                       width: "100%", boxSizing: "border-box", padding: "10px 12px",
                       border: "1px solid var(--border-dim)", borderRadius: "var(--radius-sm)",
                       fontSize: 14, fontFamily: "var(--font-head)", fontWeight: 700,

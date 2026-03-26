@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { useI18n } from "./i18n/index.jsx";
 import { Reportistica } from "./components/Reportistica";
 import { supabase } from "./supabase";
-import { emailRichiestaRicevuta, emailRichiestaApprovata, emailRichiestaRifiutata } from "./notifiche-email.js";
+import { emailRichiestaRicevuta, emailRichiestaApprovata, emailRichiestaRifiutata, emailInterventoCompletato } from "./notifiche-email.js";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";
 import { ChiudiIntervento } from "./components/ChiudiIntervento";
@@ -28,7 +28,7 @@ import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManute
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
 import { ALL_TABS } from "./components/ConfigurazioneMenu";
-import { GestionePiani, ModalPiano, ModalAssegnazione } from "./components/GestionePiani";
+import { GestionePiani } from "./components/GestionePiani";
 import { ConfigSLA } from "./components/SLABadge";
 import { GestioneSLAProfili } from "./components/GestioneSLAProfili";
 import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
@@ -805,8 +805,7 @@ export default function App() {
     notify("Intervento chiuso con successo ✅", "success");
     // Email al cliente (se ha email configurata)
     try {
-      const { emailInterventoCompletato } = await import("./notifiche-email.js").catch(() => ({ emailInterventoCompletato: null }));
-      if (!emailInterventoCompletato) throw new Error("modulo email non caricato");
+      // emailInterventoCompletato è già importato staticamente in cima al file
       const tecnico = operatori.find(o=>o.id===manutenzione?.operatoreId);
       await emailInterventoCompletato(clienteM, {...manutenzione,...dati}, tecnico);
     } catch(e) { /* email non bloccante */ }

@@ -43,28 +43,43 @@ function BarChart({ data, colore = "#3B82F6", height = 160, label }) {
 function PieChart({ slices, size = 140 }) {
   const total = slices.reduce((s, x) => s + x.v, 0);
   if (total === 0) return <div style={{ textAlign: "center", color: "var(--text-3)", padding: 20, fontSize: 13 }}>Nessun dato</div>;
-  let angle = -90;
-  const r = size / 2 - 4;
+  
+  const activeSlices = slices.filter(s => s.v > 0);
+  const r  = size / 2 - 4;
   const cx = size / 2, cy = size / 2;
   const toRad = deg => (deg * Math.PI) / 180;
+
+  // Quando c'è un solo slice (sweep=360) SVG arc non funziona → cerchio pieno
+  const isSingleSlice = activeSlices.length === 1;
+
   const arc = (a1, a2) => {
+    // Clamp sweep a max 359.99° per evitare arco degenere a 360°
+    const sweep = Math.min(a2 - a1, 359.99);
+    const a2safe = a1 + sweep;
     const x1 = cx + r * Math.cos(toRad(a1));
     const y1 = cy + r * Math.sin(toRad(a1));
-    const x2 = cx + r * Math.cos(toRad(a2));
-    const y2 = cy + r * Math.sin(toRad(a2));
-    const large = a2 - a1 > 180 ? 1 : 0;
-    return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+    const x2 = cx + r * Math.cos(toRad(a2safe));
+    const y2 = cy + r * Math.sin(toRad(a2safe));
+    const large = sweep > 180 ? 1 : 0;
+    // Verifica che i valori siano finiti
+    if (!isFinite(x1) || !isFinite(y1) || !isFinite(x2) || !isFinite(y2)) return "";
+    return `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
   };
+
+  let angle = -90;
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
       <svg width={size} height={size} style={{ flexShrink: 0 }}>
-        {slices.filter(s => s.v > 0).map((s, i) => {
-          const sweep = (s.v / total) * 360;
-          const path = arc(angle, angle + sweep);
-          angle += sweep;
-          return <path key={s.l} d={path} fill={s.col} stroke="var(--surface)" strokeWidth={2} />;
-        })}
+        {isSingleSlice
+          ? <circle cx={cx} cy={cy} r={r} fill={activeSlices[0].col} />
+          : activeSlices.map((s) => {
+              const sweep = (s.v / total) * 360;
+              const path = arc(angle, angle + sweep);
+              angle += sweep;
+              return path ? <path key={s.l} d={path} fill={s.col} stroke="var(--surface)" strokeWidth={2} /> : null;
+            })
+        }
       </svg>
       <div style={{ display: "grid", gap: 6 }}>
         {slices.filter(s => s.v > 0).map((s) => (

@@ -10,6 +10,8 @@
     <meta name="theme-color" content="#0D1B2A" />
     <meta name="description" content="CMMS per la gestione delle manutenzioni e ordini di lavoro" />
     <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.svg" />
     <title>ManuMan</title>
   </head>
@@ -20,6 +22,7 @@
       src="https://assistloop.ai/assistloop-widget.js"
       data-agent-id="3480f742-152e-4476-8f73-c5d2ed8d0217"
       defer
+      onerror="console.warn('Assistloop widget non caricato')"
     ></script>
   <script>
     if ("serviceWorker" in navigator) {

@@ -1,5 +1,5 @@
 import { useI18n } from "../i18n/index.jsx";
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { AssetSaluteBadge } from "./TemplateAsset";
 import { PianiAsset } from "./ApplicaTemplate";
 import { SelectSLAProfilo } from "./GestioneSLAProfili";

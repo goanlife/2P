@@ -1,35 +1,21 @@
 {
-  "name": "ManuMan \u2014 Gestione Manutenzioni",
+  "name": "ManuMan",
   "short_name": "ManuMan",
-  "description": "CMMS per la gestione delle manutenzioni, piani e ordini di lavoro",
+  "description": "Gestione Manutenzioni",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0D1B2A",
-  "theme_color": "#0D1B2A",
-  "orientation": "portrait-primary",
+  "theme_color": "#F59E0B",
   "icons": [
     {
-      "src": "/icon-192.svg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "/icon-512.svg",
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-192.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "type": "image/png"
     }
-  ],
-  "categories": [
-    "business",
-    "productivity"
-  ],
-  "lang": "it"
+  ]
 }

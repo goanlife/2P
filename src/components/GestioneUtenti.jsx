@@ -441,6 +441,7 @@ function GuidaSetup({ operatori=[], onCrea, onClose }) {
 
 export function GestioneUtenti({
   operatori=[], man=[], clienti=[], siti=[], onAgg, onMod, onDel, onSaveSiti, onCreaAccesso}) {
+  const { t } = useI18n();
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);
   const [sitiModal,setSitiModal]=useState(null);const [vistaModal,setVistaModal]=useState(null);
   const [accessoModal,setAccessoModal]=useState(null);

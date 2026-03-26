@@ -15,7 +15,15 @@ function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 
-const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta"), richiesta:"📋 Richiesta", rifiutata:"✕ Rifiutata" };
+// STATO_LABEL: funzione factory per supportare i18n dentro i componenti
+const getStatoLabel = (t) => ({
+  pianificata: t("stati.pianificata"),
+  inCorso:     t("stati.inCorso"),
+  completata:  t("stati.completata"),
+  scaduta:     t("stati.scaduta"),
+  richiesta:   "📋 Richiesta",
+  rifiutata:   "✕ Rifiutata",
+});
 
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
@@ -102,6 +110,7 @@ export function ChecklistBadge({manutenzioneId, pianoId, numeroIntervento}) {
 
 export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato, onDel, onMod, onDup, initialFilters, onChiudi, onVerbale, readOnly=false, slaConfig=[], slaProfili=[]}) {
   const { t } = useI18n();
+  const STATO_LABEL = getStatoLabel(t);
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");
   const [fS,sfS]=useState(initialFilters?.stato||"tutti");
   const [fC,sfC]=useState("tutti");

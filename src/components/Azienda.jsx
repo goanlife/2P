@@ -104,7 +104,7 @@ function TestEmail() {
     try {
       const SUPA_URL  = import.meta.env.VITE_SUPABASE_URL;
       const ANON_KEY  = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const { data: { session } } = await (await import("../supabase")).supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token || ANON_KEY;
 
       const res = await fetch(`${SUPA_URL}/functions/v1/notifica-email`, {
