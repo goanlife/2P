@@ -107,15 +107,34 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
   const importa = async () => {
     setImporting(true);
     setStep("import");
-    const BATCH = 100;
+    const BATCH = 50;
     let imported = 0;
-    for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i + BATCH).map(r => ({ ...r, tenant_id: tenantId, user_id: userId }));
+
+    const nuovi   = rows.filter(r => !r.id);
+    const aggiorn = rows.filter(r => r.id);
+
+    // INSERT nuovi
+    for (let i = 0; i < nuovi.length; i += BATCH) {
+      const batch = nuovi.slice(i, i + BATCH).map(({ id, ...r }) => ({
+        ...r, tenant_id: tenantId, user_id: userId
+      }));
       const { error } = await supabase.from("clienti").insert(batch);
       if (error) { setErrors([`Errore import: ${error.message}`]); setStep("upload"); setImporting(false); return; }
       imported += batch.length;
       setProgress(Math.round(imported / rows.length * 100));
     }
+
+    // UPDATE esistenti
+    for (let i = 0; i < aggiorn.length; i++) {
+      const { id, ...r } = aggiorn[i];
+      const { error } = await supabase.from("clienti")
+        .update({ ...r, tenant_id: tenantId, user_id: userId })
+        .eq("id", id)
+        .eq("tenant_id", tenantId);
+      if (!error) imported++;
+      setProgress(Math.round(imported / rows.length * 100));
+    }
+
     setStep("done");
     setImporting(false);
     setTimeout(() => onDone?.(), 1500);
@@ -138,7 +157,11 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
         <>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>📥 Importa clienti da file</div>
           <div style={{ fontSize: 12, color: "var(--text-3)", marginBottom: 16 }}>
-            CSV o Excel — le colonne vengono riconosciute automaticamente.
+            CSV o Excel — le colonne vengono riconosciute automaticamente.<br/>
+            <span style={{color:"var(--amber)",fontWeight:600}}>
+              💡 Per aggiornamenti massivi: esporta prima con 📤, modifica il CSV, poi reimportalo.
+              Le righe con ID_MANUМАН vengono aggiornate, quelle senza ID vengono create.
+            </span>
           </div>
 
           <div style={st.drop}
@@ -206,7 +229,11 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
               </button>
               <button onClick={importa} disabled={rows.length === 0}
                 style={{ padding: "7px 20px", background: "var(--amber)", color: "#0D1B2A", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                ✓ Importa {rows.length} clienti
+                {rows.some(r=>r.id) && rows.some(r=>!r.id)
+                  ? `✓ ${rows.filter(r=>!r.id).length} nuovi + ✏ ${rows.filter(r=>r.id).length} agg.`
+                  : rows.every(r=>r.id)
+                    ? `✏ Aggiorna ${rows.length} clienti`
+                    : `✓ Importa ${rows.length} clienti`}
               </button>
             </div>
           </div>
@@ -222,13 +249,19 @@ export function ImportaClienti({ tenantId, userId, onDone }) {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead style={{ position: "sticky", top: 0, background: "var(--surface-2)" }}>
                 <tr>
-                  {["Ragione sociale","P.IVA","Contatto","Telefono","Email","Indirizzo","Settore"].map(h =>
+                  {["","Ragione sociale","P.IVA","Contatto","Telefono","Email","Indirizzo","Settore"].map(h =>
                     <th key={h} style={st.th}>{h}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i} style={{ background: i % 2 === 0 ? "var(--surface)" : "var(--surface-2)" }}>
+                    <td style={{ ...st.td, textAlign:"center", padding:"6px 8px" }}>
+                      {r.id
+                        ? <span style={{background:"#EFF6FF",color:"#1D4ED8",padding:"1px 6px",borderRadius:99,fontSize:10,fontWeight:700}}>✏ agg.</span>
+                        : <span style={{background:"#ECFDF5",color:"#065F46",padding:"1px 6px",borderRadius:99,fontSize:10,fontWeight:700}}>+ nuovo</span>
+                      }
+                    </td>
                     <td style={{ ...st.td, fontWeight: 600 }}>{r.rs}</td>
                     <td style={{ ...st.td, fontFamily: "monospace", fontSize: 11 }}>{r.piva || "—"}</td>
                     <td style={st.td}>{r.contatto || "—"}</td>

@@ -289,14 +289,94 @@ export function ModalCliente({ini, onClose, onSalva, userId, tenantId=null}) {
   );
 }
 
+// ─── Menu dropdown esportazione clienti ──────────────────────────────────
+function EsportaMenuClienti({ onEsportaTutti, onEsportaFiltrati, nFiltrati, nTotali }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef();
+  React.useEffect(() => {
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+  return (
+    <div ref={ref} style={{ position:"relative" }}>
+      <button onClick={() => setOpen(v => !v)}
+        style={{ fontSize:12, padding:"7px 14px", borderRadius:7, fontWeight:600,
+          background:"var(--surface)", border:"1px solid var(--border)", cursor:"pointer",
+          display:"flex", alignItems:"center", gap:6 }}>
+        📤 Esporta CSV <span style={{ fontSize:9, opacity:.6 }}>▼</span>
+      </button>
+      {open && (
+        <div style={{ position:"absolute", top:"calc(100% + 6px)", right:0, zIndex:200,
+          background:"var(--surface)", border:"1px solid var(--border)",
+          borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,.15)", minWidth:230, overflow:"hidden" }}>
+          <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid var(--border)",
+            fontSize:11, color:"var(--text-3)", lineHeight:1.5 }}>
+            Il CSV include <strong>ID_MANUМАН</strong> per aggiornamenti massivi.
+          </div>
+          {[
+            { label:"Tutti i clienti", sub:`${nTotali} record`, fn:onEsportaTutti, icon:"📋", disabled:false },
+            { label:"Solo filtrati", sub:`${nFiltrati} record`, fn:onEsportaFiltrati, icon:"🔍", disabled:nFiltrati===nTotali },
+          ].map(item => (
+            <button key={item.label} onClick={() => { item.fn(); setOpen(false); }}
+              disabled={item.disabled}
+              style={{ width:"100%", padding:"11px 14px", textAlign:"left",
+                background:"none", border:"none", borderBottom:"1px solid var(--border)",
+                cursor:item.disabled?"default":"pointer", fontSize:13,
+                display:"flex", alignItems:"center", gap:10, opacity:item.disabled?.4:1 }}
+              onMouseEnter={e=>{ if(!item.disabled) e.currentTarget.style.background="var(--surface-2)"; }}
+              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+              <span style={{ fontSize:18 }}>{item.icon}</span>
+              <div>
+                <div style={{ fontWeight:700 }}>{item.label}</div>
+                <div style={{ fontSize:11, color:"var(--text-3)" }}>{item.sub}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, onMod, onDel, tenantId, userId, onImportDone}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [showImport,setShowImport]=useState(false);const [cerca,sCerca]=useState("");
   const filtrati=useMemo(()=>clienti.filter(c=>!cerca||c.rs.toLowerCase().includes(cerca.toLowerCase())||c.contatto.toLowerCase().includes(cerca.toLowerCase())),[clienti,cerca]);
+
+  // ── Esporta CSV ──────────────────────────────────────────────────────────
+  const esportaCSV = (soloFiltrati=false) => {
+    const lista = soloFiltrati ? filtrati : clienti;
+    if (!lista.length) { alert("Nessun cliente da esportare."); return; }
+    const esc = v => {
+      if (v == null || v === "") return "";
+      const s = String(v);
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g,'""')}"` : s;
+    };
+    const headers = ["ID_MANUМАН","Ragione sociale","Codice","P.IVA","Contatto","Telefono","Email","Indirizzo","Settore","Note"];
+    const righe = lista.map(c => [
+      c.id, c.rs, c.codice||"", c.piva||"", c.contatto||"",
+      c.tel||"", c.email||"", c.ind||"", c.settore||"", c.note||""
+    ].map(esc).join(","));
+    const csv = ["\uFEFF"+headers.join(","), ...righe].join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `clienti_${soloFiltrati?"filtrati_":""}${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   const BG=["#EEEDFE","#E6F1FB","#ECFDF5","#FEF3C7","#FEF2F2","#F0F4FF"];const TX=["#534AB7","#1E40AF","#065F46","#92400E","#991B1B","#3730A3"];
   return (
     <div style={{display:"grid",gap:12}}>
       <div className="filters">
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca cliente o contatto..." style={{flex:1}} />
+        <EsportaMenuClienti
+          onEsportaTutti={()=>esportaCSV(false)}
+          onEsportaFiltrati={()=>esportaCSV(true)}
+          nFiltrati={filtrati.length}
+          nTotali={clienti.length}
+        />
         <button onClick={()=>setShowImport(p=>!p)} style={{padding:"7px 14px",background:"var(--surface)",color:"var(--text-1)",border:"1px solid var(--border)",borderRadius:6,fontWeight:600,fontSize:13,cursor:"pointer"}}>
           {showImport?"✕ Chiudi":"📥 Importa"}
         </button>
