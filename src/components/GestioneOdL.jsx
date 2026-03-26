@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
+import { PannelloRipianifica } from "./RipianificaOdL";
 import { emailOdlAssegnato, emailInterventoCompletato } from "../notifiche-email";
 import { Overlay, Field } from "./ui/Atoms";
 
@@ -89,7 +90,7 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 }
 
 // ─── Card OdL espandibile ─────────────────────────────────────────────────
-function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", onStato, onMod, onDel, onPdf }) {
+function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", isSelected=false, onToggleSel, onStato, onMod, onDel, onPdf }) {
   const [aperto, setAperto] = useState(false);
   const st  = statoOdl(odl.stato);
   const op  = operatori.find(o=>o.id===(odl.operatore_id||odl.operatoreId));
@@ -251,6 +252,19 @@ export function GestioneOdL({
   const [odl,     setOdl]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [inMod,   setInMod]  = useState(null);
+
+  // Selezione multipla
+  const [selezionati, setSel]       = useState(new Set()); // Set di ID
+  const [showRipiani, setRipiani]   = useState(false);
+
+  const toggleSel = id => setSel(p => {
+    const n = new Set(p);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+  const selTutti = () => setSel(new Set(odlView.map(o=>o.id)));
+  const deselTutti = () => setSel(new Set());
+  const odlSel = odl.filter(o => selezionati.has(o.id));
 
   // Filtri
   const [fStato,  setFStato]  = useState("tutti");
@@ -434,7 +448,42 @@ export function GestioneOdL({
           <button onClick={()=>{setFStato("tutti");setFCl("tutti");setFOp("tutti");setFMese("");}}
             className="btn-ghost" style={{fontSize:12}}>✕ Reset</button>
         )}
+        <button onClick={()=>setRipiani(true)}
+          style={{ fontSize:12, padding:"7px 14px", borderRadius:7, fontWeight:700,
+            background:"var(--amber)", color:"#0D1B2A", border:"none", cursor:"pointer",
+            whiteSpace:"nowrap" }}>
+          📅 Ripianifica
+        </button>
       </div>
+
+      {/* Barra selezione multipla */}
+      {odlView.length > 0 && (
+        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px",
+          background:"var(--surface-2)", borderRadius:8, fontSize:12, flexWrap:"wrap" }}>
+          <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer", userSelect:"none" }}>
+            <input type="checkbox"
+              checked={selezionati.size===odlView.length && odlView.length>0}
+              onChange={e=>e.target.checked?selTutti():deselTutti()} />
+            <span style={{ fontWeight:600 }}>Seleziona tutti ({odlView.length})</span>
+          </label>
+          {selezionati.size > 0 && (<>
+            <span style={{ color:"var(--text-3)" }}>·</span>
+            <span style={{ fontWeight:700, color:"#1E40AF" }}>
+              {selezionati.size} selezionati
+            </span>
+            <button onClick={()=>setRipiani(true)}
+              style={{ padding:"5px 14px", borderRadius:6, fontWeight:700, fontSize:12,
+                background:"#1D4ED8", color:"white", border:"none", cursor:"pointer" }}>
+              ✏ Modifica selezionati
+            </button>
+            <button onClick={deselTutti}
+              style={{ padding:"5px 10px", borderRadius:6, fontSize:12,
+                background:"none", border:"1px solid var(--border)", cursor:"pointer" }}>
+              ✕ Deseleziona
+            </button>
+          </>)}
+        </div>
+      )}
 
       {/* Lista OdL */}
       {odlView.length === 0 ? (
@@ -457,6 +506,8 @@ export function GestioneOdL({
               clienti={clienti}
               assets={assets}
               tenantNome={tenantNome}
+              isSelected={selezionati.has(o.id)}
+              onToggleSel={()=>toggleSel(o.id)}
               onStato={statoOdl}
               onMod={setInMod}
               onDel={delOdl}
@@ -464,6 +515,19 @@ export function GestioneOdL({
             />
           ))}
         </div>
+      )}
+
+      {showRipiani && (
+        <PannelloRipianifica
+          odl={odl}
+          odlFiltrati={odlView}
+          operatori={operatori}
+          clienti={clienti}
+          tenantId={tenantId}
+          selezionati={odlSel}
+          onClose={()=>{setRipiani(false);}}
+          onApplica={()=>{ carica(); setRipiani(false); deselTutti(); }}
+        />
       )}
 
       {inMod && (
