@@ -11,7 +11,7 @@ function BarChart({ data, colore = "#3B82F6", height = 160, label }) {
     <div>
       {label && <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-2)", marginBottom: 8, textTransform: "uppercase", letterSpacing: ".04em" }}>{label}</div>}
       <svg width="100%" height={height} style={{ overflow: "visible" }}>
-        {data.map((d) => {
+        {data.map((d, i) => {
           const barH = (d.v / max) * (height - 30);
           const x = i * w;
           return (

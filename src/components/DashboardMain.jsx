@@ -9,7 +9,7 @@ const TIPO_OP = {
   cliente:   { label:"Cliente",   cls:"badge", style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
   interno:   { label:"Interno",   cls:"badge", style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
 };
-const STATO_LABEL = { pianificata:t("stati.pianificata"), inCorso:"In corso", completata:t("stati.completata"), scaduta:"Scaduta" };
+const STATO_LABEL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
 
 // ─── Dashboard ────────────────────────────────────────────────────────────
 export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[], onNavigate, manTotale=null, manCaricaTutto=false}) {

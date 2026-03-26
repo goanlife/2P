@@ -53,7 +53,7 @@ export function CommentiAttivita({ manutenzioneId, meOperatore, onStatoChange })
       setTesto("");
       // Se approvazione o rifiuto, notifica il parent
       if (tipo === "approvazione") onStatoChange?.("pianificata");
-      if (tipo === "rifiuto")      onStatoChange?.("annullata");
+      if (tipo === "rifiuto")      onStatoChange?.("rifiutata");
     }
     setSaving(false);
   };

@@ -89,7 +89,7 @@ export function ChecklistBadge({manutenzioneId, pianoId, numeroIntervento}) {
       if (!attivi.length) return;
       const done = (stato||[]).filter(x => attivi.some(a => a.id === x.step_id) && x.completato).length;
       setProg({ tot: attivi.length, done, perc: Math.round(done/attivi.length*100) });
-    });
+    }).catch(e => console.warn("checklist:", e.message));
   }, [manutenzioneId, pianoId, numeroIntervento]);
   if (!prog) return null;
   const color = prog.perc === 100 ? "#059669" : prog.done > 0 ? "#F59E0B" : "var(--text-3)";

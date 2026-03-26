@@ -447,13 +447,13 @@ export function GestioneUtenti({
   const [filtroTipo,setFiltroTipo]=useState("tutti");
   const [showGuida, setShowGuida]=useState(()=>{
     // Mostra la guida la prima volta o se non ci sono utenti con accesso
-    return !localStorage.getItem("manuMan_guidaUtentiDismissed");
+    try { return !localStorage.getItem("manuMan_guidaUtentiDismissed"); } catch { return false; }
   });
   const assets=[];// passed through but not needed here
   const filtrati=useMemo(()=>operatori.filter(o=>filtroTipo==="tutti"||o.tipo===filtroTipo),[operatori,filtroTipo]);
 
   const chiudiGuida = () => {
-    try { localStorage.setItem("manuMan_guidaUtentiDismissed","1"); } catch {}
+    try { try { localStorage.setItem("manuMan_guidaUtentiDismissed","1"); } catch {} } catch {}
     setShowGuida(false);
   };
 

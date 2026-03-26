@@ -37,7 +37,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
     ]).then(([{data:cs},{data:rc}]) => {
       setSteps(cs || []);
       setRicambi(rc || []);
-    });
+    }).catch(e => console.warn("DB:", e.message));
   }, [ini?.id]);
 
   const aggiungiStep = () => {
@@ -422,7 +422,7 @@ export function SuggerimentoRicambi({ templateId, ricambiCatalogo=[], onOrdina }
     supabase.from("template_ricambi")
       .select("*, ricambi(id,nome,codice,quantita_stock,soglia_minima)")
       .eq("template_id", templateId)
-      .then(({ data }) => setRicambi(data || []));
+      .then(({ data }) => setRicambi(data || [])).catch(e => console.warn("DB:", e.message));
   }, [templateId]);
 
   const critici = ricambi.filter(r => {

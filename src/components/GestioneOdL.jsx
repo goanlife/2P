@@ -4,28 +4,33 @@ import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
 import { PannelloRipianifica } from "./RipianificaOdL";
 import { HelpButton } from "./HelpPanel";
-import { emailOdlAssegnato, emailInterventoCompletato } from "../notifiche-email";
+import { emailOdlAssegnato, emailInterventoCompletato } from "../notifiche-email.js";
 import { Overlay, Field } from "./ui/Atoms";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
-const STATI_ODL = [
-  { v:"bozza",      l:t("stati.bozza"),       col:"#94A3B8", bg:"#F8FAFC" },
-  { v:"confermato", l:t("stati.confermato"),  col:"#3B82F6", bg:"#EFF6FF" },
-  { v:"in_corso",   l:t("stati.in_corso"),    col:"#F59E0B", bg:"#FEF3C7" },
-  { v:"completato", l:t("stati.completato"),  col:"#059669", bg:"#ECFDF5" },
-  { v:"annullato",  l:"Annullato",   col:"#EF4444", bg:"#FEF2F2" },
+// Costanti statiche (no traduzioni a livello modulo — t() non disponibile qui)
+const STATI_ODL_BASE = [
+  { v:"bozza",      lKey:"stati.bozza",      lFb:"Bozza",      col:"#94A3B8", bg:"#F8FAFC" },
+  { v:"confermato", lKey:"stati.confermato", lFb:"Confermato",  col:"#3B82F6", bg:"#EFF6FF" },
+  { v:"in_corso",   lKey:"stati.in_corso",   lFb:"In corso",    col:"#F59E0B", bg:"#FEF3C7" },
+  { v:"completato", lKey:"stati.completato", lFb:"Completato",  col:"#059669", bg:"#ECFDF5" },
+  { v:"annullato",  lKey:null,               lFb:"Annullato",   col:"#EF4444", bg:"#FEF2F2" },
 ];
 const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-const STATO_LABEL = { richiesta:"Richiesta", pianificata:"Pianificata", inCorso:t("stati.in_corso"), completata:"Completata", scaduta:"Scaduta" };
+// Funzione che produce gli stati tradotti — da chiamare DENTRO i componenti
+const getStatiOdl  = (t) => STATI_ODL_BASE.map(s => ({...s, l: s.lKey ? t(s.lKey) : s.lFb}));
+const getStatoLabel= (t) => ({ richiesta:"Richiesta", pianificata:"Pianificata", inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta") });
 
 const fmtData   = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}) : "—";
 const fmtOre    = min => min >= 60 ? `${Math.round(min/60*10)/10}h` : `${min}min`;
 const isoDate   = d => d.toISOString().split("T")[0];
 
-const statoOdl  = v => STATI_ODL.find(s=>s.v===v) || STATI_ODL[0];
+// statoOdl è ora una funzione locale nei componenti (vedi getStatiOdl)
 
 // ─── Modal modifica OdL ───────────────────────────────────────────────────
 function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
+  const { t } = useI18n();
+  const STATI_ODL = getStatiOdl(t);
   const [f, sf] = useState({
     titolo:       odl.titolo || "",
     data_inizio:  odl.data_inizio || "",
@@ -93,8 +98,10 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 
 // ─── Card OdL espandibile ─────────────────────────────────────────────────
 function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", isSelected=false, onToggleSel, onStato, onMod, onDel, onPdf }) {
+  const { t } = useI18n();
+  const STATI_ODL = getStatiOdl(t);
   const [aperto, setAperto] = useState(false);
-  const st  = statoOdl(odl.stato);
+  const st  = (STATI_ODL.find(s=>s.v===odl.stato)||STATI_ODL[0]);
   const op  = operatori.find(o=>o.id===(odl.operatore_id||odl.operatoreId));
   const cl  = clienti.find(c=>c.id===(odl.cliente_id||odl.clienteId));
   const att = attivita.filter(m=>m.odlId===odl.id);
@@ -252,6 +259,8 @@ export function GestioneOdL({
   onAggiornaManutenzioni,
 }) {
   const { t } = useI18n();
+  const STATI_ODL   = React.useMemo(() => getStatiOdl(t),   [t]);
+  const STATO_LABEL = React.useMemo(() => getStatoLabel(t), [t]);
   const [odl,     setOdl]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [inMod,   setInMod]  = useState(null);

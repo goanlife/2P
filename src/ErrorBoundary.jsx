@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component {
               🔄 Ricarica
             </button>
             <button onClick={() => {
-                localStorage.clear();
+                try { localStorage.clear(); } catch {}
                 sessionStorage.clear();
                 window.location.reload();
               }}

@@ -387,7 +387,7 @@ export function SelectSLAProfilo({ tenantId, value, onChange }) {
     if (!tenantId) return;
     supabase.from("sla_profili").select("id,nome,colore,is_default,sla_profilo_config(id)")
       .eq("tenant_id",tenantId).order("is_default",{ascending:false}).order("nome")
-      .then(({data})=>setProfili(data||[]));
+      .then(({data})=>setProfili(data||[])).catch(e => console.warn("DB:", e.message));
   },[tenantId]);
 
   return (

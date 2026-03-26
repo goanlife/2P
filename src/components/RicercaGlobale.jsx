@@ -108,7 +108,7 @@ export function RicercaGlobale({ man=[], clienti=[], assets=[], piani=[], operat
                     {label}
                   </div>
                   {items.map((r, i) => (
-                    <div key={i} onClick={r.action} style={{
+                    <div key={`res-${i}-${r.testo?.slice(0,10)||i}`} onClick={r.action} style={{
                       display: "flex", alignItems: "center", gap: 12, padding: "12px 20px",
                       cursor: "pointer", borderBottom: "1px solid var(--border)",
                       transition: "background .12s",
