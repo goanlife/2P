@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { useI18n } from "./i18n/index.jsx";
 import { Reportistica } from "./components/Reportistica";
 import { supabase } from "./supabase";
+import { emailRichiestaRicevuta, emailRichiestaApprovata, emailRichiestaRifiutata } from "./notifiche-email.js";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";
 import { ChiudiIntervento } from "./components/ChiudiIntervento";
@@ -181,6 +182,7 @@ export default function App() {
   const salvaEmailConfig = (cfg) => {
     setEmailConfig(cfg);
     try { localStorage.setItem("manuMan_emailConfig", JSON.stringify(cfg)); } catch {}
+    // Aggiorna emailSito per futuri invii
   }; // {msg, onConfirm}
   const confirmDel = (msg, fn) => setConfirmDlg({ msg, onConfirm: () => { fn(); setConfirmDlg(null); } });
 
@@ -1001,6 +1003,14 @@ export default function App() {
                 assets={assetsView}
                 tenantId={tenant?.id}
                 onCreata={m=>{sMan(p=>[...p,m]);notify("✅ Richiesta inviata! Il team la valuterà presto.","success");}}
+                onRichiestaCreata={async m=>{
+                  const cfgEmail = emailConfig?.notifiche?.richiesta_ricevuta;
+                  if (emailConfig?.abilitato && cfgEmail?.abilitato) {
+                    const cl = clienti.find(c=>c.id===m.cliente_id);
+                    const as = assets.find(a=>a.id===m.asset_id);
+                    emailRichiestaRicevuta(m, cl, as, cfgEmail, emailConfig.emailSito, tenant?.nome);
+                  }
+                }}
               />
             : <GestioneRichieste
                 man={manView}

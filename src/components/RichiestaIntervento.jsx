@@ -14,7 +14,7 @@ const CAUSE = [
   "Difetto di fabbricazione","Cause sconosciute","Altro",
 ];
 
-export function RichiestaIntervento({ meOperatore, siti=[], assets=[], tenantId, onCreata }) {
+export function RichiestaIntervento({ meOperatore, siti=[], assets=[], tenantId, onCreata, onRichiestaCreata }) {
   const vuoto = {
     titolo:"", sottotipo:"correttiva", priorita:"media",
     assetId:"", note:"", data:"",
@@ -68,7 +68,9 @@ export function RichiestaIntervento({ meOperatore, siti=[], assets=[], tenantId,
           tenant_id:       tenantId,
         });
       }
-      setDone(true); onCreata?.(data);
+      setDone(true);
+      onCreata?.(data);
+      onRichiestaCreata?.(data); // per trigger email admin
       setTimeout(()=>{ setDone(false); sf(vuoto); setStep(1); }, 3500);
     } catch(e) {
       setError("Errore: "+e.message);

@@ -236,50 +236,254 @@ function TestEmail() {
   );
 }
 
-function TabEmail({ emailConfig={}, onSalva }) {
-  const [cfg, setCfg] = useState({
-    abilitato:    emailConfig.abilitato    ?? false,
-    odlAssegnato: emailConfig.odlAssegnato ?? true,
-    completamento:emailConfig.completamento?? true,
-    slaAlert:     emailConfig.slaAlert     ?? true,
-    scadenzeNorm: emailConfig.scadenzeNorm ?? true,
-    mittente:     emailConfig.mittente     || "",
-  });
-  const s = (k,v) => setCfg(p=>({...p,[k]:v}));
-  const [salvato, setSalvato] = useState(false);
+function TabEmail({ emailConfig={}, onSalva, tenant, operatori=[], clienti=[] }) {
 
-  const salva = () => {
-    onSalva?.(cfg);
-    setSalvato(true);
-    setTimeout(()=>setSalvato(false), 2000);
+  // ── Struttura per ogni tipo di notifica ──────────────────────────────────
+  const DEFAULT_NOTIFICHE = {
+    odl_assegnato: {
+      abilitato: true,
+      label: "OdL confermato → tecnico",
+      icon: "📋",
+      desc: "Inviata quando un OdL passa a 'Confermato'",
+      vars: ["nome_tecnico","numero_odl","titolo","cliente","data","n_attivita"],
+      dest_operatore: true,
+      dest_email_sito: false,
+      dest_cliente: false,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    intervento_completato: {
+      abilitato: true,
+      label: "Intervento completato → cliente",
+      icon: "✅",
+      desc: "Inviata quando un OdL viene chiuso completato",
+      vars: ["titolo","tecnico","chiuso_at","ore_effettive","cliente"],
+      dest_operatore: false,
+      dest_email_sito: false,
+      dest_cliente: true,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    richiesta_ricevuta: {
+      abilitato: true,
+      label: "Nuova richiesta → admin",
+      icon: "🔔",
+      desc: "Inviata quando un cliente invia una nuova segnalazione",
+      vars: ["titolo","cliente","asset","priorita","sottotipo","causa","fermo"],
+      dest_operatore: false,
+      dest_email_sito: true,
+      dest_cliente: false,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    richiesta_approvata: {
+      abilitato: true,
+      label: "Richiesta approvata → cliente",
+      icon: "✅",
+      desc: "Inviata al cliente quando la sua segnalazione viene approvata",
+      vars: ["titolo","cliente","operatore","data","durata"],
+      dest_operatore: false,
+      dest_email_sito: false,
+      dest_cliente: true,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    richiesta_rifiutata: {
+      abilitato: true,
+      label: "Richiesta rifiutata → cliente",
+      icon: "❌",
+      desc: "Inviata al cliente quando la sua segnalazione non viene approvata",
+      vars: ["titolo","cliente","motivo"],
+      dest_operatore: false,
+      dest_email_sito: false,
+      dest_cliente: true,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    sla_alert: {
+      abilitato: true,
+      label: "SLA in scadenza",
+      icon: "⚠️",
+      desc: "Alert quando un'attività urgente sta per superare i tempi SLA",
+      vars: ["titolo","cliente","ore_rimanenti","priorita"],
+      dest_operatore: false,
+      dest_email_sito: true,
+      dest_cliente: false,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
+    scadenza_normativa: {
+      abilitato: true,
+      label: "Scadenza normativa",
+      icon: "📅",
+      desc: "Promemoria 30 giorni prima di adempimenti normativi",
+      vars: ["titolo","cliente","scadenza","giorni_rimanenti","norma"],
+      dest_operatore: false,
+      dest_email_sito: true,
+      dest_cliente: false,
+      extra_emails: "",
+      oggetto: "",
+      corpo: "",
+    },
   };
 
-  const Toggle = ({label, sub, k}) => (
-    <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-      gap:12, padding:"12px 0", borderBottom:"1px solid var(--border)" }}>
-      <div style={{ flex:1 }}>
-        <div style={{ fontSize:13, fontWeight:600 }}>{label}</div>
-        {sub && <div style={{ fontSize:11, color:"var(--text-3)", marginTop:2 }}>{sub}</div>}
-      </div>
-      <label style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
-        opacity: !cfg.abilitato && k!=="abilitato" ? 0.4 : 1 }}>
-        <div style={{ position:"relative", width:40, height:22 }}>
-          <input type="checkbox" checked={cfg[k]}
-            disabled={!cfg.abilitato && k!=="abilitato"}
-            onChange={e=>s(k,e.target.checked)}
-            style={{ position:"absolute", opacity:0, width:"100%", height:"100%", cursor:"pointer", margin:0 }} />
-          <div style={{ width:40, height:22, borderRadius:11,
-            background: cfg[k] ? "#059669" : "var(--border)",
-            transition:"background .2s", position:"relative" }}>
-            <div style={{ position:"absolute", top:2,
-              left: cfg[k] ? 20 : 2,
-              width:18, height:18, borderRadius:"50%", background:"white",
-              transition:"left .2s", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
-          </div>
+  // Merge config salvata con i default
+  const buildCfg = () => {
+    const saved = emailConfig.notifiche || {};
+    const out = {};
+    for (const [k, def] of Object.entries(DEFAULT_NOTIFICHE)) {
+      out[k] = { ...def, ...(saved[k] || {}) };
+    }
+    return out;
+  };
+
+  const [abilitato,  setAbilitato]  = React.useState(emailConfig.abilitato ?? false);
+  const [mittente,   setMittente]   = React.useState(emailConfig.mittente || "");
+  const [emailSito,  setEmailSito]  = React.useState(emailConfig.emailSito || tenant?.email || "");
+  const [notifiche,  setNotifiche]  = React.useState(buildCfg);
+  const [espanso,    setEspanso]    = React.useState(null); // quale tipo è espanso
+  const [salvato,    setSalvato]    = React.useState(false);
+
+  const setN = (tipo, campo, val) =>
+    setNotifiche(p => ({ ...p, [tipo]: { ...p[tipo], [campo]: val } }));
+
+  const salva = () => {
+    onSalva?.({ abilitato, mittente, emailSito, notifiche });
+    setSalvato(true);
+    setTimeout(() => setSalvato(false), 2000);
+  };
+
+  // ── Componente toggle switch ──────────────────────────────────────────────
+  const SwitchToggle = ({ on, onChange, disabled=false }) => (
+    <label style={{ display:"flex", alignItems:"center", cursor:disabled?"default":"pointer", flexShrink:0 }}>
+      <div style={{ position:"relative", width:40, height:22 }}>
+        <input type="checkbox" checked={on} disabled={disabled} onChange={e=>onChange(e.target.checked)}
+          style={{ position:"absolute", opacity:0, width:"100%", height:"100%", cursor:"pointer", margin:0 }} />
+        <div style={{ width:40, height:22, borderRadius:11,
+          background: on ? "#059669" : "var(--border)", transition:"background .2s",
+          opacity: disabled ? .4 : 1 }}>
+          <div style={{ position:"absolute", top:2, left:on?20:2, width:18, height:18,
+            borderRadius:"50%", background:"white", transition:"left .2s",
+            boxShadow:"0 1px 3px rgba(0,0,0,.2)" }}/>
         </div>
-      </label>
-    </div>
+      </div>
+    </label>
   );
+
+  // ── Editor di una singola notifica ────────────────────────────────────────
+  const EditorNotifica = ({ tipo, cfg: nc }) => {
+    const def = DEFAULT_NOTIFICHE[tipo];
+    const isOpen = espanso === tipo;
+
+    return (
+      <div style={{ border:"1px solid var(--border)", borderRadius:10, overflow:"hidden",
+        opacity: !abilitato ? .5 : 1 }}>
+
+        {/* Header riga */}
+        <div style={{ display:"flex", alignItems:"center", padding:"12px 16px",
+          background:"var(--surface)", gap:12 }}>
+          <span style={{ fontSize:18, flexShrink:0 }}>{def.icon}</span>
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontWeight:700, fontSize:13 }}>{def.label}</div>
+            <div style={{ fontSize:11, color:"var(--text-3)", marginTop:1 }}>{def.desc}</div>
+          </div>
+          <SwitchToggle on={nc.abilitato} disabled={!abilitato}
+            onChange={v=>setN(tipo,"abilitato",v)} />
+          <button onClick={()=>setEspanso(isOpen?null:tipo)}
+            disabled={!abilitato}
+            style={{ background:"none", border:"1px solid var(--border)", borderRadius:6,
+              padding:"4px 10px", cursor:"pointer", fontSize:11, color:"var(--text-3)",
+              fontWeight:600 }}>
+            {isOpen ? "▲ Chiudi" : "⚙ Configura"}
+          </button>
+        </div>
+
+        {/* Pannello configurazione esteso */}
+        {isOpen && (
+          <div style={{ padding:"16px", borderTop:"1px solid var(--border)",
+            background:"var(--surface-2)", display:"grid", gap:16 }}>
+
+            {/* Destinatari */}
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                letterSpacing:".05em", color:"var(--text-3)", marginBottom:10 }}>
+                Destinatari
+              </div>
+              <div style={{ display:"grid", gap:8 }}>
+                {def.dest_operatore !== undefined && (
+                  <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13 }}>
+                    <input type="checkbox" checked={nc.dest_operatore}
+                      onChange={e=>setN(tipo,"dest_operatore",e.target.checked)} />
+                    👤 Operatore/tecnico assegnato
+                  </label>
+                )}
+                {def.dest_cliente !== undefined && (
+                  <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13 }}>
+                    <input type="checkbox" checked={nc.dest_cliente}
+                      onChange={e=>setN(tipo,"dest_cliente",e.target.checked)} />
+                    🏢 Email del cliente (anagrafica clienti)
+                  </label>
+                )}
+                {def.dest_email_sito !== undefined && (
+                  <label style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer", fontSize:13 }}>
+                    <input type="checkbox" checked={nc.dest_email_sito}
+                      onChange={e=>setN(tipo,"dest_email_sito",e.target.checked)} />
+                    📬 Email sito ({emailSito || "configura sotto"})
+                  </label>
+                )}
+                <div>
+                  <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>
+                    Email aggiuntive (separate da virgola)
+                  </div>
+                  <input value={nc.extra_emails}
+                    onChange={e=>setN(tipo,"extra_emails",e.target.value)}
+                    placeholder="es. responsabile@azienda.it, admin@azienda.it"
+                    style={{ width:"100%", fontSize:12 }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Oggetto personalizzato */}
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                letterSpacing:".05em", color:"var(--text-3)", marginBottom:6 }}>
+                Oggetto email
+              </div>
+              <input value={nc.oggetto}
+                onChange={e=>setN(tipo,"oggetto",e.target.value)}
+                placeholder="Lascia vuoto per usare il default automatico"
+                style={{ width:"100%" }} />
+              <div style={{ fontSize:10, color:"var(--text-3)", marginTop:4 }}>
+                Variabili disponibili: {def.vars.map(v=>`{{${v}}}`).join(", ")}
+              </div>
+            </div>
+
+            {/* Corpo personalizzato */}
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+                letterSpacing:".05em", color:"var(--text-3)", marginBottom:6 }}>
+                Testo aggiuntivo nel corpo email
+              </div>
+              <textarea value={nc.corpo}
+                onChange={e=>setN(tipo,"corpo",e.target.value)}
+                rows={3} style={{ width:"100%", fontSize:12, resize:"vertical" }}
+                placeholder={`Es. Per urgenze contattare il numero 02-123456. Usa {{titolo}}, {{cliente}} ecc. per includere dati dinamici.`} />
+              <div style={{ fontSize:10, color:"var(--text-3)", marginTop:4 }}>
+                Questo testo viene aggiunto al template base. Puoi usare le stesse variabili dell'oggetto.
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={{ display:"grid", gap:16 }}>
@@ -288,70 +492,83 @@ function TabEmail({ emailConfig={}, onSalva }) {
       <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
         borderRadius:10, padding:"16px 18px" }}>
         <div style={{ fontWeight:700, fontSize:14, color:"#1E40AF", marginBottom:8 }}>
-          📧 Come funziona l'invio email
+          📧 Setup email — Resend
         </div>
         <div style={{ fontSize:12, color:"#1E40AF", lineHeight:1.7 }}>
-          ManuMan usa <strong>Resend</strong> (gratuito fino a 3.000 email/mese) come provider email.<br/>
-          Per attivare l'invio devi:
+          ManuMan usa <strong>Resend</strong> (gratuito fino a 3.000 email/mese).<br/>
+          1. Crea account su <strong>resend.com</strong> · 2. Genera API Key<br/>
+          3. <a href="https://supabase.com/dashboard/project/nnsylkjahuhttwajuxls/settings/functions" target="_blank" style={{color:"#1D4ED8"}}>Supabase → Settings → Edge Functions</a> → aggiungi segreto <code style={{background:"#DBEAFE",padding:"1px 5px",borderRadius:4}}>RESEND_API_KEY</code>
         </div>
-        <ol style={{ fontSize:12, color:"#1E40AF", lineHeight:2, marginLeft:18, marginTop:8 }}>
-          <li>Crea un account gratuito su <strong>resend.com</strong></li>
-          <li>Genera una API Key dal dashboard Resend</li>
-          <li>Vai su <a href="https://supabase.com/dashboard/project/nnsylkjahuhttwajuxls/settings/functions" target="_blank" style={{color:"#1D4ED8"}}>Supabase → Project Settings → Edge Functions</a></li>
-          <li>Aggiungi il segreto <code style={{background:"#DBEAFE",padding:"1px 5px",borderRadius:4}}>RESEND_API_KEY</code> con il valore della tua API Key</li>
-          <li>Assicurati che le email di operatori e clienti siano compilate in ManuMan</li>
-        </ol>
       </div>
 
-      {/* Toggles */}
+      {/* Impostazioni globali */}
       <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
-        borderRadius:10, padding:"16px 18px" }}>
-        <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>Notifiche automatiche</div>
-        <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:12 }}>
-          Le email vengono inviate solo se l'indirizzo email è configurato sull'operatore o sul cliente.
+        borderRadius:10, padding:"16px 18px", display:"grid", gap:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <div>
+            <div style={{ fontWeight:700, fontSize:14 }}>Abilita notifiche email</div>
+            <div style={{ fontSize:12, color:"var(--text-3)", marginTop:2 }}>
+              Attiva o disattiva globalmente tutte le email automatiche
+            </div>
+          </div>
+          <SwitchToggle on={abilitato} onChange={setAbilitato} />
         </div>
 
-        <Toggle k="abilitato"
-          label="Abilita invio email"
-          sub="Attiva o disattiva tutte le notifiche email" />
-        <Toggle k="odlAssegnato"
-          label="OdL confermato → email al tecnico"
-          sub="Quando un OdL passa a 'Confermato', il tecnico assegnato riceve l'email con i dettagli" />
-        <Toggle k="completamento"
-          label="OdL completato → email al cliente"
-          sub="Quando un OdL viene chiuso, il cliente riceve la conferma di avvenuto intervento" />
-        <Toggle k="slaAlert"
-          label="Avviso SLA in scadenza"
-          sub="Email al responsabile quando un'attività urgente sta per superare l'SLA" />
-        <Toggle k="scadenzeNorm"
-          label="Scadenze normative in avvicinarsi"
-          sub="Email di promemoria per adempimenti normativi in scadenza nei prossimi 30 giorni" />
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, opacity:abilitato?.1:1 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+              letterSpacing:".05em", color:"var(--text-3)", marginBottom:5 }}>
+              Email sito (admin / responsabile)
+            </div>
+            <input value={emailSito} onChange={e=>setEmailSito(e.target.value)}
+              type="email" placeholder="admin@tua-azienda.it"
+              style={{ width:"100%" }}
+              disabled={!abilitato} />
+            <div style={{ fontSize:10, color:"var(--text-3)", marginTop:3 }}>
+              Usata come destinatario per le notifiche interne
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+              letterSpacing:".05em", color:"var(--text-3)", marginBottom:5 }}>
+              Mittente personalizzato (opz.)
+            </div>
+            <input value={mittente} onChange={e=>setMittente(e.target.value)}
+              type="email" placeholder="noreply@tua-azienda.it"
+              style={{ width:"100%" }}
+              disabled={!abilitato} />
+            <div style={{ fontSize:10, color:"var(--text-3)", marginTop:3 }}>
+              Lascia vuoto per usare il default. Richiede dominio verificato su Resend.
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Mittente personalizzato */}
-      <div style={{ background:"var(--surface)", border:"1px solid var(--border)",
-        borderRadius:10, padding:"16px 18px" }}>
-        <div style={{ fontWeight:700, fontSize:14, marginBottom:8 }}>Mittente personalizzato</div>
-        <div style={{ fontSize:12, color:"var(--text-3)", marginBottom:10 }}>
-          Lascia vuoto per usare il mittente predefinito (noreply@manutenzioni.app).<br/>
-          Per usare il tuo dominio devi verificarlo su Resend.
+      {/* Una riga per tipo di notifica */}
+      <div>
+        <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
+          letterSpacing:".05em", color:"var(--text-3)", marginBottom:10 }}>
+          Configura ogni notifica — clicca ⚙ Configura per destinatari, oggetto e testo custom
         </div>
-        <input value={cfg.mittente} onChange={e=>s("mittente",e.target.value)}
-          style={{ width:"100%" }} type="email"
-          placeholder="manutenzioni@tua-azienda.it" />
+        <div style={{ display:"grid", gap:8 }}>
+          {Object.entries(notifiche).map(([tipo, nc]) => (
+            <EditorNotifica key={tipo} tipo={tipo} cfg={nc} />
+          ))}
+        </div>
       </div>
 
       {/* Test email */}
       <TestEmail />
 
       {/* Salva */}
-      <div style={{ display:"flex", justifyContent:"flex-end", gap:10 }}>
-        {salvato && <span style={{ fontSize:13, color:"#059669", alignSelf:"center" }}>✅ Salvato!</span>}
+      <div style={{ display:"flex", justifyContent:"flex-end", gap:10, alignItems:"center" }}>
+        {salvato && <span style={{ fontSize:13, color:"#059669" }}>✅ Salvato!</span>}
         <button className="btn-primary" onClick={salva}>Salva configurazione</button>
       </div>
     </div>
   );
 }
+
 
 export default function Azienda({ tenant, session, operatori=[], ruoloTenant, onTenantUpdate, gruppi=[], clienti=[], emailConfig={}, onEmailConfig }) {
   const [tab, setTab] = useState("info")
@@ -688,7 +905,7 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
       )}
 
       {tab === "email" && (
-        <TabEmail emailConfig={emailConfig} onSalva={onEmailConfig} />
+        <TabEmail emailConfig={emailConfig} onSalva={onEmailConfig} tenant={tenant} operatori={operatori} clienti={clienti} />
       )}
 
     </div>
