@@ -47,10 +47,143 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
   );
 }
 
+// ─── Menu dropdown esportazione ───────────────────────────────────────────
+function EsportaMenu({ onEsportaTutti, onEsportaFiltrati, nFiltrati, nTotali }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef();
+
+  React.useEffect(() => {
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position:"relative" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ fontSize:12, padding:"7px 14px", borderRadius:7, fontWeight:600,
+          background:"var(--surface)", border:"1px solid var(--border)", cursor:"pointer",
+          display:"flex", alignItems:"center", gap:6 }}>
+        📤 Esporta CSV
+        <span style={{ fontSize:9, opacity:.6 }}>▼</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position:"absolute", top:"calc(100% + 6px)", right:0, zIndex:200,
+          background:"var(--surface)", border:"1px solid var(--border)",
+          borderRadius:10, boxShadow:"0 8px 24px rgba(0,0,0,.15)",
+          minWidth:230, overflow:"hidden",
+        }}>
+          {/* Intestazione info */}
+          <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid var(--border)",
+            fontSize:11, color:"var(--text-3)", lineHeight:1.5 }}>
+            Il CSV esportato contiene la colonna <strong>ID_MANUМАН</strong>.<br/>
+            Modificalo e reimportalo per aggiornare in massa.
+          </div>
+
+          <button
+            onClick={() => { onEsportaTutti(); setOpen(false); }}
+            style={{ width:"100%", padding:"11px 14px", textAlign:"left",
+              background:"none", border:"none", cursor:"pointer", fontSize:13,
+              display:"flex", alignItems:"center", gap:10,
+              borderBottom:"1px solid var(--border)" }}
+            onMouseEnter={e=>e.currentTarget.style.background="var(--surface-2)"}
+            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+            <span style={{ fontSize:18 }}>📋</span>
+            <div>
+              <div style={{ fontWeight:700 }}>Tutti gli asset</div>
+              <div style={{ fontSize:11, color:"var(--text-3)" }}>{nTotali} record</div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => { onEsportaFiltrati(); setOpen(false); }}
+            disabled={nFiltrati === nTotali}
+            style={{ width:"100%", padding:"11px 14px", textAlign:"left",
+              background:"none", border:"none",
+              cursor: nFiltrati === nTotali ? "default" : "pointer",
+              fontSize:13, display:"flex", alignItems:"center", gap:10,
+              opacity: nFiltrati === nTotali ? 0.4 : 1 }}
+            onMouseEnter={e=>{ if(nFiltrati!==nTotali) e.currentTarget.style.background="var(--surface-2)"; }}
+            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+            <span style={{ fontSize:18 }}>🔍</span>
+            <div>
+              <div style={{ fontWeight:700 }}>Solo filtrati</div>
+              <div style={{ fontSize:11, color:"var(--text-3)" }}>
+                {nFiltrati} record (filtro attivo)
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnazioni=[], piani=[], onAgg, onMod, onDel, onQR, onApplicaTemplate, tenantId="", userId="", onImportDone}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
   const [showImport,setShowImport]=useState(false);
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
+
+  // ── Esporta CSV ──────────────────────────────────────────────────────────
+  const esportaCSV = (soloFiltrati=false) => {
+    const lista = soloFiltrati ? filtrati : assets;
+    if (!lista.length) { alert("Nessun asset da esportare."); return; }
+
+    const esc = v => {
+      if (v == null || v === "") return "";
+      const s = String(v);
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g,'""')}"` : s;
+    };
+    const fmtData = d => {
+      if (!d) return "";
+      try { return new Date(d+"T00:00:00").toLocaleDateString("it-IT"); }
+      catch { return d; }
+    };
+
+    const headers = [
+      "ID_MANUМАН","Nome","Tipo","Cliente","Ubicazione",
+      "Matricola","Marca","Modello","Data installazione",
+      "Stato","Note","Ore utilizzo","Costo acquisto (€)",
+      "Fine garanzia","Anni vita utile"
+    ];
+
+    const righe = lista.map(a => {
+      const cl = clienti.find(c => c.id === a.clienteId);
+      return [
+        a.id,
+        a.nome,
+        a.tipo || "",
+        cl?.rs || "",
+        a.ubicazione || "",
+        a.matricola || "",
+        a.marca || "",
+        a.modello || "",
+        fmtData(a.dataInst),
+        a.stato || "attivo",
+        a.note || "",
+        a.ore_utilizzo ?? "",
+        a.costo_acquisto ?? "",
+        fmtData(a.garanzia_al),
+        a.vita_utile_anni ?? "",
+      ].map(esc).join(",");
+    });
+
+    const csv = ["\uFEFF" + headers.join(","), ...righe].join("\n");
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const ts = new Date().toISOString().slice(0,10);
+    a.download = soloFiltrati
+      ? `asset_filtrati_${ts}.csv`
+      : `asset_completo_${ts}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
   const STATO_ASSET={attivo:{cls:"badge badge-attivo",l:"Attivo"},manutenzione:{cls:"badge badge-inCorso",l:"In manutenzione"},inattivo:{cls:"badge badge-scaduta",l:"Inattivo"}};
   return (
@@ -64,6 +197,12 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
             background:"var(--surface)",border:"1px solid var(--border)",cursor:"pointer"}}>
           📥 Importa CSV/Excel
         </button>
+        <EsportaMenu
+          onEsportaTutti={()=>esportaCSV(false)}
+          onEsportaFiltrati={()=>esportaCSV(true)}
+          nFiltrati={filtrati.length}
+          nTotali={assets.length}
+        />
         <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo asset</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>

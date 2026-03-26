@@ -3,6 +3,7 @@ import { supabase } from "../supabase";
 
 // ─── Mappatura colonne CSV/Excel → campi DB ───────────────────────────────
 const COL_MAP = {
+  id:            ["id_manuман","id","id_manuман","manuман_id","asset_id","id_asset"],
   nome:          ["nome","name","asset","denominazione","descrizione","impianto","attrezzatura","apparecchiatura","equipment"],
   tipo:          ["tipo","type","categoria","category","tipologia","classe"],
   cliente:       ["cliente","client","azienda","company","sito","site","rs","ragionesociale","intestatario"],
@@ -72,6 +73,7 @@ function parseRow(row, colMap, clienti=[]) {
   };
 
   return {
+    id:            get("id") ? parseInt(get("id"), 10) || null : null,
     nome:          get("nome"),
     tipo:          get("tipo"),
     clienteId,
@@ -109,6 +111,7 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
   const [fileName,    setFileName]   = useState("");
   const [dragOver,    setDragOver]   = useState(false);
   const [imported,    setImported]   = useState(0);
+  const [modoUpdate,   setModoUpdate] = useState(false);
   const fileRef = useRef();
 
   // ── Parse CSV ──────────────────────────────────────────────────────────
@@ -193,32 +196,51 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
     let ok = 0;
     const BATCH = 25;
 
-    for (let i = 0; i < rows.length; i += BATCH) {
-      const batch = rows.slice(i, i+BATCH).map(r => ({
-        nome:            r.nome,
-        tipo:            r.tipo || "",
-        cliente_id:      r.clienteId || null,
-        ubicazione:      r.ubicazione || "",
-        matricola:       r.matricola || "",
-        marca:           r.marca || "",
-        modello:         r.modello || "",
-        data_inst:       r.dataInst || null,
-        stato:           r.stato || "attivo",
-        note:            r.note || "",
-        ore_utilizzo:    r.ore_utilizzo || 0,
-        costo_acquisto:  r.costo_acquisto || null,
-        garanzia_al:     r.garanzia_al || null,
-        vita_utile_anni: r.vita_utile_anni || null,
-        user_id:         userId,
-        tenant_id:       tenantId,
-      }));
+    // Separa righe con id (UPDATE) da quelle senza (INSERT)
+    const conId    = rows.filter(r => r.id);
+    const senzaId  = rows.filter(r => !r.id);
 
+    const toRecord = r => ({
+      nome:            r.nome,
+      tipo:            r.tipo || "",
+      cliente_id:      r.clienteId || null,
+      ubicazione:      r.ubicazione || "",
+      matricola:       r.matricola || "",
+      marca:           r.marca || "",
+      modello:         r.modello || "",
+      data_inst:       r.dataInst || null,
+      stato:           r.stato || "attivo",
+      note:            r.note || "",
+      ore_utilizzo:    r.ore_utilizzo || 0,
+      costo_acquisto:  r.costo_acquisto || null,
+      garanzia_al:     r.garanzia_al || null,
+      vita_utile_anni: r.vita_utile_anni || null,
+      user_id:         userId,
+      tenant_id:       tenantId,
+    });
+
+    // INSERT nuovi
+    for (let i = 0; i < senzaId.length; i += BATCH) {
+      const batch = senzaId.slice(i, i+BATCH).map(toRecord);
       const { error } = await supabase.from("assets").insert(batch);
       if (!error) ok += batch.length;
-      setProgress(Math.round(((i+BATCH)/rows.length)*100));
+      setProgress(Math.round(((i+BATCH)/(rows.length))*50));
+    }
+
+    // UPDATE esistenti (uno alla volta per sicurezza)
+    for (let i = 0; i < conId.length; i++) {
+      const r = conId[i];
+      const { error } = await supabase
+        .from("assets")
+        .update(toRecord(r))
+        .eq("id", r.id)
+        .eq("tenant_id", tenantId);
+      if (!error) ok++;
+      setProgress(50 + Math.round(((i+1)/conId.length)*50));
     }
 
     setImported(ok);
+    setModoUpdate(conId.length > 0);
     setImporting(false);
     setStep("done");
     onDone?.();
@@ -267,7 +289,11 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
           {dragOver ? "Rilascia qui il file" : "Trascina il file qui o clicca per selezionarlo"}
         </div>
         <div style={{ fontSize:12, color:"var(--text-3)", marginTop:6 }}>
-          Supporta CSV (separatore ; o ,) e Excel (.xlsx)
+          Supporta CSV (separatore ; o ,) e Excel (.xlsx)<br/>
+          <span style={{color:"var(--amber)",fontWeight:600}}>
+            💡 Per aggiornamenti massivi: esporta prima con il bottone 📤, modifica il CSV, poi reimportalo.
+               Le righe con ID_MANUМАН vengono aggiornate, quelle senza ID vengono create.
+          </span>
         </div>
         <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt"
           style={{ display:"none" }}
@@ -357,7 +383,14 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
               background: rows.length ? "#059669" : "var(--surface-3)",
               color: rows.length ? "white" : "var(--text-3)",
               border:"none", cursor: rows.length && !importing ? "pointer" : "default" }}>
-            {importing ? `⏳ ${progress}%…` : `✅ Importa ${rows.length} asset`}
+            {importing
+            ? `⏳ ${progress}%…`
+            : rows.some(r=>r.id) && rows.some(r=>!r.id)
+              ? `✅ ${rows.filter(r=>!r.id).length} nuovi + ✏ ${rows.filter(r=>r.id).length} aggiornamenti`
+              : rows.every(r=>r.id)
+                ? `✏ Aggiorna ${rows.length} asset`
+                : `✅ Importa ${rows.length} asset`
+          }
           </button>
         </div>
       </div>
@@ -399,7 +432,7 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
           <thead>
             <tr style={{ background:"var(--navy)", color:"white" }}>
-              {["Nome","Tipo","Cliente","Ubicazione","Matricola","Marca/Modello","Stato","Installato"].map(h => (
+              {["","Nome","Tipo","Cliente","Ubicazione","Matricola","Marca/Modello","Stato","Installato"].map(h => (
                 <th key={h} style={{ padding:"8px 10px", textAlign:"left", fontWeight:700,
                   fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
               ))}
@@ -409,6 +442,18 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
             {rows.slice(0,50).map((r, i) => (
               <tr key={i} style={{ borderBottom:"1px solid var(--border)",
                 background: i%2===0 ? "var(--surface)" : "var(--surface-2)" }}>
+                <td style={{ padding:"7px 10px", textAlign:"center" }}>
+                  {r.id
+                    ? <span style={{ background:"#EFF6FF",color:"#1D4ED8",
+                        padding:"1px 6px",borderRadius:99,fontSize:10,fontWeight:700 }}>
+                        ✏ agg.
+                      </span>
+                    : <span style={{ background:"#ECFDF5",color:"#065F46",
+                        padding:"1px 6px",borderRadius:99,fontSize:10,fontWeight:700 }}>
+                        + nuovo
+                      </span>
+                  }
+                </td>
                 <td style={{ padding:"7px 10px", fontWeight:600, maxWidth:180,
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.nome}</td>
                 <td style={{ padding:"7px 10px", color:"var(--text-3)" }}>{r.tipo||"—"}</td>
@@ -448,15 +493,36 @@ export function ImportaAsset({ tenantId, userId, clienti=[], onDone }) {
   );
 
   // Step: done
+  const insertCount  = rows.filter(r => !r.id).length;
+  const updateCount  = rows.filter(r => r.id).length;
   return (
     <div style={{ textAlign:"center", padding:"40px 24px" }}>
       <div style={{ fontSize:48, marginBottom:16 }}>✅</div>
       <div style={{ fontWeight:800, fontSize:20, marginBottom:8 }}>
-        {imported} asset importati!
+        {imported} asset {modoUpdate ? "sincronizzati" : "importati"}!
       </div>
-      <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:24 }}>
-        Gli asset sono ora disponibili nell'anagrafica.
-      </div>
+      {modoUpdate ? (
+        <div style={{ display:"flex", gap:20, justifyContent:"center", marginBottom:20 }}>
+          {insertCount > 0 && (
+            <div style={{ background:"#ECFDF5", border:"1px solid #A7F3D0",
+              borderRadius:8, padding:"10px 20px" }}>
+              <div style={{ fontWeight:700, fontSize:18, color:"#059669" }}>{insertCount}</div>
+              <div style={{ fontSize:12, color:"#065F46" }}>Nuovi inseriti</div>
+            </div>
+          )}
+          {updateCount > 0 && (
+            <div style={{ background:"#EFF6FF", border:"1px solid #BFDBFE",
+              borderRadius:8, padding:"10px 20px" }}>
+              <div style={{ fontWeight:700, fontSize:18, color:"#1D4ED8" }}>{updateCount}</div>
+              <div style={{ fontSize:12, color:"#1E40AF" }}>Aggiornati</div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ fontSize:13, color:"var(--text-3)", marginBottom:24 }}>
+          Gli asset sono ora disponibili nell'anagrafica.
+        </div>
+      )}
       <button onClick={onDone}
         style={{ padding:"11px 28px", background:"#059669", color:"white",
           border:"none", borderRadius:8, fontWeight:700, fontSize:14, cursor:"pointer" }}>
