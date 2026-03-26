@@ -961,7 +961,18 @@ export default function App() {
   onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare?",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione}
 />}
         {vista==="calendario"   && <Calendario   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
-        {vista==="assets"       && <GestioneAssets assets={assetsView} clienti={clientiView} manutenzioni={man} assegnazioni={assegnazioni} piani={piani} onAgg={aggA} onMod={modA} onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))} onQR={a=>setQrAsset(a)} onApplicaTemplate={a=>setTemplateAsset(a)} />}
+        {vista==="assets" && <GestioneAssets
+  assets={assetsView} clienti={clientiView} manutenzioni={man}
+  assegnazioni={assegnazioni} piani={piani}
+  onAgg={aggA} onMod={modA}
+  onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))}
+  onQR={a=>setQrAsset(a)} onApplicaTemplate={a=>setTemplateAsset(a)}
+  tenantId={tenant?.id||""} userId={uid()}
+  onImportDone={async()=>{
+    const{data}=await supabase.from("assets").select("*").eq("tenant_id",tenant?.id).order("created_at");
+    if(data)sAs(data.map(mapA));
+  }}
+/>}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={(id)=>confirmDel("Eliminare questo gruppo? L'operazione non è reversibile.",()=>delGruppo(id))} onSaveAssoc={saveAssocGruppo} />}
         {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").order("created_at");if(data)sCl(data.map(mapC));}} />}

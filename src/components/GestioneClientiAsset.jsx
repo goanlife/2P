@@ -3,6 +3,7 @@ import { AssetSaluteBadge } from "./TemplateAsset";
 import { PianiAsset } from "./ApplicaTemplate";
 import { SelectSLAProfilo } from "./GestioneSLAProfili";
 import { ImportaClienti } from "./ImportaClienti";
+import { ImportaAsset } from "./ImportaAsset";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { Field, Modal } from "./ui/Atoms";
@@ -46,8 +47,9 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
   );
 }
 
-export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnazioni=[], piani=[], onAgg, onMod, onDel, onQR, onApplicaTemplate}) {
+export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnazioni=[], piani=[], onAgg, onMod, onDel, onQR, onApplicaTemplate, tenantId="", userId="", onImportDone}) {
   const [showM,ssM]=useState(false);const [inMod,siM]=useState(null);const [cerca,sCerca]=useState("");const [fTipo,sfT]=useState("tutti");const [fSt,sfSt]=useState("tutti");
+  const [showImport,setShowImport]=useState(false);
   const tipi=[...new Set(assets.map(a=>a.tipo).filter(Boolean))];
   const filtrati=useMemo(()=>assets.filter(a=>{if(fTipo!=="tutti"&&a.tipo!==fTipo)return false;if(fSt!=="tutti"&&a.stato!==fSt)return false;if(cerca&&!a.nome.toLowerCase().includes(cerca.toLowerCase())&&!(a.matricola||"").toLowerCase().includes(cerca.toLowerCase()))return false;return true;}),[assets,fTipo,fSt,cerca]);
   const STATO_ASSET={attivo:{cls:"badge badge-attivo",l:"Attivo"},manutenzione:{cls:"badge badge-inCorso",l:"In manutenzione"},inattivo:{cls:"badge badge-scaduta",l:"Inattivo"}};
@@ -57,6 +59,11 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
         <input value={cerca} onChange={e=>sCerca(e.target.value)} placeholder="🔍  Cerca asset o matricola..." style={{flex:1,minWidth:140}} />
         <select value={fTipo} onChange={e=>sfT(e.target.value)}><option value="tutti">Tutti i tipi</option>{tipi.map(t=><option key={t} value={t}>{t}</option>)}</select>
         <select value={fSt} onChange={e=>sfSt(e.target.value)}><option value="tutti">Tutti gli stati</option><option value="attivo">Attivo</option><option value="manutenzione">In manutenzione</option><option value="inattivo">Inattivo</option></select>
+        <button onClick={()=>setShowImport(true)}
+          style={{fontSize:12,padding:"7px 14px",borderRadius:7,fontWeight:600,
+            background:"var(--surface)",border:"1px solid var(--border)",cursor:"pointer"}}>
+          📥 Importa CSV/Excel
+        </button>
         <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo asset</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
@@ -86,6 +93,24 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
         })}
       </div>
       {!filtrati.length&&<div className="empty"><div className="empty-icon">⚙</div><div className="empty-text">Nessun asset trovato</div></div>}
+      {showImport && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.55)",
+          zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center",
+          padding:"24px 16px", overflowY:"auto" }}>
+          <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
+            width:"min(860px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+              <div style={{ fontWeight:800, fontSize:17 }}>📥 Importazione massiva asset</div>
+              <button onClick={()=>setShowImport(false)}
+                style={{ background:"none", border:"none", cursor:"pointer", fontSize:20, color:"var(--text-3)" }}>✕</button>
+            </div>
+            <ImportaAsset
+              tenantId={tenantId} userId={userId} clienti={clienti}
+              onDone={()=>{ setShowImport(false); onImportDone?.(); }}
+            />
+          </div>
+        </div>
+      )}
       {showM&&<ModalAsset ini={inMod} clienti={clienti} userId={inMod?.userId||""} onClose={()=>{ssM(false);siM(null);}} onSalva={f=>inMod?onMod({...inMod,...f}):onAgg(f)} />}
     </div>
   );
