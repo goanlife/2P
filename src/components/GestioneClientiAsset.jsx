@@ -4,6 +4,7 @@ import { PianiAsset } from "./ApplicaTemplate";
 import { SelectSLAProfilo } from "./GestioneSLAProfili";
 import { ImportaClienti } from "./ImportaClienti";
 import { ImportaAsset } from "./ImportaAsset";
+import { HelpButton } from "./HelpPanel";
 import { supabase } from "../supabase";
 import { PannelloAllegati } from "./AllegatiTemi";
 import { Field, Modal } from "./ui/Atoms";
@@ -204,6 +205,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
           nTotali={assets.length}
         />
         <button className="btn-primary" onClick={()=>{siM(null);ssM(true);}}>+ Nuovo asset</button>
+        <HelpButton sezione="assets" />
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12}}>
         {filtrati.map(a=>{const cl=clienti.find(c=>c.id===a.clienteId);const manAss=manutenzioni.filter(m=>m.assetId===a.id);const sc=STATO_ASSET[a.stato]||STATO_ASSET.inattivo;
@@ -381,6 +383,7 @@ export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, 
           {showImport?"✕ Chiudi":"📥 Importa"}
         </button>
         <button style={{color:"#7F77DD",borderColor:"#C4B5FD",background:"#EEEDFE",fontWeight:600}} onClick={()=>{siM(null);ssM(true);}}>+ Nuovo cliente</button>
+        <HelpButton sezione="clienti" />
       </div>
       {showImport&&(
         <div style={{border:"1px solid var(--border)",borderRadius:10,overflow:"hidden",marginBottom:4}}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { HelpButton } from "./components/HelpPanel";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
 import { DashboardFornitore } from "./components/DashboardFornitore";

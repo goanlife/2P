@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
 import { PannelloRipianifica } from "./RipianificaOdL";
+import { HelpButton } from "./HelpPanel";
 import { emailOdlAssegnato, emailInterventoCompletato } from "../notifiche-email";
 import { Overlay, Field } from "./ui/Atoms";
 
@@ -454,6 +455,7 @@ export function GestioneOdL({
             whiteSpace:"nowrap" }}>
           📅 Ripianifica
         </button>
+        <HelpButton sezione="odl" />
       </div>
 
       {/* Barra selezione multipla */}

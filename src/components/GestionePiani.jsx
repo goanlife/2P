@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Overlay, Field } from "./ui/Atoms";
 import { ModalGeneraOdL } from "./GeneraOdL";
+import { HelpButton } from "./HelpPanel";
 
 // ─── Costanti ─────────────────────────────────────────────────────────────
 const FREQ = [
