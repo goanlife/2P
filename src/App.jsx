@@ -147,6 +147,7 @@ export default function App() {
   const [gruppi,   sGruppi]= useState([]);
   const [gOps,     sGOps]  = useState([]);
   const [gSiti,    sGSiti] = useState([]);
+  const [odl,      sOdl]   = useState([]);  // Ordini di Lavoro
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
   const [manTotale, setManTotale] = useState(null); // null = non sappiamo ancora
@@ -338,7 +339,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => setSess(session));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s) { setLoad(true); setSess(s); }
-      else { setSess(null); setTenant(null); setRuoloTenant("membro"); sMan([]); sCl([]); sAs([]); sPi([]); sAss([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); }
+      else { setSess(null); setTenant(null); setRuoloTenant("membro"); sMan([]); sCl([]); sAs([]); sPi([]); sAss([]); sOp([]); sSiti([]); sGruppi([]); sGOps([]); sGSiti([]); sOdl([]); }
     });
     return () => subscription.unsubscribe();
   }, []);
