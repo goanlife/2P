@@ -148,6 +148,7 @@ export default function App() {
   const [gOps,     sGOps]  = useState([]);
   const [gSiti,    sGSiti] = useState([]);
   const [odl,      sOdl]   = useState([]);  // Ordini di Lavoro
+  const [odlIniziale, setOdlIniziale] = useState(null); // OdL da evidenziare (da calendario)
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
   const [manTotale, setManTotale] = useState(null); // null = non sappiamo ancora
@@ -843,6 +844,9 @@ export default function App() {
     window.scrollTo({top:0, behavior:"smooth"});
   };
   // Reset filtri manutenzioni quando si naviga via dalla tab manutenzioni
+  // Reset odlIniziale quando si cambia vista (per evitare ri-scroll)
+  React.useEffect(()=>{ if(vista!=="odl") setOdlIniziale(null); },[vista]);
+
   const sVWithReset = (tab) => {
     if (tab !== "manutenzioni") setFiltroMan({});
     sV(tab);
@@ -1009,7 +1013,9 @@ export default function App() {
   onAggSito={aggSito} onModSito={modSito} onDelSito={delSito} onToggleSito={attivaDisattivaSito}
   onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare?",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione}
 />}
-        {vista==="calendario"   && <Calendario   man={manView} odl={odl} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
+        {vista==="calendario"   && <Calendario   man={manView} odl={odl} clienti={clientiView} assets={assetsView} operatori={operatori}
+          onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)}
+          onApriOdl={(o)=>{ setOdlIniziale(o); navigateTo("odl"); }} />}
         {vista==="assets" && <GestioneAssets
   assets={assetsView} clienti={clientiView} manutenzioni={man}
   assegnazioni={assegnazioni} piani={piani}
@@ -1033,7 +1039,9 @@ export default function App() {
         />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
-        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig} onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
+        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig}
+          odlIniziale={odlIniziale}
+          onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
         {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
         {vista==="richieste" && (

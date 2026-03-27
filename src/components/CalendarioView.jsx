@@ -42,7 +42,7 @@ export function ModalRipianifica({manut, nuovaData, man=[], operatori=[], onConf
 }
 
 // ─── Popup dettaglio giorno ───────────────────────────────────────────────
-export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operatori=[], onClose, onStato, onMod, onChiudi, onRipianifica}) {
+export function PopupGiorno({data=[], attivita=[], odlGiorno=[], clienti=[], assets=[], operatori=[], onClose, onStato, onMod, onChiudi, onRipianifica, onApriOdl}) {
   const STATO_COL = { pianificata:"#3B82F6", inCorso:"#F59E0B", completata:"#059669", scaduta:"#EF4444" };
   const STATO_BG  = { pianificata:"#EFF6FF", inCorso:"#FFFBEB", completata:"#ECFDF5", scaduta:"#FEF2F2" };
   const STATO_LBL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
@@ -55,7 +55,7 @@ export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operat
           <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>
             {new Date(data+"T12:00:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
           </div>
-          <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{attivita.length} attività · {totOre}h totali</div>
+          <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{attivita.length} attività · {totOre}h totali{odlGiorno.length>0?` · ${odlGiorno.length} OdL`:""}</div>
         </div>
         <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",fontSize:18,color:"var(--text-3)",padding:"4px 8px"}}>✕</button>
       </div>
@@ -131,11 +131,63 @@ export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operat
           );
         })}
       </div>
+      {/* ── OdL del giorno ───────────────────────────────────────────── */}
+      {odlGiorno.length > 0 && (
+        <div style={{flexShrink:0, borderTop:"1px solid var(--border)", padding:"12px 16px"}}>
+          <div style={{fontSize:11,fontWeight:700,color:"var(--text-3)",textTransform:"uppercase",
+            letterSpacing:".04em",marginBottom:8}}>📋 Ordini di Lavoro</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {odlGiorno.map(o=>{
+              const STATI_COL={bozza:"#94A3B8",confermato:"#3B82F6",in_corso:"#F59E0B",completato:"#059669",annullato:"#EF4444"};
+              const col=STATI_COL[o.stato]||"#94A3B8";
+              const STATI_LBL={bozza:"Bozza",confermato:"Confermato",in_corso:"In corso",completato:"Completato",annullato:"Annullato"};
+              const op=operatori.find(x=>x.id===o.operatore_id);
+              return(
+                <div key={o.id}
+                  onClick={()=>onApriOdl&&onApriOdl(o)}
+                  style={{
+                    background:"var(--surface-2)",
+                    border:`1px solid ${col}30`,
+                    borderLeft:`3px solid ${col}`,
+                    borderRadius:"var(--radius-sm)",
+                    padding:"10px 12px",
+                    cursor:onApriOdl?"pointer":"default",
+                    transition:"background .15s",
+                  }}
+                  onMouseEnter={e=>e.currentTarget.style.background="var(--surface-3)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="var(--surface-2)"}
+                >
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                    <span style={{fontSize:10,fontWeight:700,color:"var(--text-3)",
+                      fontFamily:"var(--font-head)"}}>{o.numero}</span>
+                    <span style={{fontSize:10,padding:"1px 7px",borderRadius:99,fontWeight:700,
+                      background:col+"18",color:col}}>{STATI_LBL[o.stato]||o.stato}</span>
+                    {onApriOdl && <span style={{marginLeft:"auto",fontSize:11,color:"var(--text-3)"}}>→</span>}
+                  </div>
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:3,overflow:"hidden",
+                    textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{o.titolo||"OdL senza titolo"}</div>
+                  {op && <div style={{fontSize:11,color:"var(--text-3)",display:"flex",alignItems:"center",gap:5}}>
+                    <span style={{width:7,height:7,borderRadius:"50%",background:op.col,display:"inline-block"}}/>
+                    {op.nome}
+                  </div>}
+                  {o.data_fine && o.data_fine!==o.data_inizio && (
+                    <div style={{fontSize:10,color:"var(--text-3)",marginTop:3}}>
+                      📅 {new Date(o.data_inizio+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})}
+                      {" → "}
+                      {new Date(o.data_fine+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"})}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export function Calendario({man=[], odl=[], clienti=[], assets=[], operatori=[], onRipianifica, onNuovaData, onStato, onMod, onChiudi}) {
+export function Calendario({man=[], odl=[], clienti=[], assets=[], operatori=[], onRipianifica, onNuovaData, onStato, onMod, onChiudi, onApriOdl}) {
   const oggi=new Date();
   const [anno,sA]=useState(oggi.getFullYear());const [mese,sM]=useState(oggi.getMonth());
   const [opF,sOpF]=useState(0);const [drag,sDrag]=useState(null);const [drop,sDrop]=useState(null);const [ripModal,sRip]=useState(null);
@@ -253,8 +305,9 @@ export function Calendario({man=[], odl=[], clienti=[], assets=[], operatori=[],
                     const op=operatori.find(x=>x.id===o.operatore_id);
                     return(
                       <div key={"odl-"+o.id}
-                        title={`OdL: ${o.titolo||"—"} · ${o.stato}`}
-                        style={{
+                        title={`OdL: ${o.titolo||"—"} · ${o.stato} · click per aprire`}
+                        onClick={e=>{e.stopPropagation();apriPopup(g);}}
+                        style={{cursor:"pointer",
                           background:col+"18",
                           borderLeft:`3px solid ${col}`,
                           borderRadius:"0 4px 4px 0",
@@ -286,12 +339,14 @@ export function Calendario({man=[], odl=[], clienti=[], assets=[], operatori=[],
           <PopupGiorno
             data={popup}
             attivita={man.filter(m=>m.data===popup).sort((a,b)=>{const ord={scaduta:0,inCorso:1,pianificata:2,completata:3};return (ord[a.stato]||2)-(ord[b.stato]||2);})}
+            odlGiorno={odlPerG[new Date(popup+"T00:00:00").getDate()]||[]}
             clienti={clienti} assets={assets} operatori={operatori}
             onClose={()=>setPopup(null)}
             onStato={(id,s)=>{onStato&&onStato(id,s);}}
             onMod={(m)=>{setPopup(null);onMod&&onMod(m);}}
             onChiudi={(m)=>{setPopup(null);onChiudi&&onChiudi(m);}}
             onRipianifica={(m)=>{setPopup(null);sRip({manut:m,nuovaData:m.data});}}
+            onApriOdl={(o)=>{setPopup(null);onApriOdl&&onApriOdl(o);}}
           />
         </>
       )}

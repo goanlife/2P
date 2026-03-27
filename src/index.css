@@ -889,7 +889,14 @@ input::placeholder { color: var(--text-3); }
     padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   }
 
-  @keyframes slideUpDrawer {
+  /* Highlight OdL dal calendario */
+@keyframes highlightOdl {
+  0%   { box-shadow: 0 0 0 3px var(--amber), 0 0 20px rgba(245,158,11,.4); }
+  50%  { box-shadow: 0 0 0 3px var(--amber), 0 0 30px rgba(245,158,11,.6); }
+  100% { box-shadow: none; }
+}
+
+@keyframes slideUpDrawer {
     from { transform: translateY(100%); }
     to   { transform: translateY(0); }
   }

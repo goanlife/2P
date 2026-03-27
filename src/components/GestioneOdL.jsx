@@ -99,7 +99,8 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 // ─── Card OdL espandibile ─────────────────────────────────────────────────
 function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", isSelected=false, onToggleSel, onStato, onMod, onDel, onPdf }) {
   const { t } = useI18n();
-  const STATI_ODL = getStatiOdl(t);
+  const STATI_ODL   = getStatiOdl(t);
+  const STATO_LABEL = getStatoLabel(t); // FIX: era undefined causando crash
   const [aperto, setAperto] = useState(false);
   const st  = (STATI_ODL.find(s=>s.v===odl.stato)||STATI_ODL[0]);
   const op  = operatori.find(o=>o.id===(odl.operatore_id||odl.operatoreId));
@@ -256,7 +257,7 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenant
 // ─── Vista principale OdL ─────────────────────────────────────────────────
 export function GestioneOdL({
   manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="", emailConfig={},
-  onAggiornaManutenzioni,
+  onAggiornaManutenzioni, odlIniziale=null,
 }) {
   const { t } = useI18n();
   const STATI_ODL   = React.useMemo(() => getStatiOdl(t),   [t]);
@@ -286,6 +287,17 @@ export function GestioneOdL({
 
   // Carica OdL
   useEffect(()=>{ if(tenantId) carica(); }, [tenantId]);
+
+  // Scroll all'OdL iniziale (quando si arriva dal calendario)
+  const [odlEvidenziato, setOdlEvidenziato] = React.useState(odlIniziale?.id||null);
+  React.useEffect(()=>{
+    if(!odlIniziale) return;
+    setOdlEvidenziato(odlIniziale.id);
+    const el = document.getElementById(`odl-card-${odlIniziale.id}`);
+    if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+    const t = setTimeout(()=>setOdlEvidenziato(null), 3000);
+    return ()=>clearTimeout(t);
+  },[odlIniziale]);
 
   const carica = async () => {
     setLoading(true);
@@ -511,8 +523,10 @@ export function GestioneOdL({
       ) : (
         <div style={{display:"grid", gap:10}}>
           {odlView.map(o=>(
+            <div key={o.id} id={`odl-card-${o.id}`}
+              style={odlEvidenziato===o.id?{animation:"highlightOdl 3s ease"}:{}}
+            >
             <CardOdL
-              key={o.id}
               odl={o}
               attivita={manutenzioni}
               operatori={operatori}
@@ -526,6 +540,7 @@ export function GestioneOdL({
               onDel={delOdl}
               onPdf={stampaOdl}
             />
+            </div>
           ))}
         </div>
       )}
