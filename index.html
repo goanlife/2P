@@ -2,18 +2,40 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- viewport-fit=cover per iPhone notch/Dynamic Island -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+
+    <!-- PWA / App meta -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- black-translucent: la status bar diventa trasparente, il contenuto parte dall'alto -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="ManuMan" />
+    <meta name="application-name" content="ManuMan" />
     <meta name="theme-color" content="#0D1B2A" />
+
+    <!-- SEO / descrizione -->
     <meta name="description" content="CMMS per la gestione delle manutenzioni e ordini di lavoro" />
+
+    <!-- Manifest e icone -->
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/x-icon" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <!-- Preconnect font -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <title>ManuMan</title>
+
+    <!-- Previeni flash bianco su caricamento (PWA) -->
+    <style>
+      html, body, #root {
+        background-color: #0D1B2A;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
@@ -24,12 +46,12 @@
       defer
       onerror="console.warn('Assistloop widget non caricato')"
     ></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js").catch(() => {});
-      });
-    }
-  </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

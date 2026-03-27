@@ -1,6 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
 /* ─── Design Tokens ─────────────────────────────────────────────────────── */
+/* ─── PWA / App safe area ────────────────────────────────────────────────── */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Previeni overscroll bounce su iOS PWA */
+html {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+  height: 100%;
+}
+body {
+  height: 100%;
+  overscroll-behavior: none;
+}
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 :root {
   --navy:      #0D1B2A;
   --navy-2:    #152232;
@@ -195,6 +219,8 @@ body {
   margin: 0 auto;
   padding: 28px 20px 48px;
   width: 100%;
+  /* iOS scroll fluido */
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-header {
@@ -731,7 +757,10 @@ input::placeholder { color: var(--text-3); }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .page-content { padding: 16px 12px 40px; }
+  .page-content {
+    padding: 16px 12px calc(env(safe-area-inset-bottom, 0px) + 20px);
+    /* Previeni contenuto sotto la barra home di iOS */
+  }
   .topbar { padding: 0 14px; }
   .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 }
@@ -1043,8 +1072,12 @@ input::placeholder { color: var(--text-3); }
 
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100dvh; /* dynamic viewport height — corretto su mobile */
   flex-direction: row;
+  /* Gestisce safe areas su iPhone notch/Dynamic Island */
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .sidebar-overlay {
@@ -1065,6 +1098,8 @@ input::placeholder { color: var(--text-3); }
   position: sticky;
   top: 0;
   height: 100vh;
+  /* Safe area per iPhone con notch */
+  padding-top: env(safe-area-inset-top, 0px);
   overflow-y: auto;
   border-right: 1px solid var(--navy-4);
   transition: transform .25s cubic-bezier(.4,0,.2,1);
@@ -1211,11 +1246,11 @@ input::placeholder { color: var(--text-3); }
 
 /* ─── Mini topbar ────────────────────────────────────────────── */
 .mini-topbar {
-  height: 54px;
+  height: calc(54px + env(safe-area-inset-top, 0px));
   background: var(--navy);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: env(safe-area-inset-top, 0px) 16px 0;
   gap: 12px;
   position: sticky;
   top: 0;
@@ -1270,6 +1305,9 @@ input::placeholder { color: var(--text-3); }
 @media (max-width: 768px) {
   .app-shell {
     flex-direction: column;
+    /* Safe area laterali su mobile */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
   }
 
   .sidebar {
@@ -1278,8 +1316,12 @@ input::placeholder { color: var(--text-3); }
     top: 0;
     bottom: 0;
     transform: translateX(-100%);
-    width: 260px;
+    width: min(80vw, 280px);
     z-index: 300;
+    /* Safe areas */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
   }
 
   .sidebar.open {
