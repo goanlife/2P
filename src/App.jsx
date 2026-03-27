@@ -380,10 +380,16 @@ export default function App() {
       supabase.from("gruppi").select("*").eq("tenant_id", tid).order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
       supabase.from("gruppo_siti").select("*").order("created_at"),
-      supabase.from("ordini_lavoro").select("*").eq("tenant_id", tid).order("data_inizio", {ascending:false}),
-    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs, rmCount, rOdl]) => {
-      if (ro.error||rc.error||ra.error||rp.error||rm.error) {
-        setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
+    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs, rmCount]) => {
+      // Log errori parziali ma non bloccare se sono tabelle opzionali
+      if (ro.error) { console.error("operatori:", ro.error.message); }
+      if (rc.error) { console.error("clienti:", rc.error.message); }
+      if (ra.error) { console.error("assets:", ra.error.message); }
+      if (rp.error) { console.error("piani:", rp.error.message); }
+      if (rm.error) { console.error("manutenzioni:", rm.error.message); }
+      // Blocca solo se TUTTE le tabelle principali falliscono (DB completamente inaccessibile)
+      if (ro.error && rc.error && ra.error) {
+        setDbErr("Database non raggiungibile. Verifica la connessione e riprova.");
         setLoad(false); return;
       }
       const mappedOps = (ro.data||[]).map(mapOp);
@@ -406,16 +412,26 @@ export default function App() {
         .then(({data,error}) => { if(!error && data) sPVoci(data.map(mapVoce)); });
       supabase.from("piano_siti").select("*").eq("tenant_id", tid).order("created_at")
         .then(({data,error}) => { if(!error && data) sPSiti(data.map(mapPSito)); });
+      // OdL — non bloccante, la tabella potrebbe non esistere ancora
+      supabase.from("ordini_lavoro").select("*").eq("tenant_id", tid).order("data_inizio", {ascending:false})
+        .then(({data,error}) => { if(!error && data) sOdl(data); });
       sSiti((rs.data||[]).map(mapSito));
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
       sGSiti((rgs.data||[]).map(mapGSito));
-      sOdl(rOdl?.data || []);
+
       setLoad(false);
     }).catch(err => {
       console.error('Errore caricamento dati:', err);
-      setDbErr('Errore di rete. Controlla la connessione e ricarica.');
-      setLoad(false);
+      // Su mobile: retry automatico dopo 3 secondi prima di mostrare errore
+      setTimeout(() => {
+        if (navigator.onLine === false) {
+          setDbErr('Nessuna connessione internet. Controlla la rete e riprova.');
+        } else {
+          setDbErr('Errore di connessione al database. Riprova.');
+        }
+        setLoad(false);
+      }, 3000);
     });
   }, [session, tenant]);
 
@@ -864,11 +880,20 @@ export default function App() {
   if (dbErr) return (
     <div className="error-screen">
       <div className="error-box">
-        <div style={{fontSize:28,marginBottom:12}}>⚠️</div>
-        <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,marginBottom:8}}>Errore database</div>
-        <div style={{fontSize:13,color:"var(--red)",marginBottom:8}}>{dbErr}</div>
-        <div style={{fontSize:12,color:"var(--text-3)"}}>Esegui <strong>schema.sql</strong> (v2) nel SQL Editor di Supabase, poi ricarica.</div>
-        <button className="btn-primary" onClick={logout} style={{marginTop:16}}>Logout</button>
+        <div style={{fontSize:32,marginBottom:12}}>⚠️</div>
+        <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:18,marginBottom:8}}>Errore di connessione</div>
+        <div style={{fontSize:13,color:"var(--red)",marginBottom:12}}>{dbErr}</div>
+        <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+          <button className="btn-primary"
+            onClick={()=>{ setDbErr(null); window.location.reload(); }}
+            style={{padding:"10px 24px"}}>
+            🔄 Riprova
+          </button>
+          <button onClick={logout}
+            style={{padding:"10px 24px",background:"transparent",border:"1px solid var(--border)",borderRadius:"var(--radius-sm)",cursor:"pointer",fontSize:13}}>
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
