@@ -380,7 +380,8 @@ export default function App() {
       supabase.from("gruppi").select("*").eq("tenant_id", tid).order("created_at"),
       supabase.from("gruppo_operatori").select("*").order("created_at"),
       supabase.from("gruppo_siti").select("*").order("created_at"),
-    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs, rmCount]) => {
+      supabase.from("ordini_lavoro").select("*").eq("tenant_id", tid).order("data_inizio", {ascending:false}),
+    ]).then(async ([ro, rc, ra, rp, rm, rs, rg, rgo, rgs, rmCount, rOdl]) => {
       if (ro.error||rc.error||ra.error||rp.error||rm.error) {
         setDbErr("Errore caricamento dati. Esegui schema.sql (v3) su Supabase.");
         setLoad(false); return;
@@ -409,6 +410,7 @@ export default function App() {
       sGruppi((rg.data||[]).map(mapGruppo));
       sGOps((rgo.data||[]).map(mapGOp));
       sGSiti((rgs.data||[]).map(mapGSito));
+      sOdl(rOdl?.data || []);
       setLoad(false);
     }).catch(err => {
       console.error('Errore caricamento dati:', err);
@@ -981,7 +983,7 @@ export default function App() {
   onAggSito={aggSito} onModSito={modSito} onDelSito={delSito} onToggleSito={attivaDisattivaSito}
   onAggAss={aggAssegnazione} onModAss={modAssegnazione} onDelAss={(id)=>confirmDel("Eliminare?",()=>delAssegnazione(id))} onAttivaDisattiva={attivaDisattiva} onRinnova={rinnovaAssegnazione}
 />}
-        {vista==="calendario"   && <Calendario   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
+        {vista==="calendario"   && <Calendario   man={manView} odl={odl} clienti={clientiView} assets={assetsView} operatori={operatori} onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)} />}
         {vista==="assets" && <GestioneAssets
   assets={assetsView} clienti={clientiView} manutenzioni={man}
   assegnazioni={assegnazioni} piani={piani}

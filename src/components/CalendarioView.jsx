@@ -135,7 +135,7 @@ export function PopupGiorno({data=[], attivita=[], clienti=[], assets=[], operat
   );
 }
 
-export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipianifica, onNuovaData, onStato, onMod, onChiudi}) {
+export function Calendario({man=[], odl=[], clienti=[], assets=[], operatori=[], onRipianifica, onNuovaData, onStato, onMod, onChiudi}) {
   const oggi=new Date();
   const [anno,sA]=useState(oggi.getFullYear());const [mese,sM]=useState(oggi.getMonth());
   const [opF,sOpF]=useState(0);const [drag,sDrag]=useState(null);const [drop,sDrop]=useState(null);const [ripModal,sRip]=useState(null);
@@ -143,6 +143,31 @@ export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipia
   const fornitori=useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const primoG=new Date(anno,mese,1).getDay();const giorniN=new Date(anno,mese+1,0).getDate();
   const attPerG=useMemo(()=>{const m={};man.filter(x=>{if(opF!==0&&x.operatoreId!==opF)return false;const d=new Date(x.data);return d.getFullYear()===anno&&d.getMonth()===mese;}).forEach(x=>{const g=new Date(x.data).getDate();if(!m[g])m[g]=[];m[g].push(x);});return m;},[man,anno,mese,opF]);
+  // OdL per giorno — mostrati su ogni giorno compreso tra data_inizio e data_fine
+  const odlPerG=useMemo(()=>{
+    const m={};
+    odl.filter(o=>{
+      if(!o.data_inizio) return false;
+      if(opF!==0&&o.operatore_id!==opF) return false;
+      const dI=new Date(o.data_inizio);
+      const dF=o.data_fine?new Date(o.data_fine):dI;
+      // Cella se il mese corrente si sovrappone
+      return dI.getFullYear()===anno&&dI.getMonth()===mese ||
+             dF.getFullYear()===anno&&dF.getMonth()===mese ||
+             (dI<=new Date(anno,mese,1)&&dF>=new Date(anno,mese+1,0));
+    }).forEach(o=>{
+      const dI=new Date(o.data_inizio);
+      const dF=o.data_fine?new Date(o.data_fine):dI;
+      const primoGMese=1, ultimoGMese=new Date(anno,mese+1,0).getDate();
+      const startG=dI.getFullYear()===anno&&dI.getMonth()===mese ? dI.getDate() : primoGMese;
+      const endG  =dF.getFullYear()===anno&&dF.getMonth()===mese ? dF.getDate() : ultimoGMese;
+      for(let g=startG;g<=endG;g++){
+        if(!m[g])m[g]=[];
+        m[g].push(o);
+      }
+    });
+    return m;
+  },[odl,anno,mese,opF]);
   const celle=[];for(let i=0;i<(primoG===0?6:primoG-1);i++)celle.push(null);for(let g=1;g<=giorniN;g++)celle.push(g);
   const toIso=g=>`${anno}-${String(mese+1).padStart(2,"0")}-${String(g).padStart(2,"0")}`;
   const giorniConflitto=useMemo(()=>{const set=new Set();const grouped={};man.filter(x=>x.stato!=="completata").forEach(x=>{const k=`${x.operatoreId}_${x.data}`;if(!grouped[k])grouped[k]=[];grouped[k].push(x);});Object.values(grouped).filter(g=>g.length>1).forEach(g=>{const d=new Date(g[0].data);if(d.getFullYear()===anno&&d.getMonth()===mese)set.add(d.getDate());});return set;},[man,anno,mese]);
@@ -168,7 +193,9 @@ export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipia
       {/* Legenda operatori */}
       <div style={{display:"flex",gap:12,flexWrap:"wrap",padding:"8px 12px",background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)"}}>
         {fornitori.map(op=><div key={op.id} style={{display:"flex",alignItems:"center",gap:5,fontSize:11.5,fontWeight:500,color:"var(--text-2)"}}><span style={{width:10,height:10,borderRadius:2,background:op.col,display:"inline-block"}} />{op.nome.split(" ")[0]}</div>)}
-        <span style={{fontSize:11,color:"var(--text-3)",marginLeft:"auto"}}>🔄 piano · ⚠ conflitto · trascina per spostare · click per dettaglio</span>
+        <span style={{fontSize:11,color:"var(--text-3)",marginLeft:"auto"}}>
+          📋 OdL · 🔄 piano · ⚠ conflitto · trascina per spostare · click per dettaglio
+        </span>
       </div>
       <div className="cal-grid">
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:"var(--surface-2)"}}>{["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map(g=><div key={g} className="cal-day-header">{g}</div>)}</div>
@@ -219,6 +246,33 @@ export function Calendario({man=[], clienti=[], assets=[], operatori=[], onRipia
                     );
                   })}
                   {att.length>3&&<div style={{fontSize:9,color:"var(--amber)",paddingLeft:2,fontWeight:700}}>+{att.length-3} altre</div>}
+                  {/* OdL del giorno */}
+                  {(odlPerG[g]||[]).slice(0,2).map(o=>{
+                    const STATI_ODL_COL={bozza:"#94A3B8",confermato:"#3B82F6",in_corso:"#F59E0B",completato:"#059669",annullato:"#EF4444"};
+                    const col=STATI_ODL_COL[o.stato]||"#94A3B8";
+                    const op=operatori.find(x=>x.id===o.operatore_id);
+                    return(
+                      <div key={"odl-"+o.id}
+                        title={`OdL: ${o.titolo||"—"} · ${o.stato}`}
+                        style={{
+                          background:col+"18",
+                          borderLeft:`3px solid ${col}`,
+                          borderRadius:"0 4px 4px 0",
+                          padding:"2px 4px",
+                          fontSize:10,
+                          display:"flex",alignItems:"center",gap:3,
+                          overflow:"hidden",
+                        }}>
+                        <span style={{fontSize:9,flexShrink:0}}>📋</span>
+                        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,color:"var(--text-1)",fontWeight:500}}>
+                          {o.numero?<span style={{color:"var(--text-3)",marginRight:2}}>{o.numero}</span>:null}
+                          {o.titolo||"OdL senza titolo"}
+                        </span>
+                        <span style={{fontSize:9,color:col,fontWeight:700,flexShrink:0,textTransform:"uppercase"}}>{o.stato==="in_corso"?"▶":o.stato==="completato"?"✓":""}</span>
+                      </div>
+                    );
+                  })}
+                  {(odlPerG[g]||[]).length>2&&<div style={{fontSize:9,color:"var(--text-3)",paddingLeft:2}}>+{(odlPerG[g]||[]).length-2} OdL</div>}
                 </div>
               </div>
             );
