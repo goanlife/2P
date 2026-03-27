@@ -10,13 +10,13 @@ on:
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply all pending migrations via Supabase Management API
+      - name: Apply all migrations via Supabase Management API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
@@ -33,681 +33,663 @@ jobs:
               -H "Content-Type: application/json" \
               -d "{\"query\": $(echo "$sql" | jq -Rs .)}")
             BODY=$(cat /tmp/r.json)
-            if echo "$BODY" | grep -qi '"error"' && ! echo "$BODY" | grep -qi 'already exists\|duplicate\|does not exist'; then
+            if echo "$BODY" | grep -qi '"error"' && ! echo "$BODY" | grep -qi 'already exists\|duplicate\|does not exist\|multiple primary\|42701\|42P07\|42P16'; then
               echo "  ❌ ERRORE: $BODY"
             else
               echo "  ✅ OK (HTTP $HTTP)"
             fi
           }
 
-          # ──────────────────────────────────────────────────
-          # 007 — Proposta A: Asset Health Card + Template
-          # ──────────────────────────────────────────────────
-          run_sql "007 assets: ore_utilizzo" \
+          # ══════════════════════════════════════════════════════
+          # FASE 1 — Tabelle base (idempotenti)
+          # ══════════════════════════════════════════════════════
+
+          run_sql "tenants: tabella" \
+            "create table if not exists tenants (
+              id            uuid primary key default gen_random_uuid(),
+              nome          text,
+              piva          text,
+              indirizzo     text,
+              tel           text,
+              email         text,
+              logo_url      text,
+              codice_invito text unique,
+              citta         text,
+              cap           text,
+              sito          text,
+              owner_id      uuid references auth.users(id),
+              created_at    timestamptz default now()
+            );
+            alter table tenants disable row level security;"
+
+          run_sql "tenant_users: tabella" \
+            "create table if not exists tenant_users (
+              id         bigserial primary key,
+              tenant_id  uuid references tenants(id) on delete cascade,
+              user_id    uuid references auth.users(id) on delete cascade,
+              ruolo      text default 'membro',
+              created_at timestamptz default now(),
+              unique(tenant_id, user_id)
+            );
+            alter table tenant_users disable row level security;"
+
+          run_sql "tenant_inviti: tabella" \
+            "create table if not exists tenant_inviti (
+              id         bigserial primary key,
+              tenant_id  uuid references tenants(id) on delete cascade,
+              codice     text unique not null,
+              email      text,
+              ruolo      text default 'membro',
+              usato      boolean default false,
+              usato_da   uuid references auth.users(id),
+              created_at timestamptz default now(),
+              expires_at timestamptz
+            );
+            alter table tenant_inviti disable row level security;"
+
+          run_sql "tenant_membri: tabella" \
+            "create table if not exists tenant_membri (
+              id         bigserial primary key,
+              tenant_id  uuid references tenants(id) on delete cascade,
+              user_id    uuid references auth.users(id) on delete cascade,
+              ruolo      text default 'membro',
+              created_at timestamptz default now(),
+              unique(tenant_id, user_id)
+            );
+            alter table tenant_membri disable row level security;"
+
+          # ══════════════════════════════════════════════════════
+          # FASE 2 — Patch tabelle principali (ADD COLUMN IF NOT EXISTS)
+          # ══════════════════════════════════════════════════════
+
+          run_sql "clienti: tenant_id" \
+            "alter table clienti add column if not exists tenant_id uuid references tenants(id) on delete cascade;"
+
+          run_sql "clienti: codice" \
+            "alter table clienti add column if not exists codice text;"
+
+          run_sql "clienti: sla_profilo_id" \
+            "alter table clienti add column if not exists sla_profilo_id bigint;"
+
+          run_sql "assets: tenant_id" \
+            "alter table assets add column if not exists tenant_id uuid references tenants(id) on delete cascade;"
+
+          run_sql "assets: ore_utilizzo" \
             "alter table assets add column if not exists ore_utilizzo numeric(10,1) default 0;"
 
-          run_sql "007 assets: soglia_ore" \
-            "alter table assets add column if not exists soglia_ore numeric(10,1) default null;"
+          run_sql "assets: soglia_ore" \
+            "alter table assets add column if not exists soglia_ore numeric(10,1);"
 
-          run_sql "007 assets: costo_acquisto" \
-            "alter table assets add column if not exists costo_acquisto numeric(12,2) default null;"
+          run_sql "assets: costo_acquisto" \
+            "alter table assets add column if not exists costo_acquisto numeric(12,2);"
 
-          run_sql "007 assets: garanzia_al" \
-            "alter table assets add column if not exists garanzia_al date default null;"
+          run_sql "assets: garanzia_al" \
+            "alter table assets add column if not exists garanzia_al date;"
 
-          run_sql "007 assets: vita_utile_anni" \
-            "alter table assets add column if not exists vita_utile_anni int default null;"
+          run_sql "assets: vita_utile_anni" \
+            "alter table assets add column if not exists vita_utile_anni int;"
 
-          run_sql "007 assets: specifiche_json" \
-            "alter table assets add column if not exists specifiche_json jsonb default null;"
+          run_sql "assets: specifiche_json" \
+            "alter table assets add column if not exists specifiche_json jsonb;"
 
-          run_sql "007 asset_tipo_template: crea tabella" \
+          run_sql "operatori: tenant_id" \
+            "alter table operatori add column if not exists tenant_id uuid references tenants(id) on delete cascade;"
+
+          run_sql "operatori: email" \
+            "alter table operatori add column if not exists email text;"
+
+          run_sql "operatori: tema" \
+            "alter table operatori add column if not exists tema text default 'navy';"
+
+          run_sql "operatori: tariffa_ora" \
+            "alter table operatori add column if not exists tariffa_ora numeric(8,2);"
+
+          run_sql "operatori: auth_user_id" \
+            "alter table operatori add column if not exists auth_user_id uuid references auth.users(id) on delete set null;"
+
+          run_sql "piani: tenant_id" \
+            "alter table piani add column if not exists tenant_id uuid references tenants(id) on delete cascade;"
+
+          run_sql "piani: aggregazione_odl" \
+            "alter table piani add column if not exists aggregazione_odl text default 'per_visita'
+               check (aggregazione_odl in ('per_visita','per_attivita','per_mese','per_categoria'));"
+
+          run_sql "manutenzioni: tenant_id" \
+            "alter table manutenzioni add column if not exists tenant_id uuid references tenants(id) on delete cascade;"
+
+          run_sql "manutenzioni: note_chiusura" \
+            "alter table manutenzioni add column if not exists note_chiusura text;"
+
+          run_sql "manutenzioni: ore_effettive" \
+            "alter table manutenzioni add column if not exists ore_effettive numeric(6,2);"
+
+          run_sql "manutenzioni: parti_usate" \
+            "alter table manutenzioni add column if not exists parti_usate text;"
+
+          run_sql "manutenzioni: firma_svg" \
+            "alter table manutenzioni add column if not exists firma_svg text;"
+
+          run_sql "manutenzioni: chiuso_at" \
+            "alter table manutenzioni add column if not exists chiuso_at timestamptz;"
+
+          run_sql "manutenzioni: numero_intervento" \
+            "alter table manutenzioni add column if not exists numero_intervento int default 1;"
+
+          run_sql "manutenzioni: sla_profilo_id" \
+            "alter table manutenzioni add column if not exists sla_profilo_id bigint;"
+
+          run_sql "manutenzioni: odl_id" \
+            "alter table manutenzioni add column if not exists odl_id bigint;"
+
+          run_sql "manutenzioni: assegnazione_id" \
+            "alter table manutenzioni add column if not exists assegnazione_id bigint;"
+
+          run_sql "manutenzioni: sottotipo" \
+            "alter table manutenzioni add column if not exists sottotipo text;"
+
+          run_sql "manutenzioni: causa_guasto" \
+            "alter table manutenzioni add column if not exists causa_guasto text;"
+
+          run_sql "manutenzioni: fermo_impianto" \
+            "alter table manutenzioni add column if not exists fermo_impianto boolean default false;"
+
+          run_sql "manutenzioni: downtime_ore" \
+            "alter table manutenzioni add column if not exists downtime_ore numeric(6,2);"
+
+          run_sql "manutenzioni: approvata_da" \
+            "alter table manutenzioni add column if not exists approvata_da bigint;"
+
+          run_sql "manutenzioni: approvata_at" \
+            "alter table manutenzioni add column if not exists approvata_at timestamptz;"
+
+          run_sql "manutenzioni: rifiutata_motivo" \
+            "alter table manutenzioni add column if not exists rifiutata_motivo text;"
+
+          run_sql "manutenzioni: piano_sito_id" \
+            "alter table manutenzioni add column if not exists piano_sito_id bigint;"
+
+          run_sql "manutenzioni: piano_voce_id" \
+            "alter table manutenzioni add column if not exists piano_voce_id bigint;"
+
+          # ══════════════════════════════════════════════════════
+          # FASE 3 — Nuove tabelle (SLA, OdL, Checklist, ecc.)
+          # ══════════════════════════════════════════════════════
+
+          run_sql "sla_profili: tabella" \
+            "create table if not exists sla_profili (
+              id         bigserial primary key,
+              nome       text not null,
+              colore     text default '#3B82F6',
+              is_default boolean default false,
+              tenant_id  uuid references tenants(id) on delete cascade,
+              user_id    uuid,
+              created_at timestamptz default now()
+            );
+            alter table sla_profili disable row level security;"
+
+          run_sql "sla_profilo_config: tabella" \
+            "create table if not exists sla_profilo_config (
+              id                bigserial primary key,
+              profilo_id        bigint references sla_profili(id) on delete cascade,
+              priorita          text,
+              ore_risposta      int,
+              ore_risoluzione   int,
+              note              text,
+              tenant_id         uuid references tenants(id) on delete cascade
+            );
+            alter table sla_profilo_config disable row level security;"
+
+          run_sql "sla_config: tabella" \
+            "create table if not exists sla_config (
+              id                bigserial primary key,
+              tenant_id         uuid references tenants(id) on delete cascade,
+              priorita          text,
+              ore_risposta      int,
+              ore_risoluzione   int
+            );
+            alter table sla_config disable row level security;"
+
+          run_sql "ricambi: tabella" \
+            "create table if not exists ricambi (
+              id              bigserial primary key,
+              nome            text not null,
+              codice          text,
+              unita           text default 'pz',
+              prezzo          numeric(10,2) default 0,
+              quantita_stock  numeric(10,2) default 0,
+              soglia_minima   numeric(10,2) default 0,
+              categoria       text,
+              note            text,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              user_id         uuid,
+              created_at      timestamptz default now()
+            );
+            alter table ricambi disable row level security;"
+
+          run_sql "intervento_ricambi: tabella" \
+            "create table if not exists intervento_ricambi (
+              id              bigserial primary key,
+              manutenzione_id bigint references manutenzioni(id) on delete cascade,
+              ricambio_id     bigint references ricambi(id) on delete set null,
+              nome_libero     text,
+              quantita        numeric(10,2) default 1,
+              prezzo_unitario numeric(10,2) default 0,
+              note            text,
+              tenant_id       uuid references tenants(id) on delete cascade
+            );
+            alter table intervento_ricambi disable row level security;"
+
+          run_sql "ordini_acquisto: tabella" \
+            "create table if not exists ordini_acquisto (
+              id          bigserial primary key,
+              fornitore   text,
+              stato       text default 'bozza',
+              data_ordine date,
+              note        text,
+              totale      numeric(12,2) default 0,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              user_id     uuid,
+              created_at  timestamptz default now(),
+              updated_at  timestamptz default now()
+            );
+            alter table ordini_acquisto disable row level security;"
+
+          run_sql "ordini_acquisto_righe: tabella" \
+            "create table if not exists ordini_acquisto_righe (
+              id              bigserial primary key,
+              ordine_id       bigint references ordini_acquisto(id) on delete cascade,
+              ricambio_id     bigint references ricambi(id) on delete set null,
+              descrizione     text,
+              codice          text,
+              quantita        numeric(10,2) default 1,
+              prezzo_unitario numeric(12,2) default 0,
+              note            text,
+              tenant_id       uuid references tenants(id) on delete cascade
+            );
+            alter table ordini_acquisto_righe disable row level security;"
+
+          run_sql "ordine_righe: tabella (alias)" \
+            "create table if not exists ordine_righe (
+              id              bigserial primary key,
+              ordine_id       bigint references ordini_acquisto(id) on delete cascade,
+              ricambio_id     bigint references ricambi(id) on delete set null,
+              descrizione     text,
+              codice          text,
+              quantita        numeric(10,2) default 1,
+              prezzo_unitario numeric(12,2) default 0,
+              note            text,
+              tenant_id       uuid references tenants(id) on delete cascade
+            );
+            alter table ordine_righe disable row level security;"
+
+          run_sql "ordini_lavoro: tabella" \
+            "create table if not exists ordini_lavoro (
+              id              bigserial primary key,
+              titolo          text,
+              numero          text,
+              stato           text default 'bozza',
+              piano_id        bigint references piani(id) on delete set null,
+              cliente_id      bigint references clienti(id) on delete set null,
+              operatore_id    bigint references operatori(id) on delete set null,
+              data_inizio     date,
+              data_fine       date,
+              durata_stimata  int default 0,
+              n_attivita      int default 0,
+              note            text,
+              completato_at   timestamptz,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              user_id         uuid,
+              created_at      timestamptz default now()
+            );
+            create index if not exists idx_odl_tenant on ordini_lavoro(tenant_id);
+            alter table ordini_lavoro disable row level security;"
+
+          run_sql "piano_assegnazioni: tabella" \
+            "create table if not exists piano_assegnazioni (
+              id           bigserial primary key,
+              piano_id     bigint references piani(id) on delete cascade,
+              asset_id     bigint references assets(id) on delete set null,
+              cliente_id   bigint references clienti(id) on delete set null,
+              operatore_id bigint references operatori(id) on delete set null,
+              data_inizio  date,
+              data_fine    date,
+              attivo       boolean default true,
+              titolo       text,
+              scope        text default 'asset',
+              area_nome    text,
+              frequenza    text,
+              durata       int,
+              tipo         text,
+              priorita     text,
+              note         text,
+              tenant_id    uuid references tenants(id) on delete cascade,
+              user_id      uuid,
+              created_at   timestamptz default now()
+            );
+            alter table piano_assegnazioni disable row level security;"
+
+          run_sql "piano_voci: tabella" \
+            "create table if not exists piano_voci (
+              id          bigserial primary key,
+              piano_id    bigint references piani(id) on delete cascade,
+              titolo      text,
+              testo       text,
+              frequenza   text default 'mensile',
+              durata      int default 60,
+              tipo        text default 'ordinaria',
+              priorita    text default 'media',
+              note        text,
+              categoria   text,
+              ordine      int default 0,
+              attivo      boolean default true,
+              user_id     uuid,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              created_at  timestamptz default now()
+            );
+            create index if not exists idx_piano_voci_piano on piano_voci(piano_id);
+            alter table piano_voci disable row level security;"
+
+          run_sql "piano_siti: tabella" \
+            "create table if not exists piano_siti (
+              id           bigserial primary key,
+              piano_id     bigint references piani(id) on delete cascade,
+              cliente_id   bigint references clienti(id) on delete cascade,
+              operatore_id bigint references operatori(id) on delete set null,
+              data_inizio  date,
+              data_fine    date,
+              attivo       boolean default true,
+              note         text,
+              user_id      uuid,
+              tenant_id    uuid references tenants(id) on delete cascade,
+              created_at   timestamptz default now()
+            );
+            create index if not exists idx_piano_siti_piano on piano_siti(piano_id);
+            create index if not exists idx_piano_siti_cliente on piano_siti(cliente_id);
+            alter table piano_siti disable row level security;"
+
+          run_sql "piano_checklist: tabella" \
+            "create table if not exists piano_checklist (
+              id                bigserial primary key,
+              piano_id          bigint references piani(id) on delete cascade,
+              titolo            text,
+              testo             text,
+              obbligatorio      boolean default true,
+              ogni_n_interventi int default 1,
+              ordine            int default 0,
+              tenant_id         uuid references tenants(id) on delete cascade
+            );
+            create index if not exists idx_piano_checklist_piano on piano_checklist(piano_id);
+            alter table piano_checklist disable row level security;"
+
+          run_sql "manutenzione_checklist: tabella" \
+            "create table if not exists manutenzione_checklist (
+              id              bigserial primary key,
+              manutenzione_id bigint references manutenzioni(id) on delete cascade,
+              step_id         bigint references piano_checklist(id) on delete cascade,
+              completato      boolean default false,
+              completato_at   timestamptz,
+              tenant_id       uuid references tenants(id) on delete cascade
+            );
+            create index if not exists idx_man_checklist_man on manutenzione_checklist(manutenzione_id);
+            alter table manutenzione_checklist disable row level security;"
+
+          run_sql "allegati: tabella" \
+            "create table if not exists allegati (
+              id          bigserial primary key,
+              entita_tipo text,
+              entita_id   bigint,
+              nome        text not null,
+              storage_path text not null,
+              mime_type   text,
+              dimensione  bigint default 0,
+              user_id     uuid,
+              tenant_id   uuid references tenants(id) on delete cascade,
+              created_at  timestamptz default now()
+            );
+            create index if not exists idx_allegati_entita on allegati(entita_tipo, entita_id);
+            alter table allegati disable row level security;"
+
+          run_sql "allegati_manutenzione: tabella" \
+            "create table if not exists allegati_manutenzione (
+              id              bigserial primary key,
+              manutenzione_id bigint references manutenzioni(id) on delete cascade,
+              nome            text not null,
+              storage_path    text not null,
+              mime_type       text,
+              dimensione      bigint default 0,
+              user_id         uuid,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              created_at      timestamptz default now()
+            );
+            create index if not exists idx_allegati_man on allegati_manutenzione(manutenzione_id);
+            alter table allegati_manutenzione disable row level security;"
+
+          run_sql "log_attivita: tabella" \
+            "create table if not exists log_attivita (
+              id              bigserial primary key,
+              entita_tipo     text,
+              entita_id       bigint,
+              azione          text,
+              dettagli        jsonb,
+              operatore_nome  text,
+              user_id         uuid,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              created_at      timestamptz default now()
+            );
+            alter table log_attivita disable row level security;"
+
+          run_sql "loghi: tabella" \
+            "create table if not exists loghi (
+              id        bigserial primary key,
+              tenant_id uuid references tenants(id) on delete cascade unique,
+              logo_url  text,
+              updated_at timestamptz default now()
+            );
+            alter table loghi disable row level security;"
+
+          run_sql "attivita_commenti: tabella" \
+            "create table if not exists attivita_commenti (
+              id              bigserial primary key,
+              manutenzione_id bigint references manutenzioni(id) on delete cascade,
+              testo           text not null,
+              tipo            text default 'commento',
+              autore_id       bigint references operatori(id) on delete set null,
+              autore_nome     text,
+              user_id         uuid,
+              tenant_id       uuid references tenants(id) on delete cascade,
+              created_at      timestamptz default now()
+            );
+            alter table attivita_commenti disable row level security;"
+
+          run_sql "gruppi: tabella" \
+            "create table if not exists gruppi (
+              id          bigserial primary key,
+              nome        text not null,
+              descrizione text,
+              col         text default '#3B82F6',
+              tenant_id   uuid references tenants(id) on delete cascade,
+              user_id     uuid,
+              created_at  timestamptz default now()
+            );
+            create index if not exists idx_gruppi_tenant on gruppi(tenant_id);
+            alter table gruppi disable row level security;"
+
+          run_sql "gruppo_operatori: tabella" \
+            "create table if not exists gruppo_operatori (
+              id           bigserial primary key,
+              gruppo_id    bigint references gruppi(id) on delete cascade,
+              operatore_id bigint references operatori(id) on delete cascade,
+              created_at   timestamptz default now(),
+              unique(gruppo_id, operatore_id)
+            );
+            alter table gruppo_operatori disable row level security;"
+
+          run_sql "gruppo_siti: tabella" \
+            "create table if not exists gruppo_siti (
+              id          bigserial primary key,
+              gruppo_id   bigint references gruppi(id) on delete cascade,
+              cliente_id  bigint references clienti(id) on delete cascade,
+              created_at  timestamptz default now(),
+              unique(gruppo_id, cliente_id)
+            );
+            alter table gruppo_siti disable row level security;"
+
+          run_sql "menu_config: tabella" \
+            "create table if not exists menu_config (
+              id         bigserial primary key,
+              gruppo_id  bigint references gruppi(id) on delete cascade,
+              tab_id     text not null,
+              visibile   boolean default true,
+              tenant_id  uuid references tenants(id) on delete cascade,
+              created_at timestamptz default now()
+            );
+            alter table menu_config disable row level security;"
+
+          run_sql "scadenze_normative: tabella" \
+            "create table if not exists scadenze_normative (
+              id                    bigserial primary key,
+              titolo                text not null,
+              cliente_id            bigint references clienti(id) on delete set null,
+              asset_id              bigint references assets(id) on delete set null,
+              scadenza              date not null,
+              frequenza_mesi        int default 12,
+              stato                 text default 'attiva',
+              riferimento_normativo text,
+              note                  text,
+              user_id               uuid,
+              tenant_id             uuid references tenants(id) on delete cascade,
+              created_at            timestamptz default now()
+            );
+            create index if not exists idx_scadenze_tenant on scadenze_normative(tenant_id);
+            alter table scadenze_normative disable row level security;"
+
+          run_sql "asset_tipo_template: tabella" \
             "create table if not exists asset_tipo_template (
               id            bigserial primary key,
               tenant_id     uuid references tenants(id) on delete cascade,
               tipo_asset    text not null,
               nome          text not null,
               descrizione   text,
-              tipo_attivita text default 'ordinaria' check (tipo_attivita in ('ordinaria','straordinaria')),
+              tipo_attivita text default 'ordinaria',
               frequenza     text default 'mensile',
-              durata        int  default 60,
+              durata        int default 60,
               priorita      text default 'media',
-              stima_costo   numeric(10,2) default null,
+              stima_costo   numeric(10,2),
               attivo        boolean default true,
               created_at    timestamptz default now()
-            );"
+            );
+            create index if not exists idx_template_tenant on asset_tipo_template(tenant_id);
+            alter table asset_tipo_template disable row level security;"
 
-          run_sql "007 asset_tipo_template: index tenant" \
-            "create index if not exists idx_template_tenant on asset_tipo_template(tenant_id);"
-
-          run_sql "007 asset_tipo_template: index tipo" \
-            "create index if not exists idx_template_tipo on asset_tipo_template(tipo_asset);"
-
-          run_sql "007 asset_tipo_template: disable rls" \
-            "alter table asset_tipo_template disable row level security;"
-
-          run_sql "007 template_checklist_steps: crea tabella" \
+          run_sql "template_checklist_steps: tabella" \
             "create table if not exists template_checklist_steps (
-              id           bigserial primary key,
-              template_id  bigint references asset_tipo_template(id) on delete cascade,
-              testo        text not null,
-              obbligatorio boolean default false,
-              ordine       int default 0
-            );"
+              id          bigserial primary key,
+              template_id bigint references asset_tipo_template(id) on delete cascade,
+              testo       text not null,
+              ordine      int default 0,
+              obbligatorio boolean default true
+            );
+            alter table template_checklist_steps disable row level security;"
 
-          run_sql "007 template_checklist_steps: disable rls" \
-            "alter table template_checklist_steps disable row level security;"
-
-          run_sql "007 template_ricambi: crea tabella" \
+          run_sql "template_ricambi: tabella" \
             "create table if not exists template_ricambi (
-              id           bigserial primary key,
-              template_id  bigint references asset_tipo_template(id) on delete cascade,
-              ricambio_id  bigint references ricambi(id) on delete set null,
-              nome_libero  text,
-              quantita     numeric(10,2) default 1,
-              note         text
-            );"
-
-          run_sql "007 template_ricambi: disable rls" \
-            "alter table template_ricambi disable row level security;"
-
-          run_sql "007 piani: template_id" \
-            "alter table piani add column if not exists template_id bigint references asset_tipo_template(id) on delete set null;"
-
-          run_sql "007 piani: stima_costo" \
-            "alter table piani add column if not exists stima_costo numeric(10,2) default null;"
-
-          # ──────────────────────────────────────────────────
-          # 008 — Codice cliente
-          # ──────────────────────────────────────────────────
-          run_sql "008 clienti: codice" \
-            "alter table clienti add column if not exists codice text default null;"
-
-          run_sql "008 clienti: genera codici esistenti" \
-            "update clienti set codice = upper(regexp_replace(left(rs, 4), '[^A-Za-z0-9]', '', 'g')) || id::text where codice is null;"
-
-          # ──────────────────────────────────────────────────
-          # 009 — SLA Profili
-          # ──────────────────────────────────────────────────
-          run_sql "009 sla_profili: crea tabella" \
-            "create table if not exists sla_profili (
               id          bigserial primary key,
-              tenant_id   uuid references tenants(id) on delete cascade,
-              nome        text not null,
-              descrizione text,
-              colore      text default '#3B82F6',
-              is_default  boolean default false,
-              created_at  timestamptz default now()
-            );"
-
-          run_sql "009 sla_profili: index" \
-            "create index if not exists idx_sla_profili_tenant on sla_profili(tenant_id);"
-
-          run_sql "009 sla_profili: disable rls" \
-            "alter table sla_profili disable row level security;"
-
-          run_sql "009 sla_profilo_config: crea tabella" \
-            "create table if not exists sla_profilo_config (
-              id              bigserial primary key,
-              profilo_id      bigint references sla_profili(id) on delete cascade,
-              priorita        text check (priorita in ('bassa','media','alta','urgente')),
-              ore_risposta    int default 24,
-              ore_risoluzione int default 72
-            );"
-
-          run_sql "009 sla_profilo_config: disable rls" \
-            "alter table sla_profilo_config disable row level security;"
-
-          run_sql "009 clienti: sla_profilo_id" \
-            "alter table clienti add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
-
-          run_sql "009 migra sla_config → profilo Standard" \
-            "insert into sla_profili (tenant_id, nome, descrizione, is_default)
-              select distinct tenant_id, 'Standard', 'Profilo SLA predefinito', true
-              from sla_config where tenant_id is not null
-              on conflict do nothing;"
-
-          run_sql "009 migra voci sla_config → sla_profilo_config" \
-            "insert into sla_profilo_config (profilo_id, priorita, ore_risposta, ore_risoluzione)
-              select p.id, s.priorita, s.ore_risposta, s.ore_risoluzione
-              from sla_config s
-              join sla_profili p on p.tenant_id = s.tenant_id and p.is_default = true
-              on conflict do nothing;"
-
-          # ──────────────────────────────────────────────────
-          # 010 — SLA voci custom libere
-          # ──────────────────────────────────────────────────
-          run_sql "010 sla_profilo_config: nome" \
-            "alter table sla_profilo_config add column if not exists nome text;"
-
-          run_sql "010 sla_profilo_config: note" \
-            "alter table sla_profilo_config add column if not exists note text;"
-
-          run_sql "010 sla_profilo_config: priorita nullable" \
-            "alter table sla_profilo_config alter column priorita drop not null;"
-
-          run_sql "010 sla_profilo_config: drop unique constraint" \
-            "alter table sla_profilo_config drop constraint if exists sla_profilo_config_profilo_id_priorita_key;"
-
-          run_sql "010 sla_profilo_config: partial unique index" \
-            "create unique index if not exists idx_sla_config_priorita_unica
-              on sla_profilo_config(profilo_id, priorita)
-              where priorita is not null;"
-
-          run_sql "010 sla_profilo_config: ordine" \
-            "alter table sla_profilo_config add column if not exists ordine int default 0;"
-
-          run_sql "010 sla_profilo_config: popola nome esistenti" \
-            "update sla_profilo_config set nome = case priorita
-              when 'urgente' then 'Urgente'
-              when 'alta'    then 'Alta priorità'
-              when 'media'   then 'Media priorità'
-              when 'bassa'   then 'Bassa priorità'
-              else 'SLA generico' end
-            where nome is null;"
-
-          # ──────────────────────────────────────────────────
-          # 015 — Piano voci (attività template) + piano_siti (applicazione a sito)
-          # ──────────────────────────────────────────────────
-          run_sql "015 piano_voci: tabella attività template" \
-            "create table if not exists piano_voci (
-              id          bigserial primary key,
-              piano_id    bigint references piani(id) on delete cascade,
-              tenant_id   uuid references tenants(id) on delete cascade,
-              titolo      text not null,
-              frequenza   text default 'mensile'
-                check (frequenza in ('settimanale','mensile','bimestrale','trimestrale','semestrale','annuale')),
-              durata      int  default 60,
-              tipo        text default 'ordinaria',
-              priorita    text default 'media',
-              note        text,
-              categoria   text,
-              ordine      int  default 0,
-              attivo      boolean default true,
-              user_id     uuid,
-              created_at  timestamptz default now()
+              template_id bigint references asset_tipo_template(id) on delete cascade,
+              ricambio_id bigint references ricambi(id) on delete set null,
+              quantita    numeric(10,2) default 1,
+              note        text
             );
-            create index if not exists idx_piano_voci_piano on piano_voci(piano_id);
-            alter table piano_voci disable row level security;"
+            alter table template_ricambi disable row level security;"
 
-          run_sql "015 piano_siti: applicazione piano a sito" \
-            "create table if not exists piano_siti (
-              id            bigserial primary key,
-              piano_id      bigint references piani(id) on delete cascade,
-              cliente_id    bigint references clienti(id) on delete cascade,
-              tenant_id     uuid references tenants(id) on delete cascade,
-              operatore_id  bigint references operatori(id) on delete set null,
-              data_inizio   date,
-              data_fine     date,
-              attivo        boolean default true,
-              note          text,
-              user_id       uuid,
-              created_at    timestamptz default now()
-            );
-            create index if not exists idx_piano_siti_piano   on piano_siti(piano_id);
-            create index if not exists idx_piano_siti_cliente on piano_siti(cliente_id);
-            alter table piano_siti disable row level security;"
+          # ══════════════════════════════════════════════════════
+          # FASE 4 — Storage bucket per allegati
+          # ══════════════════════════════════════════════════════
 
-          run_sql "015 piani: aggregazione_odl" \
-            "alter table piani add column if not exists aggregazione_odl text default 'per_visita'
-             check (aggregazione_odl in ('per_visita','per_attivita','per_mese','per_categoria'));
-             alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;
-             alter table piani add column if not exists data_inizio date;
-             alter table piani add column if not exists data_fine date;"
-
-          run_sql "015 manutenzioni: piano_sito_id" \
-            "alter table manutenzioni add column if not exists piano_sito_id bigint references piano_siti(id) on delete set null;
-             alter table manutenzioni add column if not exists piano_voce_id bigint references piano_voci(id) on delete set null;"
-
-          # ──────────────────────────────────────────────────
-          # 000 — Tabella allegati + bucket storage
-          # ──────────────────────────────────────────────────
-          run_sql "000 allegati: crea tabella" \
-            "create table if not exists allegati (
-              id           bigserial primary key,
-              tenant_id    uuid references tenants(id) on delete cascade,
-              entita_tipo  text not null,
-              entita_id    bigint not null,
-              nome         text not null,
-              storage_path text not null,
-              mime_type    text default '',
-              dimensione   bigint default 0,
-              user_id      uuid,
-              created_at   timestamptz default now()
-            );"
-
-          run_sql "000 allegati: indici" \
-            "create index if not exists idx_allegati_entita on allegati(entita_tipo, entita_id);
-             alter table allegati disable row level security;"
-
-          run_sql "000 allegati: storage bucket" \
-            "insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-             values ('allegati', 'allegati', false, 20971520, null)
+          run_sql "storage: bucket allegati" \
+            "insert into storage.buckets (id, name, public, file_size_limit)
+             values ('allegati', 'allegati', false, 20971520)
              on conflict (id) do nothing;"
 
-          run_sql "000 allegati: storage policy upload" \
-            "create policy if not exists \"allegati_upload\"
-             on storage.objects for insert to authenticated
-             with check (bucket_id = 'allegati');"
+          # ══════════════════════════════════════════════════════
+          # FASE 5 — Patch FK differite (sicure da eseguire dopo)
+          # ══════════════════════════════════════════════════════
 
-          run_sql "000 allegati: storage policy read" \
-            "create policy if not exists \"allegati_read\"
-             on storage.objects for select to authenticated
-             using (bucket_id = 'allegati');"
+          run_sql "manutenzioni: FK assegnazione_id" \
+            "do \$\$ begin
+               if not exists (
+                 select 1 from information_schema.table_constraints
+                 where constraint_name = 'manutenzioni_assegnazione_id_fkey'
+               ) then
+                 alter table manutenzioni
+                   add constraint manutenzioni_assegnazione_id_fkey
+                   foreign key (assegnazione_id)
+                   references piano_assegnazioni(id) on delete set null;
+               end if;
+             end \$\$;"
 
-          run_sql "000 allegati: storage policy delete" \
-            "create policy if not exists \"allegati_delete\"
-             on storage.objects for delete to authenticated
-             using (bucket_id = 'allegati');"
+          run_sql "manutenzioni: FK odl_id" \
+            "do \$\$ begin
+               if not exists (
+                 select 1 from information_schema.table_constraints
+                 where constraint_name = 'manutenzioni_odl_id_fkey'
+               ) then
+                 alter table manutenzioni
+                   add constraint manutenzioni_odl_id_fkey
+                   foreign key (odl_id)
+                   references ordini_lavoro(id) on delete set null;
+               end if;
+             end \$\$;"
 
-          # ──────────────────────────────────────────────────
-          # 013 — Ordini di Lavoro (OdL)
-          # ──────────────────────────────────────────────────
-          run_sql "013 ordini_lavoro: crea tabella" \
-            "create table if not exists ordini_lavoro (
-              id            bigserial primary key,
-              tenant_id     uuid references tenants(id) on delete cascade,
-              piano_id      bigint references piani(id) on delete set null,
-              cliente_id    bigint references clienti(id) on delete set null,
-              operatore_id  bigint references operatori(id) on delete set null,
-              numero        text,
-              titolo        text not null,
-              descrizione   text,
-              stato         text default 'bozza'
-                check (stato in ('bozza','confermato','in_corso','completato','annullato')),
-              data_inizio   date not null,
-              data_fine     date,
-              durata_stimata int,
-              note          text,
-              created_by    uuid,
-              created_at    timestamptz default now()
-            );"
+          run_sql "manutenzioni: FK approvata_da" \
+            "do \$\$ begin
+               if not exists (
+                 select 1 from information_schema.table_constraints
+                 where constraint_name = 'manutenzioni_approvata_da_fkey'
+               ) then
+                 alter table manutenzioni
+                   add constraint manutenzioni_approvata_da_fkey
+                   foreign key (approvata_da)
+                   references operatori(id) on delete set null;
+               end if;
+             end \$\$;"
 
-          run_sql "013 ordini_lavoro: indici" \
-            "create index if not exists idx_odl_tenant  on ordini_lavoro(tenant_id);
-             create index if not exists idx_odl_piano   on ordini_lavoro(piano_id);
-             create index if not exists idx_odl_cliente on ordini_lavoro(cliente_id);
-             create index if not exists idx_odl_data    on ordini_lavoro(data_inizio);
-             alter table ordini_lavoro disable row level security;"
+          run_sql "clienti: FK sla_profilo_id" \
+            "do \$\$ begin
+               if not exists (
+                 select 1 from information_schema.table_constraints
+                 where constraint_name = 'clienti_sla_profilo_id_fkey'
+               ) then
+                 alter table clienti
+                   add constraint clienti_sla_profilo_id_fkey
+                   foreign key (sla_profilo_id)
+                   references sla_profili(id) on delete set null;
+               end if;
+             end \$\$;"
 
-          run_sql "013 manutenzioni: odl_id" \
-            "alter table manutenzioni add column if not exists odl_id bigint references ordini_lavoro(id) on delete set null;
-             create index if not exists idx_man_odl on manutenzioni(odl_id);"
+          # ══════════════════════════════════════════════════════
+          # FASE 6 — Indici di performance
+          # ══════════════════════════════════════════════════════
 
-          # ──────────────────────────────────────────────────
-          # 012 — Piano voci scope (asset|area|generale)
-          # ──────────────────────────────────────────────────
-          run_sql "012 piani: cliente_id" \
-            "alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;"
+          run_sql "indici: manutenzioni tenant" \
+            "create index if not exists idx_man_tenant on manutenzioni(tenant_id);
+             create index if not exists idx_man_stato on manutenzioni(stato);
+             create index if not exists idx_man_data on manutenzioni(data);
+             create index if not exists idx_clienti_tenant on clienti(tenant_id);
+             create index if not exists idx_assets_tenant on assets(tenant_id);
+             create index if not exists idx_piani_tenant on piani(tenant_id);
+             create index if not exists idx_operatori_tenant on operatori(tenant_id);"
 
-          run_sql "012 piani: data_inizio + data_fine" \
-            "alter table piani add column if not exists data_inizio date default null;
-             alter table piani add column if not exists data_fine   date default null;"
-
-          run_sql "012 piano_assegnazioni: titolo" \
-            "alter table piano_assegnazioni add column if not exists titolo text;"
-
-          run_sql "012 piano_assegnazioni: scope" \
-            "alter table piano_assegnazioni add column if not exists scope text default 'asset' check (scope in ('asset','area','generale'));"
-
-          run_sql "012 piano_assegnazioni: area_nome" \
-            "alter table piano_assegnazioni add column if not exists area_nome text;"
-
-          run_sql "012 piano_assegnazioni: frequenza" \
-            "alter table piano_assegnazioni add column if not exists frequenza text;"
-
-          run_sql "012 piano_assegnazioni: durata" \
-            "alter table piano_assegnazioni add column if not exists durata int;"
-
-          run_sql "012 piano_assegnazioni: tipo + priorita + note" \
-            "alter table piano_assegnazioni add column if not exists tipo text;
-             alter table piano_assegnazioni add column if not exists priorita text;
-             alter table piano_assegnazioni add column if not exists note text;"
-
-          # ──────────────────────────────────────────────────
-          # 011 — Snapshot SLA su manutenzioni (C+D)
-          # ──────────────────────────────────────────────────
-          run_sql "011 manutenzioni: sla_profilo_id snapshot" \
-            "alter table manutenzioni add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
-
-          # ──────────────────────────────────────────────────
-          # 012 — Piano voci flessibili (scope asset|area|generale)
-          # ──────────────────────────────────────────────────
-          run_sql "012 piano_assegnazioni: titolo" \
-            "alter table piano_assegnazioni add column if not exists titolo text;"
-
-          run_sql "012 piano_assegnazioni: scope" \
-            "alter table piano_assegnazioni add column if not exists scope text default 'asset' check (scope in ('asset','area','generale'));"
-
-          run_sql "012 piano_assegnazioni: area_nome" \
-            "alter table piano_assegnazioni add column if not exists area_nome text;"
-
-          run_sql "012 piano_assegnazioni: frequenza" \
-            "alter table piano_assegnazioni add column if not exists frequenza text;"
-
-          run_sql "012 piano_assegnazioni: durata" \
-            "alter table piano_assegnazioni add column if not exists durata int;"
-
-          run_sql "012 piano_assegnazioni: tipo" \
-            "alter table piano_assegnazioni add column if not exists tipo text;"
-
-          run_sql "012 piano_assegnazioni: priorita" \
-            "alter table piano_assegnazioni add column if not exists priorita text;"
-
-          run_sql "012 piano_assegnazioni: note" \
-            "alter table piano_assegnazioni add column if not exists note text;"
-
-          run_sql "012 piani: cliente_id" \
-            "alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;"
-
-          run_sql "012 piani: data_inizio" \
-            "alter table piani add column if not exists data_inizio date;"
-
-          run_sql "012 piani: data_fine" \
-            "alter table piani add column if not exists data_fine date;"
-
-          # ──────────────────────────────────────────────────
-          # 006 — Proposta B (se non già applicata)
-          # ──────────────────────────────────────────────────
-          run_sql "006 attivita_commenti" \
-            "create table if not exists attivita_commenti (
-              id              bigserial primary key,
-              manutenzione_id bigint references manutenzioni(id) on delete cascade,
-              tenant_id       uuid references tenants(id) on delete cascade,
-              autore_id       bigint references operatori(id) on delete set null,
-              autore_nome     text not null,
-              testo           text not null,
-              tipo            text default 'nota' check (tipo in ('nota','approvazione','rifiuto','richiesta')),
-              created_at      timestamptz default now()
-            );"
-
-          run_sql "006 attivita_commenti: index" \
-            "create index if not exists idx_commenti_man on attivita_commenti(manutenzione_id);"
-
-          run_sql "006 attivita_commenti: disable rls" \
-            "alter table attivita_commenti disable row level security;"
-
-          run_sql "006 sla_config" \
-            "create table if not exists sla_config (
-              id              bigserial primary key,
-              tenant_id       uuid references tenants(id) on delete cascade,
-              priorita        text not null check (priorita in ('bassa','media','alta','urgente')),
-              ore_risposta    int default 24,
-              ore_risoluzione int default 72,
-              created_at      timestamptz default now(),
-              unique(tenant_id, priorita)
-            );"
-
-          run_sql "006 sla_config: disable rls" \
-            "alter table sla_config disable row level security;"
-
-          run_sql "006 ordini_acquisto" \
-            "create table if not exists ordini_acquisto (
-              id          bigserial primary key,
-              tenant_id   uuid references tenants(id) on delete cascade,
-              numero      text,
-              fornitore   text,
-              stato       text default 'bozza' check (stato in ('bozza','inviato','confermato','ricevuto','annullato')),
-              note        text,
-              data_ordine date,
-              data_attesa date,
-              totale      numeric(10,2),
-              created_by  bigint references operatori(id) on delete set null,
-              created_at  timestamptz default now(),
-              updated_at  timestamptz default now()
-            );"
-
-          run_sql "006 ordini_acquisto_righe" \
-            "create table if not exists ordini_acquisto_righe (
-              id              bigserial primary key,
-              ordine_id       bigint references ordini_acquisto(id) on delete cascade,
-              ricambio_id     bigint references ricambi(id) on delete set null,
-              nome_libero     text,
-              quantita        numeric(10,2) default 1,
-              prezzo_unitario numeric(10,2),
-              note            text
-            );"
-
-          run_sql "006 ordini_acquisto: index + rls" \
-            "create index if not exists idx_ordini_tenant on ordini_acquisto(tenant_id);
-             alter table ordini_acquisto disable row level security;
-             alter table ordini_acquisto_righe disable row level security;"
-
-          run_sql "006 ricambi: soglia + stock" \
-            "alter table ricambi add column if not exists soglia_minima int default 0;
-             alter table ricambi add column if not exists quantita_stock int default 0;"
-
-          run_sql "006 operatori: tariffa_ora" \
-            "alter table operatori add column if not exists tariffa_ora numeric(10,2) default 0;"
-
-          # ──────────────────────────────────────────────────
-          # 011 — SLA snapshot su manutenzioni (opzione C)
-          # ──────────────────────────────────────────────────
-          run_sql "011 manutenzioni: sla_profilo_id (snapshot chiusura)" \
-            "alter table manutenzioni add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
-
-          # ──────────────────────────────────────────────────
-          # 016 — Workflow B: ordinaria vs straordinaria
-          # ──────────────────────────────────────────────────
-          run_sql "016 manutenzioni: campi straordinaria" \
-            "alter table manutenzioni add column if not exists sottotipo text
-               check (sottotipo in ('preventiva','correttiva','urgente','miglioria','normativa'));
-             alter table manutenzioni add column if not exists causa_guasto text;
-             alter table manutenzioni add column if not exists fermo_impianto boolean default false;
-             alter table manutenzioni add column if not exists downtime_ore numeric(6,2);
-             alter table manutenzioni add column if not exists approvata_da bigint references operatori(id) on delete set null;
-             alter table manutenzioni add column if not exists approvata_at timestamptz;
-             alter table manutenzioni add column if not exists rifiutata_motivo text;"
-
-          # ──────────────────────────────────────────────────
-          # 012 — Piano checklist (step checklist per piano)
-          # ──────────────────────────────────────────────────
-          run_sql "012 piano_checklist: tabella" \
-            "create table if not exists piano_checklist (
-               id                    bigserial primary key,
-               piano_id              bigint references piani(id) on delete cascade,
-               titolo                text not null,
-               obbligatorio          boolean default true,
-               ogni_n_interventi     int default 1,
-               ordine                int default 0,
-               tenant_id             uuid references tenants(id) on delete cascade
-             );
-             create index if not exists idx_piano_checklist_piano on piano_checklist(piano_id);
-             alter table piano_checklist disable row level security;"
-
-          run_sql "012 manutenzione_checklist: tabella" \
-            "create table if not exists manutenzione_checklist (
-               id                bigserial primary key,
-               manutenzione_id   bigint references manutenzioni(id) on delete cascade,
-               step_id           bigint references piano_checklist(id) on delete cascade,
-               completato        boolean default false,
-               completato_at     timestamptz,
-               tenant_id         uuid references tenants(id) on delete cascade
-             );
-             create index if not exists idx_man_checklist_man on manutenzione_checklist(manutenzione_id);
-             alter table manutenzione_checklist disable row level security;"
-
-          # ──────────────────────────────────────────────────
-          # 010b — Allegati per manutenzioni (bucket dedicato)
-          # ──────────────────────────────────────────────────
-          run_sql "010b allegati_manutenzione: tabella" \
-            "create table if not exists allegati_manutenzione (
-               id            bigserial primary key,
-               manutenzione_id bigint references manutenzioni(id) on delete cascade,
-               nome          text not null,
-               storage_path  text not null,
-               mime_type     text,
-               dimensione    bigint default 0,
-               user_id       uuid,
-               tenant_id     uuid references tenants(id) on delete cascade,
-               created_at    timestamptz default now()
-             );
-             create index if not exists idx_allegati_man on allegati_manutenzione(manutenzione_id);
-             alter table allegati_manutenzione disable row level security;"
-
-          # ──────────────────────────────────────────────────
-          # 017 — Tabelle mancanti: gruppi, scadenzario, menu
-          # ──────────────────────────────────────────────────
-          run_sql "017 gruppi: tabella" \
-            "create table if not exists gruppi (
-               id          bigserial primary key,
-               nome        text not null,
-               descrizione text,
-               col         text default '#3B82F6',
-               tenant_id   uuid references tenants(id) on delete cascade,
-               created_at  timestamptz default now()
-             );
-             create index if not exists idx_gruppi_tenant on gruppi(tenant_id);
-             alter table gruppi disable row level security;"
-
-          run_sql "017 gruppo_operatori: tabella" \
-            "create table if not exists gruppo_operatori (
-               id           bigserial primary key,
-               gruppo_id    bigint references gruppi(id) on delete cascade,
-               operatore_id bigint references operatori(id) on delete cascade,
-               created_at   timestamptz default now()
-             );
-             alter table gruppo_operatori disable row level security;"
-
-          run_sql "017 gruppo_siti: tabella" \
-            "create table if not exists gruppo_siti (
-               id          bigserial primary key,
-               gruppo_id   bigint references gruppi(id) on delete cascade,
-               cliente_id  bigint references clienti(id) on delete cascade,
-               created_at  timestamptz default now()
-             );
-             alter table gruppo_siti disable row level security;"
-
-          run_sql "017 menu_config: tabella" \
-            "create table if not exists menu_config (
-               id          bigserial primary key,
-               gruppo_id   bigint references gruppi(id) on delete cascade,
-               tab_id      text not null,
-               visibile    boolean default true,
-               tenant_id   uuid references tenants(id) on delete cascade,
-               created_at  timestamptz default now()
-             );
-             alter table menu_config disable row level security;"
-
-          run_sql "017 scadenze_normative: tabella" \
-            "create table if not exists scadenze_normative (
-               id                      bigserial primary key,
-               titolo                  text not null,
-               cliente_id              bigint references clienti(id) on delete set null,
-               asset_id                bigint references assets(id) on delete set null,
-               scadenza                date not null,
-               frequenza_mesi          int default 12,
-               stato                   text default 'attiva' check (stato in ('attiva','completata','scaduta')),
-               riferimento_normativo   text,
-               note                    text,
-               user_id                 uuid,
-               tenant_id               uuid references tenants(id) on delete cascade,
-               created_at              timestamptz default now()
-             );
-             create index if not exists idx_scadenze_tenant on scadenze_normative(tenant_id);
-             alter table scadenze_normative disable row level security;"
-
-          run_sql "017 ordine_righe: tabella" \
-            "create table if not exists ordine_righe (
-               id              bigserial primary key,
-               ordine_id       bigint references ordini_acquisto(id) on delete cascade,
-               ricambio_id     bigint references ricambi(id) on delete set null,
-               descrizione     text,
-               codice          text,
-               quantita        numeric(10,2) default 1,
-               prezzo_unitario numeric(12,2) default 0,
-               note            text,
-               tenant_id       uuid references tenants(id) on delete cascade
-             );
-             alter table ordine_righe disable row level security;"
-
-          # ──────────────────────────────────────────────────
-          # 018 — Colonne mancanti su tabelle esistenti
-          # ──────────────────────────────────────────────────
-          run_sql "018 manutenzioni: numero_intervento" \
-            "alter table manutenzioni add column if not exists numero_intervento int default 1;"
-
-          run_sql "018 operatori: tema" \
-            "alter table operatori add column if not exists tema text default 'navy';"
-
-          run_sql "018 clienti: sla_profilo_id" \
-            "alter table clienti add column if not exists sla_profilo_id bigint references sla_profili(id) on delete set null;"
-
-          run_sql "018 piani: client_id" \
-            "alter table piani add column if not exists cliente_id bigint references clienti(id) on delete set null;
-             alter table piani add column if not exists data_inizio date;
-             alter table piani add column if not exists data_fine date;"
-
-          run_sql "018 operatori: auth_user_id" \
-            "alter table operatori add column if not exists auth_user_id uuid references auth.users(id) on delete set null;"
-
-          run_sql "018 tenants: codice_invito" \
-            "alter table tenants add column if not exists codice_invito text unique;
-             alter table tenants add column if not exists nome text;
-             alter table tenants add column if not exists piva text;
-             alter table tenants add column if not exists indirizzo text;
-             alter table tenants add column if not exists tel text;
-             alter table tenants add column if not exists email text;
-             alter table tenants add column if not exists logo_url text;"
-
-          run_sql "018 tenants: ruolo pivot" \
-            "create table if not exists tenant_membri (
-               id          bigserial primary key,
-               tenant_id   uuid references tenants(id) on delete cascade,
-               user_id     uuid references auth.users(id) on delete cascade,
-               ruolo       text default 'membro',
-               created_at  timestamptz default now(),
-               unique(tenant_id, user_id)
-             );
-             alter table tenant_membri disable row level security;"
-
-          # ──────────────────────────────────────────────────
-          # 019 — Patch colonne su tabelle esistenti (safe)
-          # ──────────────────────────────────────────────────
-          run_sql "019 piano_voci: user_id" \
-            "alter table piano_voci add column if not exists user_id uuid;"
-
-          run_sql "019 piano_siti: user_id" \
-            "alter table piano_siti add column if not exists user_id uuid;"
-
-          run_sql "019 gruppi: col" \
-            "alter table gruppi add column if not exists col text default '#3B82F6';"
-
-          run_sql "019 piano_assegnazioni: scope e area_nome" \
-            "alter table piano_assegnazioni add column if not exists scope text default 'asset';
-             alter table piano_assegnazioni add column if not exists area_nome text;
-             alter table piano_assegnazioni add column if not exists frequenza text;
-             alter table piano_assegnazioni add column if not exists durata int;
-             alter table piano_assegnazioni add column if not exists tipo text;
-             alter table piano_assegnazioni add column if not exists priorita text;
-             alter table piano_assegnazioni add column if not exists titolo text;"
-
-          run_sql "019 manutenzioni: ore_effettive e chiusura" \
-            "alter table manutenzioni add column if not exists ore_effettive numeric(6,2);
-             alter table manutenzioni add column if not exists parti_usate text;
-             alter table manutenzioni add column if not exists firma_svg text;
-             alter table manutenzioni add column if not exists chiuso_at timestamptz;
-             alter table manutenzioni add column if not exists note_chiusura text;"
-
-          run_sql "019 manutenzioni: odl_id" \
-            "alter table manutenzioni add column if not exists odl_id bigint references ordini_lavoro(id) on delete set null;"
-
-          run_sql "019 ordini_lavoro: colonne mancanti" \
-            "alter table ordini_lavoro add column if not exists numero text;
-             alter table ordini_lavoro add column if not exists n_attivita int default 0;
-             alter table ordini_lavoro add column if not exists durata_stimata int default 0;
-             alter table ordini_lavoro add column if not exists note text;
-             alter table ordini_lavoro add column if not exists completato_at timestamptz;"
-
-          run_sql "019 operatori: email" \
-            "alter table operatori add column if not exists email text;"
-
-          run_sql "019 attivita_commenti: tipo" \
-            "alter table attivita_commenti add column if not exists tipo text default 'commento';"
-
-          run_sql "019 scadenze_normative: giorni_rimanenti computed" \
-            "alter table scadenze_normative add column if not exists giorni_rimanenti int
-               generated always as (extract(day from scadenza::timestamp - now()::timestamp)::int) stored;"
+          run_sql "operatore_siti: tabella" \
+            "create table if not exists operatore_siti (
+              id           bigserial primary key,
+              operatore_id bigint references operatori(id) on delete cascade not null,
+              cliente_id   bigint references clienti(id) on delete cascade not null,
+              tenant_id    uuid references tenants(id) on delete cascade,
+              user_id      uuid,
+              created_at   timestamptz default now(),
+              unique(operatore_id, cliente_id)
+            );
+            alter table operatore_siti disable row level security;"
 
           echo ""
-          echo "🎉 Tutte le migration applicate!"
+          echo "✅ Tutte le migration applicate con successo!"
