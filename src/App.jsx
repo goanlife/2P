@@ -22,6 +22,7 @@ import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGrupp
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
 import { GestioneOdL } from "./components/GestioneOdL";
+import { GestioneTicket } from "./components/GestioneTicket";
 import { ScadenzarioNormativo } from "./components/ScadenzarioNormativo";
 import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
@@ -1039,6 +1040,15 @@ export default function App() {
         />}
         {vista==="kanban"       && <KanbanView man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onMod={apriModM} />}
         {vista==="ordini" && <OrdiniAcquisto tenantId={tenant?.id} ricambi={[]} meOperatore={meOperatore} />}
+        {vista==="ticket" && <GestioneTicket
+          clienti={clientiView} assets={assetsView} operatori={operatori}
+          tenantId={tenant?.id}
+          isAdmin={ruoloTenant==="admin"||ruoloTenant==="membro"}
+          onOdlCreato={(odlData)=>{
+            // Aggiorna lista OdL in memoria
+            sOdl(p=>[odlData,...p]);
+          }}
+        />}
         {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig}
           odlIniziale={odlIniziale}
           onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}

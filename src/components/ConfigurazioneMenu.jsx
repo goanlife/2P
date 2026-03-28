@@ -18,6 +18,7 @@ export const ALL_TABS = [
   { id: "ordini",       l: "Ordini",       icon: "📦", desc: "Ordini di acquisto ricambi" },
   { id: "odl",          l: "Ord. Lavoro",  icon: "📋", desc: "Ordini di lavoro generati dai piani" },
   { id: "scadenzario",  l: "Scadenzario",  icon: "📅", desc: "Adempimenti normativi obbligatori" },
+  { id: "ticket",       l: "Ticket",        icon: "🎫", desc: "Interventi straordinari e richieste" },
   { id: "richieste",    l: "Richieste",    icon: "📋", desc: "Richiedi un intervento (portale cliente)" },
   { id: "template",     l: "Template",     icon: "🔧", desc: "Template attività per tipo asset" },
   { id: "report",       l: "Report",        icon: "📄", desc: "Reportistica per clienti, costi e amministrazione" },

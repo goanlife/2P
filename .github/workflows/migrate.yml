@@ -691,5 +691,55 @@ jobs:
             );
             alter table operatore_siti disable row level security;"
 
+          # ══════════════════════════════════════════════════════
+          # FASE 7 — Sistema Ticket (interventi straordinari)
+          # ══════════════════════════════════════════════════════
+
+          run_sql "tickets: tabella principale" \
+            "create table if not exists tickets (
+               id                bigserial primary key,
+               numero            text unique,
+               titolo            text not null,
+               tipo              text default 'correttiva'
+                                   check (tipo in ('correttiva','urgente','miglioria','normativa')),
+               priorita          text default 'media'
+                                   check (priorita in ('bassa','media','alta','critica')),
+               stato             text default 'aperto'
+                                   check (stato in ('aperto','in_lavorazione','risolto','chiuso','annullato')),
+               cliente_id        bigint references clienti(id) on delete set null,
+               asset_id          bigint references assets(id) on delete set null,
+               operatore_id      bigint references operatori(id) on delete set null,
+               odl_id            bigint references ordini_lavoro(id) on delete set null,
+               descrizione       text,
+               causa_guasto      text,
+               fermo_impianto    boolean default false,
+               downtime_ore      numeric(6,2),
+               segnalatore_nome  text,
+               segnalatore_email text,
+               risolto_at        timestamptz,
+               tenant_id         uuid references tenants(id) on delete cascade,
+               user_id           uuid,
+               created_at        timestamptz default now(),
+               updated_at        timestamptz default now()
+             );
+             create index if not exists idx_tickets_tenant  on tickets(tenant_id);
+             create index if not exists idx_tickets_stato   on tickets(stato);
+             create index if not exists idx_tickets_cliente on tickets(cliente_id);
+             alter table tickets disable row level security;"
+
+          run_sql "ticket_commenti: tabella" \
+            "create table if not exists ticket_commenti (
+               id          bigserial primary key,
+               ticket_id   bigint references tickets(id) on delete cascade,
+               testo       text not null,
+               tipo        text default 'commento',
+               autore_nome text,
+               autore_id   bigint references operatori(id) on delete set null,
+               tenant_id   uuid references tenants(id) on delete cascade,
+               created_at  timestamptz default now()
+             );
+             create index if not exists idx_tick_comm_ticket on ticket_commenti(ticket_id);
+             alter table ticket_commenti disable row level security;"
+
           echo ""
           echo "✅ Tutte le migration applicate con successo!"
