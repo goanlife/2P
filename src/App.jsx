@@ -518,6 +518,54 @@ export default function App() {
       sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x));
     } catch(e) { console.error("ripiM:", e.message); }
   };
+
+  const approvaRichiesta = async (rich) => {
+    try {
+      const now = new Date().toISOString();
+      const updates = {
+        stato: "pianificata",
+        operatore_id: rich.operatoreId ? Number(rich.operatoreId) : null,
+        data: rich.data,
+        durata: Number(rich.durata) || 60,
+        approvata_at: now,
+        approvata_da: uid(),
+        ...(rich.nota && { note: rich.nota }),
+      };
+      const { error } = await supabase.from("manutenzioni").update(updates).eq("id", rich.id);
+      if (error) { notify("Errore approvazione: " + error.message, "error"); return; }
+      sMan(p => p.map(m => m.id === rich.id ? { ...m, stato:"pianificata", operatoreId: updates.operatore_id, data: rich.data, durata: updates.durata, approvataAt: now } : m));
+      notify("✅ Richiesta approvata e pianificata!", "success");
+      try {
+        const cfgEmail = emailConfig?.notifiche?.richiesta_approvata;
+        if (emailConfig?.abilitato && cfgEmail?.abilitato) {
+          const cl = clienti.find(c => c.id === rich.clienteId);
+          const as = assets.find(a => a.id === rich.assetId);
+          emailRichiestaApprovata(rich, cl, as, cfgEmail, emailConfig.emailSito, tenant?.nome);
+        }
+      } catch(e) { console.warn("Email approvazione:", e.message); }
+    } catch(e) { notify("Errore approvazione: " + e.message, "error"); }
+  };
+
+  const rifiutaRichiesta = async (rich, motivo) => {
+    try {
+      const updates = {
+        stato: "rifiutata",
+        rifiutata_motivo: motivo || "",
+      };
+      const { error } = await supabase.from("manutenzioni").update(updates).eq("id", rich.id);
+      if (error) { notify("Errore rifiuto: " + error.message, "error"); return; }
+      sMan(p => p.map(m => m.id === rich.id ? { ...m, stato:"rifiutata", rifiutatoMotivo: motivo || "" } : m));
+      notify("Richiesta rifiutata.", "info");
+      try {
+        const cfgEmail = emailConfig?.notifiche?.richiesta_rifiutata;
+        if (emailConfig?.abilitato && cfgEmail?.abilitato) {
+          const cl = clienti.find(c => c.id === rich.clienteId);
+          const as = assets.find(a => a.id === rich.assetId);
+          emailRichiestaRifiutata(rich, cl, as, motivo, cfgEmail, emailConfig.emailSito, tenant?.nome);
+        }
+      } catch(e) { console.warn("Email rifiuto:", e.message); }
+    } catch(e) { notify("Errore rifiuto: " + e.message, "error"); }
+  };
   const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid(),tenant?.id)).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
   const modC = async f => {
     // D: se il profilo SLA cambia, controlla quante attività attive sono interessate
