@@ -134,7 +134,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
   // ── Esporta CSV ──────────────────────────────────────────────────────────
   const esportaCSV = (soloFiltrati=false) => {
     const lista = soloFiltrati ? filtrati : assets;
-    if (!lista.length) { alert("Nessun asset da esportare."); return; }
+    if (!lista.length) { console.warn("Nessun asset da esportare."); return; }
 
     const esc = v => {
       if (v == null || v === "") return "";
@@ -352,7 +352,7 @@ export function GestioneClienti({clienti=[], manutenzioni=[], assets=[], onAgg, 
   // ── Esporta CSV ──────────────────────────────────────────────────────────
   const esportaCSV = (soloFiltrati=false) => {
     const lista = soloFiltrati ? filtrati : clienti;
-    if (!lista.length) { alert("Nessun cliente da esportare."); return; }
+    if (!lista.length) { console.warn("Nessun cliente da esportare."); return; }
     const esc = v => {
       if (v == null || v === "") return "";
       const s = String(v);

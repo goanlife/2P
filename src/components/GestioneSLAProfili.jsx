@@ -261,7 +261,7 @@ export function GestioneSLAProfili({ tenantId, clienti=[] }) {
     try {
     const usato = clienti.filter(c=>c.slaProfilo_id===id);
     if (usato.length > 0) {
-      alert(`Impossibile eliminare: associato a ${usato.length} cliente/i.\nRiassegna prima un altro contenitore.`);
+      console.warn(`Impossibile eliminare: associato a ${usato.length} cliente/i.\nRiassegna prima un altro contenitore.`);
       return;
     }
     await supabase.from("sla_profili").delete().eq("id",id);

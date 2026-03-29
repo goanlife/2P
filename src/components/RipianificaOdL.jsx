@@ -34,7 +34,7 @@ function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }
         for (const odl of odlSelezionati) {
           const nd = addDays(odl.data_inizio, Number(giorni));
           const nf = odl.data_fine ? addDays(odl.data_fine, Number(giorni)) : nd;
-          await supabase.from("ordini_lavoro").update({ data_inizio:nd, data_fine:nf }).eq("id", odl.id);
+          await supabase.from("ordini_lavoro").update({ data_inizio:nd, data_fine:nf }).eq("tenant_id", tenantId).eq("id", odl.id);
         }
       } else if (azione === "imposta_data") {
         await supabase.from("ordini_lavoro").update({ data_inizio:newData, data_fine:newData }).in("id", ids);
@@ -45,7 +45,7 @@ function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }
       }
       onApplica();
     } catch(e) {
-      alert("Errore: " + e.message);
+      console.warn("Errore: " + e.message);
     } finally {
       setLoading(false);
     }
@@ -222,7 +222,6 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
 
   const esegui = async () => {
     if (!filtrati.length) return;
-    if (!window.confirm(`Applicare a ${filtrati.length} OdL filtrati?`)) return;
     setLoading(true);
     try {
       const ids = filtrati.map(o=>o.id);
@@ -230,7 +229,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
         for (const o of filtrati) {
           const nd = addDays(o.data_inizio, Number(giorni));
           const nf = o.data_fine ? addDays(o.data_fine, Number(giorni)) : nd;
-          await supabase.from("ordini_lavoro").update({ data_inizio:nd, data_fine:nf }).eq("id", o.id);
+          await supabase.from("ordini_lavoro").update({ data_inizio:nd, data_fine:nf }).eq("tenant_id", tenantId).eq("id", o.id);
         }
       } else if (azione === "imposta_data") {
         await supabase.from("ordini_lavoro").update({ data_inizio:newData, data_fine:newData }).in("id", ids);
@@ -240,7 +239,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
         await supabase.from("ordini_lavoro").update({ stato:newStato }).in("id", ids);
       }
       onApplica();
-    } catch(e) { alert("Errore: "+e.message); }
+    } catch(e) { console.warn("Errore: "+e.message); }
     finally    { setLoading(false); }
   };
 
@@ -376,7 +375,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
 
 // ─── Export/Import CSV ────────────────────────────────────────────────────
 function esportaOdlCSV(odl=[], operatori=[], clienti=[]) {
-  if (!odl.length) { alert("Nessun OdL da esportare."); return; }
+  if (!odl.length) { console.warn("Nessun OdL da esportare."); return; }
   const esc = v => {
     if (v==null||v==="") return "";
     const s=String(v);

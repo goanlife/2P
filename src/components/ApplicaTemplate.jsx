@@ -96,7 +96,7 @@ export function ModalApplicaTemplate({
       setStep("fatto");
     } catch(e) {
       console.error("[ApplicaTemplate] Errore:", e);
-      alert("Errore: " + e.message);
+      console.warn("Errore: " + e.message);
     } finally { setSaving(false); }
   };
 

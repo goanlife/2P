@@ -1,6 +1,6 @@
 // ManuMan Service Worker — PWA offline support
 // CACHE VERSION: bump questo numero ad ogni deploy per invalidare cache vecchie
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 const CACHE = `manuMan-v${CACHE_VERSION}`;
 const STATIC = ["/", "/index.html"];
 

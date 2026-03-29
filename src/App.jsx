@@ -482,7 +482,7 @@ export default function App() {
     sV("manutenzioni");               // naviga alla lista
   };
   const modM = async f => { const {error}=await supabase.from("manutenzioni").update(toDbM(f,uid(),tenant?.id)).eq("id",f.id); if(error){notify("Errore modifica: "+error.message);return;} sMan(p=>p.map(m=>m.id===f.id?{...m,...f}:m)); };
-  const delM = async id => { await supabase.from("manutenzioni").delete().eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
+  const delM = async id => { await supabase.from("manutenzioni").delete().eq("tenant_id",tenant?.id).eq("id",id); sMan(p=>p.filter(m=>m.id!==id)); };
   const dupM = async m => {
     const nuova = toDbM({
       ...m,
@@ -510,7 +510,14 @@ export default function App() {
     const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta",richiesta:"📋 Richiesta inviata"};
     notify(label[stato]||"Stato aggiornato","success");
   };
-  const ripiM = async (id,data,operatoreId) => { const m=man.find(x=>x.id===id);const ns=m?.stato==="scaduta"?"pianificata":m?.stato; await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id); sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x)); };
+  const ripiM = async (id,data,operatoreId) => {
+    try {
+      const m=man.find(x=>x.id===id);
+      const ns=m?.stato==="scaduta"?"pianificata":m?.stato;
+      await supabase.from("manutenzioni").update({data,operatore_id:operatoreId||null,stato:ns}).eq("id",id);
+      sMan(p=>p.map(x=>x.id===id?{...x,data,operatoreId,stato:ns}:x));
+    } catch(e) { console.error("ripiM:", e.message); }
+  };
   const aggC = async f => { const {data,error}=await supabase.from("clienti").insert(toDbC(f,uid(),tenant?.id)).select().single(); if(error)notify("Errore: "+error.message); else sCl(p=>[...p,mapC(data)]); };
   const modC = async f => {
     // D: se il profilo SLA cambia, controlla quante attività attive sono interessate
@@ -521,7 +528,7 @@ export default function App() {
     if (profiloCambiato) {
       const attiveCliente = man.filter(m => m.clienteId === f.id && m.stato !== "completata");
       if (attiveCliente.length > 0) {
-        const conferma = window.confirm(
+        const conferma = confirm(
           `Il profilo SLA è cambiato.\n\n` +
           `${attiveCliente.length} attivit${attiveCliente.length === 1 ? "à attiva" : "à attive"} per questo cliente ` +
           `useranno automaticamente il nuovo profilo.\n\n` +

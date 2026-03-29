@@ -276,7 +276,7 @@ export function LogAttivita({ entitaTipo, entitaId, sb }) {
 // ─── Feature 11: Rapporto OdL PDF ────────────────────────────────────────────
 export function stampaRapportoOdL(odl, attivita=[], cliente, operatore, assets=[], tenantNome="") {
   const win = window.open("", "_blank");
-  if (!win) { alert("Popup bloccato. Consenti i popup per questo sito."); return; }
+  if (!win) { console.warn("Popup bloccato. Consenti i popup per questo sito."); return; }
 
   const now     = new Date();
   const dataStampa = now.toLocaleDateString("it-IT");

@@ -127,7 +127,7 @@ ${contenuto}
 
 function apriReport(html) {
   const w = window.open("","_blank");
-  if (!w) { alert("Popup bloccato. Consenti i popup per questo sito."); return; }
+  if (!w) { console.warn("Popup bloccato. Consenti i popup per questo sito."); return; }
   w.document.write(html); w.document.close();
 }
 
@@ -465,7 +465,7 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
       case "piano_lavori":        return genPianoLavori(ctx);
       case "attivita_critiche":   return genAttivitaCritiche(ctx);
       case "asset_in_scadenza":   return genAssetScadenza(ctx);
-      default: alert("Report in sviluppo.");
+      default: console.warn("Report in sviluppo.");
     }
   };
 

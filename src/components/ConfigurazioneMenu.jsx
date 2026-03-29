@@ -87,7 +87,7 @@ export function ConfigurazioneMenu({ gruppi=[], tenantId }) {
 
     setSaving(false);
     if (error) {
-      alert("Errore salvataggio: " + error.message);
+      console.warn("Errore salvataggio: " + error.message);
       return;
     }
     setSaved(true);

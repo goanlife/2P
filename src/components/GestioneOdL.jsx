@@ -359,7 +359,7 @@ export function GestioneOdL({
         if (stato==="completato") {
           await supabase.from("manutenzioni")
             .update({ stato:"completata", chiuso_at: new Date().toISOString() })
-            .eq("odl_id", id).in("stato",["pianificata","inCorso"]);
+            .eq("odl_id", id).eq("tenant_id", tenantId).in("stato",["pianificata","inCorso"]);
           onAggiornaManutenzioni?.();
 
           if (emailConfig.completamento !== false && cl?.email) {
@@ -412,7 +412,6 @@ export function GestioneOdL({
 
   // Elimina OdL
   const delOdl = async (id) => {
-    if (!window.confirm("Eliminare questo OdL? Le attività collegate rimarranno ma perderanno il collegamento.")) return;
     try {
       const { error } = await supabase.from("ordini_lavoro").delete().eq("id", id);
       if (error) { console.error("Errore eliminazione OdL:", error.message); return; }

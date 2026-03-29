@@ -34,6 +34,10 @@ const SLA_ORE = {
   normativa: { critica:8,  alta:24, media:72, bassa:168 },
 };
 
+// Transizioni di stato dei ticket
+const NEXT     = { aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
+const NEXT_LBL = { in_lavorazione:"▶ Prendi in carico", risolto:"✓ Segna risolto", chiuso:"🔒 Chiudi" };
+
 const tipoInfo    = v => TIPI.find(t=>t.v===v)     || TIPI[0];
 const prioritaInfo= v => PRIORITA.find(p=>p.v===v)  || PRIORITA[1];
 const statoInfo   = v => STATI.find(s=>s.v===v)      || STATI[0];
@@ -175,7 +179,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
       await onSalva(payload, ticket?.id);
       onClose();
     } catch(e) {
-      alert("Errore: "+e.message);
+      console.error("Ticket error:", e.message);
     } finally { setSaving(false); }
   };
 
@@ -313,7 +317,7 @@ function ModalConvertOdL({ ticket, operatori=[], onConverti, onClose }) {
   const submit = async () => {
     setSav(true);
     try { await onConverti({ dataInizio, dataFine, operatoreId:opId?Number(opId):null, note }); }
-    catch(e) { alert(e.message); setSav(false); }
+    catch(e) { console.error(e.message); setSav(false); }
   };
 
   const inp = { width:"100%", padding:"9px 11px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:13, background:"var(--surface)", color:"var(--text-1)", boxSizing:"border-box" };
@@ -398,8 +402,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
     setSending(false);
   };
 
-  const NEXT = { aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
-  const NEXT_LBL = { in_lavorazione:"▶ Prendi in carico", risolto:"✓ Segna risolto", chiuso:"🔒 Chiudi" };
+  // NEXT e NEXT_LBL definite a livello modulo
 
   return (
     <div style={{ position:"fixed", top:0, right:0, bottom:0, width:"min(500px,100vw)", background:"var(--surface)", borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 32px rgba(0,0,0,.18)", zIndex:500, display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -508,7 +511,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
           <button onClick={()=>onMod(ticket)}
             style={{ padding:"8px 14px", background:"var(--surface-2)", border:"1px solid var(--border)", borderRadius:"var(--radius-sm)", cursor:"pointer", fontSize:12 }}>✏ Modifica</button>
           {["chiuso","annullato"].includes(ticket.stato) && (
-            <button onClick={()=>{ if(window.confirm("Eliminare questo ticket?")) onDel(ticket.id); }}
+            <button onClick={()=>onDel(ticket.id)}
               style={{ padding:"8px 14px", background:"#FEF2F2", color:"#DC2626", border:"1px solid #FECACA", borderRadius:"var(--radius-sm)", cursor:"pointer", fontSize:12 }}>✕</button>
           )}
         </div>
@@ -608,7 +611,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
   const aggiornaStat = async (id, stato) => {
     const extra = stato==="risolto" ? {risolto_at:new Date().toISOString()} : {};
     const { data, error } = await supabase.from("tickets").update({stato,...extra}).eq("id",id).select().single();
-    if (error) { alert("Errore: "+error.message); return; }
+    if (error) { console.warn("Errore: "+error.message); return; }
     setTickets(p=>p.map(t=>t.id===id?data:t));
     if (sel?.id===id) setSel(data);
     // Aggiungi log
@@ -619,7 +622,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
   };
 
   const eliminaTicket = async (id) => {
-    await supabase.from("tickets").delete().eq("id",id);
+    try { await supabase.from("tickets").delete().eq("id",id); } catch(e) { console.error(e); return; }
     setTickets(p=>p.filter(t=>t.id!==id));
     if (sel?.id===id) setSel(null);
   };

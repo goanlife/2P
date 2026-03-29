@@ -55,7 +55,7 @@ function ModalApprovazione({ richiesta, operatori=[], clienti=[], assets=[], onC
       await onConferma({ ...richiesta, operatoreId:Number(operatoreId)||null, data, durata:Number(durata), nota });
       onClose();
     } catch(e) {
-      alert("Errore durante l'approvazione: " + e.message);
+      console.warn("Errore durante l'approvazione: " + e.message);
     } finally { setLoad(false); }
   };
   const rifiuta = async () => {
@@ -65,7 +65,7 @@ function ModalApprovazione({ richiesta, operatori=[], clienti=[], assets=[], onC
       await onRifiuta(richiesta, motRifiuto);
       onClose();
     } catch(e) {
-      alert("Errore durante il rifiuto: " + e.message);
+      console.warn("Errore durante il rifiuto: " + e.message);
     } finally { setLoad(false); }
   };
 
