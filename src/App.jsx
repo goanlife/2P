@@ -23,6 +23,7 @@ import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./com
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
 import { GestioneOdL } from "./components/GestioneOdL";
 import { GestioneTicket } from "./components/GestioneTicket";
+import { ChatbotPanel } from "./components/AIAssistente";
 import { ScadenzarioNormativo } from "./components/ScadenzarioNormativo";
 import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
@@ -158,6 +159,7 @@ export default function App() {
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
   const [temaModal, setTemaModal] = useState(false);
+  const [aiOpen, setAiOpen]       = useState(false);
   const [temaCorrente, setTemaCorrente] = useState("navy");
   const [chiudiModal, setChiudiModal] = useState(null); // manutenzione da chiudere
   const [ricercaAperta, setRicercaAperta] = useState(false);
@@ -965,6 +967,8 @@ export default function App() {
             <button className="sb-action" onClick={()=>setRicercaAperta(true)} title="Ricerca">🔍</button>
             <CampanellaNotifiche notifiche={notifiche} onNavigate={navigateTo} />
             <button className="sb-action" onClick={()=>setTemaModal(true)} title="Tema">🎨</button>
+            <button className="sb-action" onClick={()=>setAiOpen(v=>!v)} title="ManuMan AI"
+              style={aiOpen?{background:"var(--amber)",color:"#0D1B2A",borderRadius:7}:{}}>🤖</button>
             <button className="sb-action sb-logout" onClick={logout} title="Esci">↩</button>
           </div>
         </div>
@@ -1172,6 +1176,27 @@ export default function App() {
         onSalva={f=>inModM?modM({...f,id:inModM.id}):aggM(f)}
       />}
       </div>{/* sidebar-body */}
+
+      {/* ── ManuMan AI Chatbot ─────────────────────────────── */}
+      {aiOpen && (
+        <>
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.2)",zIndex:599}}
+            onClick={()=>setAiOpen(false)} />
+          <ChatbotPanel
+            dati={{
+              manutenzioni: manView,
+              ticket:       [],
+              clienti:      clientiView,
+              assets:       assetsView,
+              operatori,
+              piani,
+              odl,
+              tenantNome:   tenant?.nome || "ManuMan",
+            }}
+            onClose={()=>setAiOpen(false)}
+          />
+        </>
+      )}
     </div>
   );
 }

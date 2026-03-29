@@ -1,4 +1,5 @@
 import { useI18n } from "../i18n/index.jsx";
+import { generaReportMensile } from "./AIAssistente";
 import React, { useState, useMemo } from "react";
 import { HelpButton } from "./HelpPanel";
 
@@ -408,9 +409,37 @@ ${oreAlert.length?`<div class="section" style="color:#D97706">⚙ Ore utilizzo v
 }
 
 // ── Componente principale ──────────────────────────────────────────────────
-export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], piani=[], tenantNome="" }) {
+export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], piani=[], odl=[], tenantNome="" }) {
   const { t } = useI18n();
+
+  const generaAI = async () => {
+    setAiLoading(true);
+    setAiVisible(true);
+    setAiReport("");
+    try {
+      // Filtra manutenzioni del mese selezionato
+      const prefix = `${aiAnno}-${String(aiMese+1).padStart(2,"0")}`;
+      const manMese = man.filter(m => (m.data||"").startsWith(prefix));
+      const testo = await generaReportMensile({
+        mese: aiMese, anno: aiAnno,
+        manutenzioni: manMese,
+        ticket:       [],
+        clienti, assets, operatori, piani,
+        odl: odl || [],
+      });
+      setAiReport(testo);
+    } catch(e) {
+      setAiReport("Errore durante la generazione: " + e.message);
+    } finally {
+      setAiLoading(false);
+    }
+  };
   const [filtroCat, setFiltroCat] = useState("tutti");
+  const [aiReport,    setAiReport]    = React.useState("");
+  const [aiLoading,   setAiLoading]   = React.useState(false);
+  const [aiMese,      setAiMese]      = React.useState(new Date().getMonth());
+  const [aiAnno,      setAiAnno]      = React.useState(new Date().getFullYear());
+  const [aiVisible,   setAiVisible]   = React.useState(false);
   const [params,    setParams]    = useState({
     clienteId: "",
     da:  meseInizio(),
@@ -444,6 +473,47 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
 
   return (
     <div style={{ display:"grid", gap:16 }}>
+
+      {/* ── AI Report ──────────────────────────────────────────────────── */}
+      <div style={{
+        background:"linear-gradient(135deg,#1E1B4B,#312E81)",
+        borderRadius:"var(--radius-xl)", padding:"20px 24px",
+        border:"1px solid #4C1D95",
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:14}}>
+          <span style={{fontSize:24}}>🤖</span>
+          <div>
+            <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:15,color:"white"}}>Report Mensile AI</div>
+            <div style={{fontSize:11,color:"rgba(255,255,255,.5)"}}>Insights e raccomandazioni generate da Claude</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+          <select value={aiMese} onChange={e=>setAiMese(Number(e.target.value))}
+            style={{padding:"7px 10px",borderRadius:7,fontSize:12,border:"1px solid #4C1D95",background:"rgba(255,255,255,.1)",color:"white"}}>
+            {["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"].map((m,i)=><option key={i} value={i} style={{background:"#1E1B4B"}}>{m}</option>)}
+          </select>
+          <select value={aiAnno} onChange={e=>setAiAnno(Number(e.target.value))}
+            style={{padding:"7px 10px",borderRadius:7,fontSize:12,border:"1px solid #4C1D95",background:"rgba(255,255,255,.1)",color:"white"}}>
+            {[2024,2025,2026,2027].map(y=><option key={y} value={y} style={{background:"#1E1B4B"}}>{y}</option>)}
+          </select>
+          <button onClick={generaAI} disabled={aiLoading}
+            style={{padding:"8px 18px",background:"var(--amber)",color:"#0D1B2A",border:"none",borderRadius:7,fontWeight:700,fontSize:12,cursor:"pointer",opacity:aiLoading?0.6:1}}>
+            {aiLoading?"⟳ Generazione...":"✨ Genera report AI"}
+          </button>
+          {aiReport && <button onClick={()=>{
+            const blob=new Blob([aiReport],{type:"text/plain"});
+            const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+            a.download=`report-ai-${aiAnno}-${String(aiMese+1).padStart(2,"0")}.txt`;a.click();
+          }} style={{padding:"8px 12px",background:"rgba(255,255,255,.15)",color:"white",border:"1px solid rgba(255,255,255,.2)",borderRadius:7,fontSize:11,cursor:"pointer"}}>↓ Scarica</button>}
+        </div>
+        {aiVisible && (
+          <div style={{marginTop:14,background:"rgba(0,0,0,.25)",borderRadius:"var(--radius)",border:"1px solid rgba(255,255,255,.1)",padding:"14px 16px",maxHeight:280,overflowY:"auto"}}>
+            {aiLoading
+              ? <div style={{color:"rgba(255,255,255,.4)",textAlign:"center",padding:"16px 0",fontSize:12}}>Analisi in corso...</div>
+              : <pre style={{fontSize:12,lineHeight:1.7,color:"rgba(255,255,255,.8)",whiteSpace:"pre-wrap",fontFamily:"var(--font-body)",margin:0}}>{aiReport}</pre>}
+          </div>
+        )}
+      </div>
 
       {/* Header */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:12 }}>

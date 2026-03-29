@@ -890,6 +890,11 @@ input::placeholder { color: var(--text-3); }
   }
 
   /* Highlight OdL dal calendario */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 @keyframes highlightOdl {
   0%   { box-shadow: 0 0 0 3px var(--amber), 0 0 20px rgba(245,158,11,.4); }
   50%  { box-shadow: 0 0 0 3px var(--amber), 0 0 30px rgba(245,158,11,.6); }

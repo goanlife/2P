@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { classificaTicket, AIClassificaBadge } from "./AIAssistente";
 import { supabase } from "../supabase";
 import { Overlay, Field } from "./ui/Atoms";
 
@@ -111,13 +112,45 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
     segnalatore_email:   ticket.segnalatore_email||"",
   } : vuoto);
   const [saving, setSaving] = useState(false);
-  const set = (k,v) => sf(p=>({...p,[k]:v}));
+  const [aiSugg, setAiSugg] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiTimer = useRef(null);
+  const set = (k,v) => {
+    sf(p=>({...p,[k]:v}));
+    // Auto-classifica quando cambia descrizione o titolo
+    if (k === "descrizione" || k === "titolo") {
+      clearTimeout(aiTimer.current);
+      const newText = k === "descrizione" ? v : f.descrizione;
+      const newTitle = k === "titolo" ? v : f.titolo;
+      const combined = [newTitle, newText].filter(Boolean).join(" - ");
+      if (combined.length > 15) {
+        aiTimer.current = setTimeout(async () => {
+          setAiLoading(true);
+          const sugg = await classificaTicket(combined, assets, clienti);
+          setAiSugg(sugg);
+          setAiLoading(false);
+        }, 1500);
+      }
+    }
+  };
 
   const assetsCliente = useMemo(()=>
     f.cliente_id ? assets.filter(a=>String(a.clienteId||a.cliente_id)===f.cliente_id) : assets
   , [f.cliente_id, assets]);
 
   const fornitori = operatori.filter(o=>o.tipo==="fornitore");
+
+  const applicaAI = (sugg) => {
+    sf(p => ({
+      ...p,
+      tipo:          sugg.tipo        || p.tipo,
+      priorita:      sugg.priorita    || p.priorita,
+      causa_guasto:  sugg.causa_guasto || p.causa_guasto,
+      fermo_impianto:sugg.fermo_impianto ?? p.fermo_impianto,
+      titolo:        (!p.titolo && sugg.titolo_suggerito) ? sugg.titolo_suggerito : p.titolo,
+    }));
+    setAiSugg(null);
+  };
 
   const submit = async () => {
     if (!f.titolo.trim()) return;
@@ -164,6 +197,17 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
           <Field label="Titolo *">
             <input style={inp} value={f.titolo} onChange={e=>set("titolo",e.target.value)} placeholder="Descrizione breve del problema..." />
           </Field>
+
+          {/* Suggerimento AI */}
+          {aiLoading && (
+            <div style={{ fontSize:12, color:"var(--text-3)", display:"flex", alignItems:"center", gap:6 }}>
+              <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>⟳</span>
+              Analisi AI in corso...
+            </div>
+          )}
+          {aiSugg && !aiLoading && (
+            <AIClassificaBadge suggerimento={aiSugg} onApplica={applicaAI} />
+          )}
 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <Field label="Tipo">
