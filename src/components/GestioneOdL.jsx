@@ -97,7 +97,7 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 }
 
 // ─── Card OdL espandibile ─────────────────────────────────────────────────
-function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", isSelected=false, onToggleSel, onStato, onMod, onDel, onPdf }) {
+function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenantNome="", isSelected=false, onToggleSel, onStato, onMod, onDel, onPdf, ticketCollegati=[], onApriTicket }) {
   const { t } = useI18n();
   const STATI_ODL   = getStatiOdl(t);
   const STATO_LABEL = getStatoLabel(t); // FIX: era undefined causando crash
@@ -159,6 +159,15 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenant
               fontSize:10, padding:"1px 8px", borderRadius:99, fontWeight:700,
               background:st.bg, color:st.col,
             }}>{st.l}</span>
+            {ticketCollegati.length > 0 && (
+              <button onClick={e=>{e.stopPropagation();ticketCollegati.length===1?onApriTicket&&onApriTicket(ticketCollegati[0].id):null;}}
+                title={ticketCollegati.map(t=>t.numero).join(", ")}
+                style={{fontSize:10,padding:"1px 8px",borderRadius:99,fontWeight:700,
+                  background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #BFDBFE",
+                  cursor:"pointer",display:"flex",alignItems:"center",gap:4}}>
+                🎫 {ticketCollegati.length===1 ? ticketCollegati[0].numero : `${ticketCollegati.length} ticket`}
+              </button>
+            )}
           </div>
           <div style={{fontWeight:700, fontSize:13, overflow:"hidden",
             textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{odl.titolo}</div>
@@ -215,6 +224,33 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenant
       {/* Dettaglio attività */}
       {aperto && (
         <div style={{padding:"4px 16px 14px", borderTop:"1px solid var(--border-dim)"}}>
+          {ticketCollegati.length > 0 && (
+            <div style={{marginTop:8,marginBottom:4}}>
+              {ticketCollegati.map(t=>{
+                const SCOL={aperto:"#3B82F6",in_lavorazione:"#F59E0B",risolto:"#059669",chiuso:"#6B7280",annullato:"#EF4444"};
+                const col=SCOL[t.stato]||"#94A3B8";
+                return(
+                  <button key={t.id} onClick={()=>onApriTicket&&onApriTicket(t.id)}
+                    style={{display:"flex",alignItems:"center",gap:8,width:"100%",
+                      padding:"8px 12px",background:"var(--surface)",
+                      border:`1px solid ${col}33`,borderLeft:`3px solid ${col}`,
+                      borderRadius:"var(--radius-sm)",cursor:"pointer",marginBottom:4,
+                      fontSize:12,textAlign:"left"}}>
+                    <span style={{fontSize:14}}>🎫</span>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:700,fontSize:11,color:"var(--text-3)"}}>{t.numero}</div>
+                      <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.titolo}</div>
+                    </div>
+                    <span style={{fontSize:10,padding:"2px 7px",borderRadius:99,fontWeight:700,
+                      background:col+"18",color:col,flexShrink:0,whiteSpace:"nowrap"}}>
+                      {t.stato?.replace("_"," ")}
+                    </span>
+                    <span style={{color:"var(--text-3)",fontSize:12,flexShrink:0}}>→</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {att.length === 0 ? (
             <div style={{padding:"12px 0", textAlign:"center", fontSize:12, color:"var(--text-3)"}}>
               Nessuna attività collegata a questo OdL
@@ -257,7 +293,7 @@ function CardOdL({ odl, attivita=[], operatori=[], clienti=[], assets=[], tenant
 // ─── Vista principale OdL ─────────────────────────────────────────────────
 export function GestioneOdL({
   manutenzioni=[], operatori=[], clienti=[], assets=[], tenantId, tenantNome="", emailConfig={},
-  onAggiornaManutenzioni, odlIniziale=null,
+  onAggiornaManutenzioni, odlIniziale=null, onApriTicket,
 }) {
   const { t } = useI18n();
   const STATI_ODL   = React.useMemo(() => getStatiOdl(t),   [t]);
@@ -284,6 +320,20 @@ export function GestioneOdL({
   const [fCliente,setFCl]     = useState("tutti");
   const [fOp,     setFOp]     = useState("tutti");
   const [fMese,   setFMese]   = useState(""); // YYYY-MM
+
+  // Ticket collegati (per mostrare badge nelle card OdL)
+  const [ticketCollegati, setTicketCol] = useState({});
+  useEffect(()=>{
+    if (!tenantId) return;
+    supabase.from("tickets").select("id,numero,stato,titolo,odl_id")
+      .eq("tenant_id", tenantId).not("odl_id","is",null)
+      .then(({data})=>{
+        if (!data) return;
+        const map = {};
+        data.forEach(t=>{ if (!map[t.odl_id]) map[t.odl_id]=[]; map[t.odl_id].push(t); });
+        setTicketCol(map);
+      });
+  }, [tenantId]);
 
   // Carica OdL
   useEffect(()=>{ if(tenantId) carica(); }, [tenantId]);
@@ -538,6 +588,8 @@ export function GestioneOdL({
               onMod={setInMod}
               onDel={delOdl}
               onPdf={stampaOdl}
+              ticketCollegati={ticketCollegati[o.id]||[]}
+              onApriTicket={onApriTicket}
             />
             </div>
           ))}

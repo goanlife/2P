@@ -366,7 +366,7 @@ function ModalConvertOdL({ ticket, operatori=[], onConverti, onClose }) {
 }
 
 // ─── Pannello dettaglio ticket (slide-in laterale) ────────────────────────
-function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantId, onStato, onMod, onDel, onConvertOdL, onClose }) {
+function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantId, onStato, onMod, onDel, onConvertOdL, onClose, onApriOdl }) {
   const [commenti,  setCommenti]  = useState([]);
   const [testoComm, setTesto]     = useState("");
   const [sending,   setSending]   = useState(false);
@@ -436,7 +436,17 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
           {!op && <div style={{ display:"flex", gap:8 }}><span style={{ color:"var(--text-3)", minWidth:80 }}>Tecnico</span><span style={{ color:"#F59E0B", fontWeight:600 }}>⚠ Non assegnato</span></div>}
           <div style={{ display:"flex", gap:8 }}><span style={{ color:"var(--text-3)", minWidth:80 }}>Aperto il</span><span>{fmtDT(ticket.created_at)}</span></div>
           {ticket.segnalatore_nome && <div style={{ display:"flex", gap:8 }}><span style={{ color:"var(--text-3)", minWidth:80 }}>Segnalato da</span><span>{ticket.segnalatore_nome}{ticket.segnalatore_email?` · ${ticket.segnalatore_email}`:""}</span></div>}
-          {ticket.odl_id && <div style={{ display:"flex", gap:8 }}><span style={{ color:"var(--text-3)", minWidth:80 }}>OdL</span><span style={{ color:"#3B82F6", fontWeight:700 }}>📋 OdL collegato #{ticket.odl_id}</span></div>}
+          {ticket.odl_id && (
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <span style={{ color:"var(--text-3)", minWidth:80 }}>OdL</span>
+              <button onClick={()=>onApriOdl&&onApriOdl(ticket.odl_id)}
+                style={{ background:"#EFF6FF", color:"#1D4ED8", border:"1px solid #BFDBFE",
+                  borderRadius:6, padding:"3px 10px", fontSize:12, fontWeight:700,
+                  cursor:onApriOdl?"pointer":"default", display:"flex", alignItems:"center", gap:5 }}>
+                📋 Apri OdL collegato →
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Descrizione */}
@@ -531,7 +541,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
 }
 
 // ─── Vista principale Ticket ──────────────────────────────────────────────
-export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, isAdmin=true, onOdlCreato }) {
+export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, isAdmin=true, onOdlCreato, onApriOdl, ticketIniziale=null }) {
   const [tickets,   setTickets]   = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [sel,       setSel]       = useState(null);   // ticket aperto nel pannello
@@ -542,6 +552,19 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
   const [fOp,       setFO]        = useState("tutti");
   const [fCliente,  setFC]        = useState("tutti");
   const [cerca,     setCerca]     = useState("");
+
+  const [ticketEvidenziato, setTicketEv] = useState(ticketIniziale?.id||null);
+  useEffect(()=>{
+    if (!ticketIniziale?.id) return;
+    setTicketEv(ticketIniziale.id);
+    // Apri automaticamente il pannello dettaglio sul ticket iniziale
+    const t = tickets.find(x=>x.id===ticketIniziale.id);
+    if (t) setSel(t);
+    const el = document.getElementById(`ticket-row-${ticketIniziale.id}`);
+    if (el) el.scrollIntoView({behavior:"smooth",block:"center"});
+    const timer = setTimeout(()=>setTicketEv(null), 3000);
+    return ()=>clearTimeout(timer);
+  }, [ticketIniziale?.id, tickets]);
 
   const carica = useCallback(async () => {
     if (!tenantId) return;
@@ -735,9 +758,12 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
             const isSel = sel?.id===t.id;
             return (
               <div key={t.id}
+                id={`ticket-row-${t.id}`}
                 onClick={()=>setSel(isSel?null:t)}
                 style={{
                   background:"var(--surface)",
+                  transition:"box-shadow .3s",
+                  ...(ticketEvidenziato===t.id ? {boxShadow:"0 0 0 3px var(--amber)",animation:"highlightOdl 3s ease"} : {}),
                   border:`1px solid ${isSel?"var(--amber)":slaOk?"var(--border)":"#FECACA"}`,
                   borderLeft:`4px solid ${tip.col}`,
                   borderRadius:"var(--radius-xl)",
@@ -812,6 +838,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
           onMod={(t)=>{ setForm(t); setSel(null); }}
           onDel={eliminaTicket}
           onConvertOdL={convertToOdL}
+          onApriOdl={onApriOdl}
           onClose={()=>setSel(null)}
         />
       )}

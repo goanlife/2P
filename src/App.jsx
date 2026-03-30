@@ -150,7 +150,8 @@ export default function App() {
   const [gOps,     sGOps]  = useState([]);
   const [gSiti,    sGSiti] = useState([]);
   const [odl,      sOdl]   = useState([]);  // Ordini di Lavoro
-  const [odlIniziale, setOdlIniziale] = useState(null); // OdL da evidenziare (da calendario)
+  const [odlIniziale,    setOdlIniziale]    = useState(null);
+  const [ticketIniziale, setTicketIniziale] = useState(null); // ticket da evidenziare (da OdL)
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
   const [manTotale, setManTotale] = useState(null); // null = non sappiamo ancora
@@ -903,7 +904,8 @@ export default function App() {
   };
   // Reset filtri manutenzioni quando si naviga via dalla tab manutenzioni
   // Reset odlIniziale quando si cambia vista (per evitare ri-scroll)
-  React.useEffect(()=>{ if(vista!=="odl") setOdlIniziale(null); },[vista]);
+  React.useEffect(()=>{ if(vista!=="odl")    setOdlIniziale(null);    },[vista]);
+  React.useEffect(()=>{ if(vista!=="ticket") setTicketIniziale(null); },[vista]);
 
   const sVWithReset = (tab) => {
     if (tab !== "manutenzioni") setFiltroMan({});
@@ -1103,13 +1105,17 @@ export default function App() {
           clienti={clientiView} assets={assetsView} operatori={operatori}
           tenantId={tenant?.id}
           isAdmin={ruoloTenant==="admin"||ruoloTenant==="membro"}
-          onOdlCreato={(odlData)=>{
-            // Aggiorna lista OdL in memoria
-            sOdl(p=>[odlData,...p]);
+          ticketIniziale={ticketIniziale}
+          onOdlCreato={(odlData)=>{ sOdl(p=>[odlData,...p]); }}
+          onApriOdl={(odlId)=>{
+            const o = odl.find(x=>x.id===odlId);
+            if (o) { setOdlIniziale(o); navigateTo("odl"); }
+            else navigateTo("odl");
           }}
         />}
         {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig}
           odlIniziale={odlIniziale}
+          onApriTicket={(ticketId)=>{ setTicketIniziale({id:ticketId}); navigateTo("ticket"); }}
           onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
         {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
