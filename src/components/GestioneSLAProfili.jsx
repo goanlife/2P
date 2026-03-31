@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { PRI_COL } from '../constants';
 import { supabase } from "../supabase";
 import { Field, Overlay } from "./ui/Atoms";
 
@@ -13,7 +14,6 @@ const SLA_HARDCODED = {
   media:   { ore_risposta:24, ore_risoluzione:72  },
   bassa:   { ore_risposta:72, ore_risoluzione:168 },
 };
-const PRI_COL = { urgente:"#EF4444", alta:"#3B82F6", media:"#F59E0B", bassa:"#94A3B8" };
 const PRIORITA_OPT = [
   { v:"",        l:"— Nessuna (SLA custom) —" },
   { v:"urgente", l:"⚡ Urgente" },

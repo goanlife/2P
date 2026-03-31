@@ -1,19 +1,11 @@
 import { useI18n } from "../i18n/index.jsx";
+import { FREQUENZE } from '../constants';
 import React, { useState, useMemo } from "react";
 import { supabase } from "../supabase";
 import { SelettoreTema, TEMI} from "./AllegatiTemi";
 import { AvatarComp, Overlay, Modal, Field } from "./ui/Atoms";
 
 const COLORI_OP = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6"];
-
-const FREQUENZE = [
-  { v:"settimanale", l:"Settimanale", giorni:7   },
-  { v:"mensile",     l:"Mensile",     giorni:30  },
-  { v:"bimestrale",  l:"Bimestrale",  giorni:60  },
-  { v:"trimestrale", l:"Trimestrale", giorni:90  },
-  { v:"semestrale",  l:"Semestrale",  giorni:180 },
-  { v:"annuale",     l:"Annuale",     giorni:365 },
-];
 
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 

@@ -1,95 +1,108 @@
-export const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
-export const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+// ═══════════════════════════════════════════════════════════════════════════
+// constants.js — Costanti condivise in tutta l'app ManuMan
+// Aggiorna qui, si propaga ovunque automaticamente
+// ═══════════════════════════════════════════════════════════════════════════
 
-export const FREQUENZE = [
-  { v:"settimanale", l:"Settimanale", giorni:7   },
-  { v:"mensile",     l:"Mensile",     giorni:30  },
-  { v:"bimestrale",  l:"Bimestrale",  giorni:60  },
-  { v:"trimestrale", l:"Trimestrale", giorni:90  },
-  { v:"semestrale",  l:"Semestrale",  giorni:180 },
-  { v:"annuale",     l:"Annuale",     giorni:365 },
-];
+// ─── Colori priorità ──────────────────────────────────────────────────────
+export const PRI_COL = {
+  bassa:   "#94A3B8",
+  media:   "#F59E0B",
+  alta:    "#3B82F6",
+  urgente: "#EF4444",
+  critica: "#DC2626",
+};
 
-export const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
+export const PRI_BG = {
+  bassa:   "#F8FAFC",
+  media:   "#FFFBEB",
+  alta:    "#EFF6FF",
+  urgente: "#FFF1F2",
+  critica: "#FEF2F2",
+};
 
+// ─── Etichette stato manutenzioni ─────────────────────────────────────────
 export const STATO_LABEL = {
-  pianificata:"Pianificata",
-  inCorso:"In corso",
-  completata:"Completata",
-  scaduta:"Scaduta",
+  richiesta:   "Richiesta",
+  pianificata: "Pianificata",
+  inCorso:     "In corso",
+  completata:  "Completata",
+  scaduta:     "Scaduta",
 };
 
-export const TIPO_OP = {
-  fornitore: { label:"Fornitore", style:{background:"#EFF6FF",color:"#1D4ED8",border:"1px solid #BFDBFE"} },
-  cliente:   { label:"Cliente",   style:{background:"#EEEDFE",color:"#4F46E5",border:"1px solid #C4B5FD"} },
-  interno:   { label:"Interno",   style:{background:"#ECFDF5",color:"#065F46",border:"1px solid #A7F3D0"} },
+export const STATO_COL = {
+  pianificata: "#3B82F6",
+  inCorso:     "#F59E0B",
+  completata:  "#059669",
+  scaduta:     "#EF4444",
+  richiesta:   "#7C3AED",
 };
 
-export const COLORI_OP     = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6"];
-export const COLORI_GRUPPI = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6","#0EA5E9","#84CC16"];
+export const STATO_BG = {
+  pianificata: "#EFF6FF",
+  inCorso:     "#FFFBEB",
+  completata:  "#ECFDF5",
+  scaduta:     "#FEF2F2",
+  richiesta:   "#F5F3FF",
+};
 
-export const TEMI = [
-  { id:"navy",   nome:"Navy",   top:"#0D1B2A", bot:"#F59E0B", desc:"Industrial scuro" },
-  { id:"slate",  nome:"Slate",  top:"#1E293B", bot:"#6366F1", desc:"Grigio professionale" },
-  { id:"forest", nome:"Forest", top:"#052E16", bot:"#22C55E", desc:"Verde bosco" },
-  { id:"sunset", nome:"Sunset", top:"#431407", bot:"#F97316", desc:"Caldo arancione" },
-  { id:"ocean",  nome:"Ocean",  top:"#0C4A6E", bot:"#0EA5E9", desc:"Azzurro oceano" },
+// ─── Frequenze piani di manutenzione ──────────────────────────────────────
+export const FREQUENZE = [
+  { v: "giornaliero",  l: "Giornaliero",  giorni: 1   },
+  { v: "settimanale",  l: "Settimanale",  giorni: 7   },
+  { v: "mensile",      l: "Mensile",      giorni: 30  },
+  { v: "bimestrale",   l: "Bimestrale",   giorni: 60  },
+  { v: "trimestrale",  l: "Trimestrale",  giorni: 90  },
+  { v: "semestrale",   l: "Semestrale",   giorni: 180 },
+  { v: "annuale",      l: "Annuale",      giorni: 365 },
 ];
 
-export const OP_DEFAULT = [
-  { nome:"Marco Rossi",   spec:"Elettrico",  col:"#378ADD", tipo:"fornitore" },
-  { nome:"Laura Bianchi", spec:"Meccanico",  col:"#1D9E75", tipo:"fornitore" },
-  { nome:"Giorgio Ferri", spec:"Idraulico",  col:"#D85A30", tipo:"fornitore" },
-  { nome:"Anna Conti",    spec:"Generico",   col:"#7F77DD", tipo:"interno"   },
+// ─── Stati Ordini di Lavoro ────────────────────────────────────────────────
+export const STATI_ODL = [
+  { v: "bozza",      l: "Bozza",      col: "#94A3B8", bg: "#F8FAFC" },
+  { v: "confermato", l: "Confermato", col: "#3B82F6", bg: "#EFF6FF" },
+  { v: "in_corso",   l: "In corso",   col: "#F59E0B", bg: "#FEF3C7" },
+  { v: "completato", l: "Completato", col: "#059669", bg: "#ECFDF5" },
+  { v: "annullato",  l: "Annullato",  col: "#EF4444", bg: "#FEF2F2" },
 ];
 
-export const TABS = [
-  {id:"dashboard",   l:"Dashboard",    icon:"◈"},
-  {id:"manutenzioni",l:"Manutenzioni", icon:"⚡"},
-  {id:"piani",       l:"Piani",        icon:"🔄"},
-  {id:"calendario",  l:"Calendario",   icon:"📅"},
-  {id:"assets",      l:"Asset",        icon:"⚙"},
-  {id:"utenti",      l:"Utenti",       icon:"👥"},
-  {id:"gruppi",      l:"Gruppi",       icon:"🗂"},
-  {id:"clienti",     l:"Clienti",      icon:"🏢"},
-  {id:"statistiche", l:"Statistiche",  icon:"📊"},
+// ─── Tipi ticket ───────────────────────────────────────────────────────────
+export const TICKET_TIPI = [
+  { v: "correttiva", l: "🔧 Correttiva",  col: "#DC2626", bg: "#FEF2F2", desc: "Guasto in corso" },
+  { v: "urgente",    l: "⚡ Urgente",     col: "#B91C1C", bg: "#FFF1F2", desc: "Rischio blocco imminente" },
+  { v: "miglioria",  l: "⬆ Miglioria",   col: "#7C3AED", bg: "#F5F3FF", desc: "Miglioramento non urgente" },
+  { v: "normativa",  l: "⚖ Normativa",   col: "#D97706", bg: "#FEF3C7", desc: "Adempimento non pianificato" },
 ];
 
-export const PRIMARY_TABS = [
-  {id:"dashboard",    l:"Dashboard",  icon:"◈"},
-  {id:"manutenzioni", l:"Attività",   icon:"⚡"},
-  {id:"calendario",   l:"Calendario", icon:"📅"},
-  {id:"clienti",      l:"Clienti",    icon:"🏢"},
+export const TICKET_PRIORITA = [
+  { v: "bassa",   l: "Bassa",      col: "#64748B" },
+  { v: "media",   l: "Media",      col: "#F59E0B" },
+  { v: "alta",    l: "Alta",       col: "#3B82F6" },
+  { v: "critica", l: "🔴 Critica", col: "#DC2626" },
 ];
 
-export const DRAWER_TABS = [
-  {id:"piani",       l:"Piani",        icon:"🔄"},
-  {id:"assets",      l:"Asset",        icon:"⚙"},
-  {id:"utenti",      l:"Utenti",       icon:"👥"},
-  {id:"gruppi",      l:"Gruppi",       icon:"🗂"},
-  {id:"statistiche", l:"Statistiche",  icon:"📊"},
+export const TICKET_STATI = [
+  { v: "aperto",         l: "Aperto",         col: "#3B82F6", bg: "#EFF6FF" },
+  { v: "in_lavorazione", l: "In lavorazione",  col: "#F59E0B", bg: "#FFFBEB" },
+  { v: "risolto",        l: "Risolto",         col: "#059669", bg: "#ECFDF5" },
+  { v: "chiuso",         l: "Chiuso",          col: "#6B7280", bg: "#F9FAFB" },
+  { v: "annullato",      l: "Annullato",        col: "#EF4444", bg: "#FEF2F2" },
 ];
 
-// ─── Utils ────────────────────────────────────────────────────────────────
-export const fmtData   = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
-export const fmtDataOra= d => d ? new Date(d).toLocaleString("it-IT") : "—";
-export const isoDate   = d => { const dt=new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`; };
-export const addDays   = (iso,n) => { const d=new Date(iso); d.setDate(d.getDate()+n); return isoDate(d); };
-export const addMonths = (iso,n) => { const d=new Date(iso); d.setMonth(d.getMonth()+n); return isoDate(d); };
+// SLA ore di default per tipo+priorità (usato quando il cliente non ha profilo SLA)
+export const SLA_ORE_DEFAULT = {
+  urgente:   { critica: 2,  alta: 4,  media: 8,   bassa: 24  },
+  correttiva:{ critica: 4,  alta: 8,  media: 24,  bassa: 48  },
+  miglioria: { critica: 24, alta: 48, media: 72,  bassa: 168 },
+  normativa: { critica: 8,  alta: 24, media: 72,  bassa: 168 },
+};
 
-export function generaOccorrenze(piano, dataInizio, mesi=12) {
-  if (!dataInizio) return [];
-  const freq = FREQUENZE.find(f=>f.v===piano.frequenza); if (!freq) return [];
-  const fine = (piano.dataFine&&piano.dataFine>dataInizio) ? piano.dataFine : addMonths(dataInizio, mesi);
-  const occ=[]; let cur=dataInizio;
-  while (cur<=fine && occ.length<200) {
-    occ.push(cur);
-    const mult={mensile:1,bimestrale:2,trimestrale:3,semestrale:6,annuale:12}[piano.frequenza];
-    cur = mult ? addMonths(cur,mult) : addDays(cur,freq.giorni);
-  }
-  return occ;
-}
-
-export function conflitti(manutenzioni, operatoreId, data, escludiId=null) {
-  return manutenzioni.filter(m=>m.operatoreId===Number(operatoreId)&&m.data===data&&m.stato!=="completata"&&m.id!==escludiId);
-}
+// ─── Helper functions ──────────────────────────────────────────────────────
+export const priCol    = v => PRI_COL[v]    || "#94A3B8";
+export const priBg     = v => PRI_BG[v]     || "#F8FAFC";
+export const statoCol  = v => STATO_COL[v]  || "#94A3B8";
+export const statoBg   = v => STATO_BG[v]   || "var(--surface-2)";
+export const statoLbl  = v => STATO_LABEL[v] || v;
+export const odlStato  = v => STATI_ODL.find(s => s.v === v) || STATI_ODL[0];
+export const tktTipo   = v => TICKET_TIPI.find(t => t.v === v) || TICKET_TIPI[0];
+export const tktPri    = v => TICKET_PRIORITA.find(p => p.v === v) || TICKET_PRIORITA[1];
+export const tktStato  = v => TICKET_STATI.find(s => s.v === v) || TICKET_STATI[0];

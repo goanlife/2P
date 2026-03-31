@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { PRI_COL } from '../constants';
 import { useI18n } from "../i18n/index.jsx";
 import { supabase } from "../supabase";
 import { stampaRapportoOdL } from "../utils/features";
@@ -16,7 +17,6 @@ const STATI_ODL_BASE = [
   { v:"completato", lKey:"stati.completato", lFb:"Completato",  col:"#059669", bg:"#ECFDF5" },
   { v:"annullato",  lKey:null,               lFb:"Annullato",   col:"#EF4444", bg:"#FEF2F2" },
 ];
-const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 // Funzione che produce gli stati tradotti — da chiamare DENTRO i componenti
 const getStatiOdl  = (t) => STATI_ODL_BASE.map(s => ({...s, l: s.lKey ? t(s.lKey) : s.lFb}));
 const getStatoLabel= (t) => ({ richiesta:"Richiesta", pianificata:"Pianificata", inCorso:t("stati.inCorso"), completata:t("stati.completata"), scaduta:t("stati.scaduta") });

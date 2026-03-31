@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { PRI_COL } from '../constants';
 import { supabase } from "../supabase";
 import { Field, Modal, Overlay } from "./ui/Atoms";
 
@@ -6,11 +7,6 @@ import { Field, Modal, Overlay } from "./ui/Atoms";
 const TIPI_ASSET = [
   "Impianto elettrico","Linea produzione","Impianto termico",
   "Impianto pneumatico","Impianto idraulico","Sicurezza","Meccanico","Altro"
-];
-const FREQUENZE = [
-  {v:"settimanale",l:"Settimanale"},{v:"mensile",l:"Mensile"},
-  {v:"bimestrale",l:"Bimestrale"},{v:"trimestrale",l:"Trimestrale"},
-  {v:"semestrale",l:"Semestrale"},{v:"annuale",l:"Annuale"},
 ];
 const PRI = [{v:"bassa",l:"Bassa"},{v:"media",l:"Media"},{v:"alta",l:"Alta"},{v:"urgente",l:"Urgente"}];
 const fmtEuro = v => v ? `€${Number(v).toFixed(0)}` : null;
@@ -290,8 +286,6 @@ export function GestioneTemplateAsset({ tenantId, ricambi=[] }) {
 
   const tipiDistinct = [...new Set(templates.map(t => t.tipo_asset))].sort();
   const filtrati = filtroTipo === "tutti" ? templates : templates.filter(t => t.tipo_asset === filtroTipo);
-
-  const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
   if (loading) return <div style={{ padding:32, textAlign:"center", color:"var(--text-3)" }}>Caricamento...</div>;
 

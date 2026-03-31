@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { PRI_COL } from '../constants';
 import { Overlay, Field } from "./ui/Atoms";
 import { ModalGeneraOdL } from "./GeneraOdL";
 import { useI18n } from "../i18n/index.jsx";
@@ -19,7 +20,6 @@ const AGGREG = [
   { v:"per_mese",      l:"Per mese",      sub:"Tutte le attività del mese → 1 OdL",  icon:"📅" },
   { v:"per_categoria", l:"Per categoria", sub:"Raggruppate per categoria",            icon:"🏷" },
 ];
-const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 const fmtData = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}) : "—";
 const oggi = () => new Date().toISOString().split("T")[0];
 

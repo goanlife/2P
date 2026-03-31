@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { PRI_COL } from '../constants';
 import { supabase } from "../supabase";
 import { Field, Overlay } from "./ui/Atoms";
 import { useI18n } from "../i18n/index.jsx";
@@ -177,8 +178,6 @@ function CardRichiesta({ m, clienti=[], assets=[], operatori=[], onApprova, onRi
   const as = assets.find(a=>a.id===m.assetId);
   const op = operatori.find(o=>o.id===m.operatoreId);
   const st = SOTTOTIPI_STR.find(s=>s.v===m.sottotipo);
-
-  const PRI_COL = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
   return (
     <div style={{

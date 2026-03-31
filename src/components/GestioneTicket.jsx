@@ -3,51 +3,39 @@ import { classificaTicket, AIClassificaBadge } from "./AIAssistente";
 import { supabase } from "../supabase";
 import { Overlay, Field } from "./ui/Atoms";
 
-// ─── Costanti ─────────────────────────────────────────────────────────────
-const TIPI = [
-  { v:"correttiva", l:"🔧 Correttiva",  desc:"Guasto in corso",            col:"#DC2626", bg:"#FEF2F2" },
-  { v:"urgente",    l:"⚡ Urgente",      desc:"Rischio blocco imminente",    col:"#B91C1C", bg:"#FFF1F2" },
-  { v:"miglioria",  l:"⬆ Miglioria",    desc:"Miglioramento non urgente",   col:"#7C3AED", bg:"#F5F3FF" },
-  { v:"normativa",  l:"⚖ Normativa",    desc:"Adempimento non pianificato", col:"#D97706", bg:"#FEF3C7" },
-];
-
-const PRIORITA = [
-  { v:"bassa",    l:"Bassa",    col:"#64748B" },
-  { v:"media",    l:"Media",    col:"#F59E0B" },
-  { v:"alta",     l:"Alta",     col:"#3B82F6" },
-  { v:"critica",  l:"🔴 Critica", col:"#DC2626" },
-];
-
-const STATI = [
-  { v:"aperto",        l:"Aperto",        col:"#3B82F6", bg:"#EFF6FF" },
-  { v:"in_lavorazione",l:"In lavorazione",col:"#F59E0B", bg:"#FFFBEB" },
-  { v:"risolto",       l:"Risolto",       col:"#059669", bg:"#ECFDF5" },
-  { v:"chiuso",        l:"Chiuso",        col:"#6B7280", bg:"#F9FAFB" },
-  { v:"annullato",     l:"Annullato",     col:"#EF4444", bg:"#FEF2F2" },
-];
-
-// SLA ore per tipo+priorità (Plangei-style)
-const SLA_ORE = {
-  urgente:   { critica:2,  alta:4,  media:8,  bassa:24 },
-  correttiva:{ critica:4,  alta:8,  media:24, bassa:48 },
-  miglioria: { critica:24, alta:48, media:72, bassa:168 },
-  normativa: { critica:8,  alta:24, media:72, bassa:168 },
-};
+// Costanti importate da constants.js (TICKET_TIPI, TICKET_PRIORITA, TICKET_STATI, SLA_ORE_DEFAULT)
 
 // Transizioni di stato dei ticket
 const NEXT     = { aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
 const NEXT_LBL = { in_lavorazione:"▶ Prendi in carico", risolto:"✓ Segna risolto", chiuso:"🔒 Chiudi" };
 
-const tipoInfo    = v => TIPI.find(t=>t.v===v)     || TIPI[0];
-const prioritaInfo= v => PRIORITA.find(p=>p.v===v)  || PRIORITA[1];
-const statoInfo   = v => STATI.find(s=>s.v===v)      || STATI[0];
+const tipoInfo    = v => TICKET_TIPI.find(t=>t.v===v)     || TICKET_TIPI[0];
+const prioritaInfo= v => TICKET_PRIORITA.find(p=>p.v===v)  || TICKET_PRIORITA[1];
+const statoInfo   = v => TICKET_STATI.find(s=>s.v===v)      || TICKET_STATI[0];
 
 const fmtDT = d => d ? new Date(d).toLocaleString("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—";
 const fmtD  = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"}) : "—";
 
-function slaScadenza(ticket) {
+function slaScadenza(ticket, slaProfiles={}, clienti=[]) {
   if (!ticket.created_at) return null;
-  const ore = SLA_ORE[ticket.tipo]?.[ticket.priorita] || 24;
+  
+  // Prova a usare il profilo SLA del cliente
+  let ore = null;
+  if (ticket.cliente_id && slaProfiles) {
+    const cl = clienti.find(c => c.id === ticket.cliente_id);
+    const profiloId = cl?.slaProfilo_id;
+    const profilo = profiloId ? slaProfiles[profiloId] : slaProfiles['default'];
+    if (profilo?.sla_profilo_config?.length) {
+      // Trova la voce SLA più adatta per priorità
+      const PRIO_ORD = { critica:0, alta:1, media:2, bassa:3 };
+      const voci = [...profilo.sla_profilo_config].sort((a,b)=>(a.ordine||0)-(b.ordine||0));
+      const voce = voci[PRIO_ORD[ticket.priorita]] || voci[0];
+      if (voce?.ore_risoluzione) ore = voce.ore_risoluzione;
+    }
+  }
+  
+  // Fallback sulle ore di default per tipo+priorità
+  if (!ore) ore = SLA_ORE_DEFAULT[ticket.tipo]?.[ticket.priorita] || 24;
   return new Date(new Date(ticket.created_at).getTime() + ore*60*60*1000);
 }
 
@@ -216,12 +204,12 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
             <Field label="Tipo">
               <select style={sel} value={f.tipo} onChange={e=>set("tipo",e.target.value)}>
-                {TIPI.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
+                {TICKET_TIPI.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
               </select>
             </Field>
             <Field label="Priorità">
               <select style={sel} value={f.priorita} onChange={e=>set("priorita",e.target.value)}>
-                {PRIORITA.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
+                {TICKET_PRIORITA.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
               </select>
             </Field>
           </div>
@@ -566,6 +554,24 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
     return ()=>clearTimeout(timer);
   }, [ticketIniziale?.id, tickets]);
 
+  // Profili SLA per calcolare scadenze reali per cliente
+  const [slaProfiles, setSlaProfiles] = useState({});
+  useEffect(()=>{
+    if (!tenantId) return;
+    supabase.from("sla_profili")
+      .select("id, nome, is_default, sla_profilo_config(*)")
+      .eq("tenant_id", tenantId)
+      .then(({data})=>{
+        if (!data) return;
+        const map = {};
+        data.forEach(p=>{
+          map[p.id] = p;
+          if (p.is_default) map['default'] = p;
+        });
+        setSlaProfiles(map);
+      });
+  }, [tenantId]);
+
   const carica = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
@@ -598,7 +604,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
     inLavorazione:tickets.filter(t=>t.stato==="in_lavorazione").length,
     slaScaduti:   tickets.filter(t=>{
       if (["chiuso","annullato","risolto"].includes(t.stato)) return false;
-      const sc = slaScadenza(t); return sc && sc < new Date();
+      const sc = slaScadenza(t, slaProfiles, clienti); return sc && sc < new Date();
     }).length,
     critici:      tickets.filter(t=>t.priorita==="critica"&&!["chiuso","annullato"].includes(t.stato)).length,
   }), [tickets]);
@@ -711,11 +717,11 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
         </select>
         <select value={fTipo} onChange={e=>setFT(e.target.value)} style={{ padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:12 }}>
           <option value="tutti">Tutti i tipi</option>
-          {TIPI.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
+          {TICKET_TIPI.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
         </select>
         <select value={fPri} onChange={e=>setFP(e.target.value)} style={{ padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:12 }}>
           <option value="tutti">Tutte le priorità</option>
-          {PRIORITA.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
+          {TICKET_PRIORITA.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
         </select>
         {clientiUsati.length>1 && (
           <select value={fCliente} onChange={e=>setFC(e.target.value)} style={{ padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:12 }}>
@@ -753,7 +759,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
             const tip = tipoInfo(t.tipo);
             const st  = statoInfo(t.stato);
             const pr  = prioritaInfo(t.priorita);
-            const scad = slaScadenza(t);
+            const scad = slaScadenza(t, slaProfiles, clienti);
             const slaOk = !scad || scad > new Date() || ["chiuso","annullato","risolto"].includes(t.stato);
             const isSel = sel?.id===t.id;
             return (
@@ -791,7 +797,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
                       <BadgeTipo tipo={t.tipo} />
                       <BadgePri priorita={t.priorita} />
                       <BadgeStato stato={t.stato} />
-                      {!slaOk && <SLABadge ticket={t} />}
+                      {!slaOk && <SLABadge ticket={t} scadenza={slaScadenza(t, slaProfiles, clienti)} />}
                       {t.fermo_impianto && <span style={{ fontSize:10, fontWeight:700, color:"#DC2626" }}>⛔</span>}
                       {t.odl_id && <span style={{ fontSize:10, color:"#3B82F6", fontWeight:700 }}>📋 OdL</span>}
                     </div>

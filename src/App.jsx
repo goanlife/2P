@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { FREQUENZE, STATO_LABEL as STATO_LABEL_MAP, PRI_COL as PRI_COLOR_MAP } from './constants';
 import { HelpButton } from "./components/HelpPanel";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { useI18n } from "./i18n/index.jsx";
@@ -41,14 +42,6 @@ import { Dashboard } from "./components/DashboardMain";
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
 const MESI   = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const FREQUENZE = [
-  { v:"settimanale", l:"Settimanale", giorni:7   },
-  { v:"mensile",     l:"Mensile",     giorni:30  },
-  { v:"bimestrale",  l:"Bimestrale",  giorni:60  },
-  { v:"trimestrale", l:"Trimestrale", giorni:90  },
-  { v:"semestrale",  l:"Semestrale",  giorni:180 },
-  { v:"annuale",     l:"Annuale",     giorni:365 },
-];
 const COLORI_OP = ["#378ADD","#1D9E75","#D85A30","#7F77DD","#E8A020","#C0395A","#2AADAD","#8B5CF6"];
 const OP_DEFAULT = [
   { nome:"Marco Rossi",   spec:"Elettrico",  col:"#378ADD", tipo:"fornitore" },

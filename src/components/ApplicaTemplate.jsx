@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { PRI_COL } from '../constants';
 import { supabase } from "../supabase";
 import { Overlay, Field } from "./ui/Atoms";
 
@@ -6,8 +7,6 @@ const isoDate = d => d.toISOString().split("T")[0];
 const fmtData  = d => d ? new Date(d+"T00:00:00").toLocaleDateString("it-IT") : "—";
 const FREQ_L   = { settimanale:"Settimanale", mensile:"Mensile", bimestrale:"Bimestrale",
                    trimestrale:"Trimestrale", semestrale:"Semestrale", annuale:"Annuale" };
-const PRI_COL  = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
-
 // ── Modal: applica template a un asset specifico ──────────────────────────
 // Crea piano + assegnazione + genera attività in un solo click
 export function ModalApplicaTemplate({
