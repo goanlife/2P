@@ -440,11 +440,13 @@ export default function App() {
   };
   const caricaTutteLeManut = async () => {
     if (!tenant?.id) return;
-    setManCaricaTutto(true);
-    setManTotale(null); // nascondi banner
-    const {data} = await supabase.from("manutenzioni").select("*")
-      .eq("tenant_id", tenant.id).order("data",{ascending:false});
-    if(data) sMan(data.map(mapM));
+    try {
+      setManCaricaTutto(true);
+      setManTotale(null);
+      const {data} = await supabase.from("manutenzioni").select("*")
+        .eq("tenant_id", tenant.id).order("data",{ascending:false});
+      if(data) sMan(data.map(mapM));
+    } catch(e) { console.error("caricaTutteLeManut:", e.message); }
   };
   const UID = session?.user?.id || "";
   const BATCH = 50;
@@ -497,11 +499,14 @@ export default function App() {
     notify("✅ Attività duplicata!", "success");
   };
   const statoM = async (id,stato) => {
-    const {error} = await supabase.from("manutenzioni").update({stato}).eq("id",id);
-    if (error) { notify("Errore: "+error.message); return; }
-    sMan(p=>p.map(m=>m.id===id?{...m,stato}:m));
-    const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta",richiesta:"📋 Richiesta inviata"};
-    notify(label[stato]||"Stato aggiornato","success");
+    try {
+      const tid = tenant?.id;
+      const {error} = await supabase.from("manutenzioni").update({stato}).eq("id",id).eq("tenant_id",tid);
+      if (error) { notify("Errore: "+error.message); return; }
+      sMan(p=>p.map(m=>m.id===id?{...m,stato}:m));
+      const label = {inCorso:"▶ Attività avviata",completata:"✅ Attività completata",pianificata:"↩ Attività riportata in pianificata",scaduta:"⚠ Attività segnata scaduta",richiesta:"📋 Richiesta inviata"};
+      notify(label[stato]||"Stato aggiornato","success");
+    } catch(e) { console.error("statoM:", e.message); }
   };
   const ripiM = async (id,data,operatoreId) => {
     try {

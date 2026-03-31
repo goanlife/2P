@@ -269,7 +269,9 @@ export function GestioneSLAProfili({ tenantId, clienti=[] }) {
       } catch(e) { console.error("DB error:", e.message); }
   };
 
-  const onSalva = async ()=>{ await carica(); setShowM(false); setInMod(null); };
+  const onSalva = async ()=>{
+    try { await carica(); setShowM(false); setInMod(null);     } catch(e) { console.error("onSalva:", e.message); }
+  };
 
   if (loading) return <div style={{padding:20,color:"var(--text-3)",fontSize:13}}>Caricamento...</div>;
 

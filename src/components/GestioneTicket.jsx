@@ -381,6 +381,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
   const inviaCommento = async () => {
     if (!testoComm.trim()) return;
     setSending(true);
+    try {
     const { data } = await supabase.from("ticket_commenti").insert({
       ticket_id: ticket.id,
       testo:     testoComm.trim(),
@@ -389,7 +390,8 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
     }).select().single();
     if (data) setCommenti(p=>[...p,data]);
     setTesto("");
-    setSending(false);
+    } catch(e) { console.error("inviaCommento:", e.message); }
+    finally { setSending(false); }
   };
 
   // NEXT e NEXT_LBL definite a livello modulo
@@ -631,26 +633,28 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
 
   // CRUD
   const salvaTicket = async (payload, id) => {
-    if (id) {
-      const { data, error } = await supabase.from("tickets").update(payload).eq("id",id).select().single();
-      if (error) throw error;
-      setTickets(p=>p.map(t=>t.id===id?data:t));
-      if (sel?.id===id) setSel(data);
-    } else {
-      // Genera numero automatico: TKT-YYYY-NNN
-      const anno = new Date().getFullYear();
-      const count = tickets.filter(t=>(t.numero||"").startsWith(`TKT-${anno}`)).length+1;
-      const numero = `TKT-${anno}-${String(count).padStart(3,"0")}`;
-      const { data, error } = await supabase.from("tickets").insert({...payload, numero}).select().single();
-      if (error) throw error;
-      setTickets(p=>[data,...p]);
-    }
+    try {
+      if (id) {
+        const { data, error } = await supabase.from("tickets").update(payload).eq("id",id).eq("tenant_id",tenantId).select().single();
+        if (error) throw error;
+        setTickets(p=>p.map(t=>t.id===id?data:t));
+        if (sel?.id===id) setSel(data);
+      } else {
+        const anno = new Date().getFullYear();
+        const count = tickets.filter(t=>(t.numero||"").startsWith(`TKT-${anno}`)).length+1;
+        const numero = `TKT-${anno}-${String(count).padStart(3,"0")}`;
+        const { data, error } = await supabase.from("tickets").insert({...payload, numero}).select().single();
+        if (error) throw error;
+        setTickets(p=>[data,...p]);
+      }
+    } catch(e) { throw e; } // ri-lancia per gestione nel form
   };
 
   const aggiornaStat = async (id, stato) => {
+    try {
     const extra = stato==="risolto" ? {risolto_at:new Date().toISOString()} : {};
-    const { data, error } = await supabase.from("tickets").update({stato,...extra}).eq("id",id).select().single();
-    if (error) { console.warn("Errore: "+error.message); return; }
+    const { data, error } = await supabase.from("tickets").update({stato,...extra}).eq("id",id).eq("tenant_id",tenantId).select().single();
+    if (error) { console.error("Errore aggiornaStat:", error.message); return; }
     setTickets(p=>p.map(t=>t.id===id?data:t));
     if (sel?.id===id) setSel(data);
     // Aggiungi log
@@ -660,6 +664,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
     await supabase.from("ticket_commenti").insert({
       ticket_id:id, testo, autore_nome:"Sistema", tipo:"log", tenant_id:tenantId,
     });
+    } catch(e) { console.error("aggiornaStat:", e.message); }
   };
 
   const eliminaTicket = async (id) => {
@@ -688,7 +693,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
 
     // Collega ticket → OdL
     const { data: upd } = await supabase.from("tickets")
-      .update({ odl_id: odlData.id, stato:"in_lavorazione" }).eq("id",ticket.id).select().single();
+      .update({ odl_id: odlData.id, stato:"in_lavorazione" }).eq("id",ticket.id).eq("tenant_id",tenantId).select().single();
     if (upd) { setTickets(p=>p.map(t=>t.id===ticket.id?upd:t)); setSel(upd); }
 
     // Log

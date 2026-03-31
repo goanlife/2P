@@ -350,14 +350,16 @@ export function GestioneOdL({
   },[odlIniziale]);
 
   const carica = async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("ordini_lavoro")
-      .select("*")
-      .eq("tenant_id", tenantId)
-      .order("data_inizio", { ascending:false });
-    setOdl(data || []);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const { data } = await supabase
+        .from("ordini_lavoro")
+        .select("*")
+        .eq("tenant_id", tenantId)
+        .order("data_inizio", { ascending:false });
+      setOdl(data || []);
+    } catch(e) { console.error("carica OdL:", e.message); }
+    finally { setLoading(false); }
   };
 
   // Filtrati
@@ -393,7 +395,7 @@ export function GestioneOdL({
   // Aggiorna stato OdL
   const statoOdl = async (id, stato) => {
     try {
-      await supabase.from("ordini_lavoro").update({ stato }).eq("id", id);
+      await supabase.from("ordini_lavoro").update({ stato }).eq("tenant_id", tenantId).eq("id", id);
       const odlObj = odl.find(o=>o.id===id);
       setOdl(prev=>prev.map(o=>o.id===id?{...o,stato}:o));
 
