@@ -695,6 +695,16 @@ jobs:
           # FASE 7 — Sistema Ticket (interventi straordinari)
           # ══════════════════════════════════════════════════════
 
+          run_sql "tickets: nuovi campi approvazione (idempotente)" \
+            "alter table tickets
+               add column if not exists approvata_at    timestamptz,
+               add column if not exists approvata_da    uuid,
+               add column if not exists rifiutata_motivo text;
+             -- Rimuovi e ricrea il check per includere i nuovi stati
+             alter table tickets drop constraint if exists tickets_stato_check;
+             alter table tickets add constraint tickets_stato_check
+               check (stato in ('in_attesa','aperto','in_lavorazione','risolto','chiuso','annullato','rifiutato'));"
+
           run_sql "tickets: tabella principale" \
             "create table if not exists tickets (
                id                bigserial primary key,

@@ -81,11 +81,13 @@ export const TICKET_PRIORITA = [
 ];
 
 export const TICKET_STATI = [
-  { v: "aperto",         l: "Aperto",         col: "#3B82F6", bg: "#EFF6FF" },
+  { v: "in_attesa",      l: "In attesa",       col: "#D97706", bg: "#FEF3C7" }, // richiesta cliente → approvazione admin
+  { v: "aperto",         l: "Aperto",          col: "#3B82F6", bg: "#EFF6FF" },
   { v: "in_lavorazione", l: "In lavorazione",  col: "#F59E0B", bg: "#FFFBEB" },
   { v: "risolto",        l: "Risolto",         col: "#059669", bg: "#ECFDF5" },
   { v: "chiuso",         l: "Chiuso",          col: "#6B7280", bg: "#F9FAFB" },
-  { v: "annullato",      l: "Annullato",        col: "#EF4444", bg: "#FEF2F2" },
+  { v: "rifiutato",      l: "Rifiutato",       col: "#9333EA", bg: "#F5F3FF" },
+  { v: "annullato",      l: "Annullato",       col: "#EF4444", bg: "#FEF2F2" },
 ];
 
 // SLA ore di default per tipo+priorità (usato quando il cliente non ha profilo SLA)

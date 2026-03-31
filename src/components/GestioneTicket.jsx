@@ -6,8 +6,10 @@ import { Overlay, Field } from "./ui/Atoms";
 // Costanti importate da constants.js (TICKET_TIPI, TICKET_PRIORITA, TICKET_STATI, SLA_ORE_DEFAULT)
 
 // Transizioni di stato dei ticket
-const NEXT     = { aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
-const NEXT_LBL = { in_lavorazione:"▶ Prendi in carico", risolto:"✓ Segna risolto", chiuso:"🔒 Chiudi" };
+const NEXT     = { in_attesa:"aperto", aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
+const NEXT_LBL = { aperto:"▶ Apri ticket", in_lavorazione:"▶ Prendi in carico", risolto:"✓ Segna risolto", chiuso:"🔒 Chiudi" };
+const STATI_TERMINALI = ["chiuso","annullato","rifiutato"];
+const STATI_ATTIVI = ["in_attesa","aperto","in_lavorazione"];
 
 const tipoInfo    = v => TICKET_TIPI.find(t=>t.v===v)     || TICKET_TIPI[0];
 const prioritaInfo= v => TICKET_PRIORITA.find(p=>p.v===v)  || TICKET_PRIORITA[1];
@@ -493,8 +495,14 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
         {/* Avanza stato */}
         {NEXT[ticket.stato] && (
           <button onClick={()=>onStato(ticket.id, NEXT[ticket.stato])}
-            style={{ width:"100%", padding:"10px", background:"var(--amber)", color:"#0D1B2A", border:"none", borderRadius:"var(--radius-sm)", fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {NEXT_LBL[NEXT[ticket.stato]]}
+            style={{ width:"100%", padding:"10px", background:ticket.stato==="in_attesa"?"#059669":"var(--amber)", color:ticket.stato==="in_attesa"?"white":"#0D1B2A", border:"none", borderRadius:"var(--radius-sm)", fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {ticket.stato==="in_attesa" ? "✅ Approva richiesta" : NEXT_LBL[NEXT[ticket.stato]]}
+          </button>
+        )}
+        {ticket.stato==="in_attesa" && (
+          <button onClick={()=>onStato(ticket.id,"rifiutato")}
+            style={{ width:"100%", padding:"8px", background:"#FEF2F2", color:"#DC2626", border:"1px solid #FECACA", borderRadius:"var(--radius-sm)", fontWeight:700, fontSize:12, cursor:"pointer" }}>
+            ✕ Rifiuta richiesta
           </button>
         )}
 
@@ -529,12 +537,12 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
 }
 
 // ─── Vista principale Ticket ──────────────────────────────────────────────
-export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, isAdmin=true, onOdlCreato, onApriOdl, ticketIniziale=null }) {
+export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, isAdmin=true, onOdlCreato, onApriOdl, ticketIniziale=null, mostraInAttesa=false }) {
   const [tickets,   setTickets]   = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [sel,       setSel]       = useState(null);   // ticket aperto nel pannello
   const [form,      setForm]      = useState(null);   // null | "nuovo" | ticket da modificare
-  const [fStato,    setFS]        = useState("aperto");
+  const [fStato,    setFS]        = useState(mostraInAttesa ? "in_attesa" : "aperto");
   const [fTipo,     setFT]        = useState("tutti");
   const [fPri,      setFP]        = useState("tutti");
   const [fOp,       setFO]        = useState("tutti");
@@ -587,7 +595,8 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
   // Filtrati
   const ticketsView = useMemo(()=>{
     return tickets.filter(t=>{
-      if (fStato!=="tutti" && t.stato!==fStato) return false;
+      if (fStato==="attivi") { if (!STATI_ATTIVI.includes(t.stato)) return false; }
+      else if (fStato!=="tutti" && t.stato!==fStato) return false;
       if (fTipo!=="tutti"  && t.tipo!==fTipo)   return false;
       if (fPri!=="tutti"   && t.priorita!==fPri) return false;
       if (fOp!=="tutti"    && String(t.operatore_id)!==fOp) return false;
@@ -606,6 +615,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
       if (["chiuso","annullato","risolto"].includes(t.stato)) return false;
       const sc = slaScadenza(t, slaProfiles, clienti); return sc && sc < new Date();
     }).length,
+    inAttesa: tickets.filter(t => t.stato === "in_attesa").length,
     critici:      tickets.filter(t=>t.priorita==="critica"&&!["chiuso","annullato"].includes(t.stato)).length,
   }), [tickets]);
 
@@ -644,9 +654,11 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
     setTickets(p=>p.map(t=>t.id===id?data:t));
     if (sel?.id===id) setSel(data);
     // Aggiungi log
+    const testo = stato === "aperto"    ? "✅ Richiesta approvata — ticket aperto" :
+                  stato === "rifiutato" ? "✕ Richiesta rifiutata" :
+                  `Stato aggiornato → ${statoInfo(stato).l}`;
     await supabase.from("ticket_commenti").insert({
-      ticket_id:id, testo:`Stato aggiornato → ${statoInfo(stato).l}`,
-      autore_nome:"Sistema", tipo:"log", tenant_id:tenantId,
+      ticket_id:id, testo, autore_nome:"Sistema", tipo:"log", tenant_id:tenantId,
     });
   };
 
@@ -694,10 +706,10 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
       {/* KPI */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
         {[
+          { l:"In attesa",     v:kpi.inAttesa||0,   col:kpi.inAttesa>0?"#D97706":"#6B7280", icon:"⏳" },
           { l:"Aperti",        v:kpi.aperti,        col:"#3B82F6", icon:"📬" },
           { l:"In lavorazione",v:kpi.inLavorazione,  col:"#F59E0B", icon:"🔧" },
           { l:"SLA scaduti",   v:kpi.slaScaduti,    col:kpi.slaScaduti>0?"#DC2626":"#059669", icon:"⏱" },
-          { l:"Critici aperti",v:kpi.critici,        col:kpi.critici>0?"#DC2626":"#6B7280", icon:"🔴" },
         ].map(k=>(
           <div key={k.l} style={{ background:"var(--surface-2)", borderRadius:"var(--radius)", padding:"12px 14px", textAlign:"center" }}>
             <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>{k.icon} {k.l}</div>
@@ -760,7 +772,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
             const st  = statoInfo(t.stato);
             const pr  = prioritaInfo(t.priorita);
             const scad = slaScadenza(t, slaProfiles, clienti);
-            const slaOk = !scad || scad > new Date() || ["chiuso","annullato","risolto"].includes(t.stato);
+            const slaOk = !scad || scad > new Date() || [...STATI_TERMINALI, "risolto"].includes(t.stato);
             const isSel = sel?.id===t.id;
             return (
               <div key={t.id}
