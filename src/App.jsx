@@ -291,7 +291,7 @@ export default function App() {
     if (ruoloTenant === "admin") return ALL_TABS;
     // Cliente: tab di default se nessun gruppo configurato
     if (ruolo === "cliente" && (!gOps.length || !Object.keys(menuConfig).length)) {
-      return ALL_TABS.filter(t => ["dashboard","manutenzioni","calendario","assets","statistiche"].includes(t.id));
+      return ALL_TABS.filter(t => ["dashboard","ticket","calendario","assets","statistiche"].includes(t.id));
     }
     // Nessun gruppo configurato → tutto visibile
     if (!gOps.length || !Object.keys(menuConfig).length) return ALL_TABS;
@@ -947,8 +947,8 @@ export default function App() {
           {tabsVisibili.map(tab=>(
             <button key={tab.id} className={"sb-item"+(vista===tab.id?" active":"")}
               onClick={()=>{ sVWithReset(tab.id); setSidebar(false); }}>
-              <span className="sb-icon">{tab.icon}</span>
-              <span className="sb-label">{t(`nav.${tab.id}`) || tab.l}</span>
+              <span className="sb-icon">{tab.id==="ticket"&&isCliente?"📩":tab.icon}</span>
+              <span className="sb-label">{tab.id==="ticket"&&isCliente?"Nuova richiesta":(t(`nav.${tab.id}`) || tab.l)}</span>
             </button>
           ))}
         </nav>
@@ -1069,36 +1069,7 @@ export default function App() {
           onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
         {vista==="template" && <GestioneTemplateAsset tenantId={tenant?.id} ricambi={[]} />}
         {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
-        {vista==="richieste" && (
-          isCliente
-            ? <RichiestaIntervento
-                meOperatore={meOperatore}
-                siti={siti}
-                assets={assetsView}
-                tenantId={tenant?.id}
-                onCreata={()=>{ notify("✅ Richiesta inviata! Il team la valuterà presto.", "success"); }}
-                onRichiestaCreata={async m=>{
-                  const cfgEmail = emailConfig?.notifiche?.richiesta_ricevuta;
-                  if (emailConfig?.abilitato && cfgEmail?.abilitato) {
-                    const cl = clienti.find(c=>c.id===m.cliente_id);
-                    const as = assets.find(a=>a.id===m.asset_id);
-                    emailRichiestaRicevuta(m, cl, as, cfgEmail, emailConfig.emailSito, tenant?.nome);
-                  }
-                }}
-              />
-            : /* Admin: GestioneTicket filtrato sulle richieste in attesa */
-              <GestioneTicket
-                clienti={clientiView} assets={assetsView} operatori={operatori}
-                tenantId={tenant?.id}
-                isAdmin={true}
-                mostraInAttesa={true}
-                onOdlCreato={(odlData)=>{ sOdl(p=>[odlData,...p]); }}
-                onApriOdl={(odlId)=>{
-                  const o = odl.find(x=>x.id===odlId);
-                  if (o) { setOdlIniziale(o); navigateTo("odl"); } else navigateTo("odl");
-                }}
-              />
-        )}
+
         {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} emailConfig={emailConfig} onEmailConfig={salvaEmailConfig} />}
       </main>
 
