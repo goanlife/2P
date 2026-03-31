@@ -219,7 +219,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
           {ticket && (
             <Field label="Stato">
               <select style={sel} value={f.stato} onChange={e=>set("stato",e.target.value)}>
-                {STATI.map(s=><option key={s.v} value={s.v}>{s.l}</option>)}
+                {TICKET_STATI.map(s=><option key={s.v} value={s.v}>{s.l}</option>)}
               </select>
             </Field>
           )}
@@ -730,7 +730,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
           style={{ padding:"8px 12px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:13, flex:"1 1 180px", minWidth:180, background:"var(--surface)", color:"var(--text-1)" }} />
         <select value={fStato} onChange={e=>setFS(e.target.value)} style={{ padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:12 }}>
           <option value="tutti">Tutti gli stati</option>
-          {STATI.map(s=><option key={s.v} value={s.v}>{s.l}</option>)}
+          {TICKET_STATI.map(s=><option key={s.v} value={s.v}>{s.l}</option>)}
         </select>
         <select value={fTipo} onChange={e=>setFT(e.target.value)} style={{ padding:"8px 10px", border:"1px solid var(--border-dim)", borderRadius:7, fontSize:12 }}>
           <option value="tutti">Tutti i tipi</option>
