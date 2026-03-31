@@ -508,7 +508,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
 
         <div style={{ display:"flex", gap:8 }}>
           {/* Converti in OdL */}
-          {!ticket.odl_id && !["chiuso","annullato"].includes(ticket.stato) && (
+          {!ticket.odl_id && !["chiuso","annullato","rifiutato","in_attesa"].includes(ticket.stato) && (
             <button onClick={()=>setConverting(true)}
               style={{ flex:1, padding:"8px", background:"#EFF6FF", color:"#1D4ED8", border:"1px solid #BFDBFE", borderRadius:"var(--radius-sm)", fontWeight:700, fontSize:12, cursor:"pointer" }}>
               📋 Converti in OdL
@@ -616,7 +616,7 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
       const sc = slaScadenza(t, slaProfiles, clienti); return sc && sc < new Date();
     }).length,
     inAttesa: tickets.filter(t => t.stato === "in_attesa").length,
-    critici:      tickets.filter(t=>t.priorita==="critica"&&!["chiuso","annullato"].includes(t.stato)).length,
+    critici:      tickets.filter(t=>t.priorita==="critica"&&![...STATI_TERMINALI,"risolto"].includes(t.stato)).length,
   }), [tickets]);
 
   const clientiUsati = useMemo(()=>{
