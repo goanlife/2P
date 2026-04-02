@@ -49,8 +49,12 @@ export function PopupGiorno({data=[], attivita=[], odlGiorno=[], clienti=[], ass
   const totOre = Math.round(attivita.reduce((s,m)=>s+m.durata,0)/60*10)/10;
   return (
     <div className="popup-giorno-panel" style={{position:"fixed",top:0,right:0,bottom:0,width:"min(420px,100vw)",background:"var(--surface)",borderLeft:"1px solid var(--border)",boxShadow:"-4px 0 24px rgba(0,0,0,.15)",zIndex:500,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Handle mobile */}
+      <div style={{display:"flex",justifyContent:"center",padding:"10px 0 0",flexShrink:0}}>
+        <div style={{width:40,height:4,background:"rgba(0,0,0,.12)",borderRadius:99}} />
+      </div>
       {/* Header */}
-      <div style={{padding:"16px 20px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
+      <div style={{padding:"12px 20px 12px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
         <div style={{flex:1}}>
           <div style={{fontFamily:"var(--font-head)",fontWeight:700,fontSize:16}}>
             {new Date(data+"T12:00:00").toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}
