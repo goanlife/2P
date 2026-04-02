@@ -37,6 +37,8 @@ import { GestioneSLAProfili } from "./components/GestioneSLAProfili";
 import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
 import { RichiestaIntervento } from "./components/RichiestaIntervento";
 import { Dashboard } from "./components/DashboardMain";
+import { LoadingScreen } from "./components/LoadingScreen";
+import { PageTransition } from "./components/PageTransition";
 
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
@@ -884,13 +886,7 @@ export default function App() {
   if (!session) return <Auth />;
   if (!tenant && !loading) return <Onboarding session={session} onTenantReady={t => { setTenant(t); }} />;
 
-  if (loading) return (
-    <div className="loading-screen">
-      <div className="loading-logo">🔧</div>
-      <div style={{fontFamily:"var(--font-head)",fontSize:22,fontWeight:700,color:"white"}}>ManuMan</div>
-      <div className="loading-text">Caricamento in corso…</div>
-    </div>
-  );
+  if (loading) return <LoadingScreen />;
 
   if (dbErr) return (
     <div className="error-screen">
@@ -997,6 +993,7 @@ export default function App() {
           </div>
         </header>
         <main className="page-content">
+        <PageTransition pageKey={vista}>
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
             ? <DashboardFornitore me={meOperatore} man={man} clienti={clienti} assets={assets} onStato={statoM} onApriChiudi={m=>setChiudiModal(m)} />
@@ -1071,6 +1068,7 @@ export default function App() {
         {vista==="scadenzario" && <ScadenzarioNormativo tenantId={tenant?.id} clienti={clientiView} assets={assetsView} operatori={operatori} />}
 
         {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} emailConfig={emailConfig} onEmailConfig={salvaEmailConfig} />}
+        </PageTransition>
       </main>
 
       {chiudiModal && (

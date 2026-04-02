@@ -568,3 +568,44 @@ tr:hover td { background: rgba(14,165,233,.03); color: var(--text-1); }
 [data-theme="forest"] { --amber: #059669; --amber-dim: #047857; --amber-glow: #34D399; }
 [data-theme="sunset"] { --amber: #F97316; --amber-dim: #EA580C; --amber-glow: #FB923C; }
 [data-theme="ocean"] { --amber: #0EA5E9; --amber-dim: #0284C7; --amber-glow: #38BDF8; }
+
+
+/* ─── Micro-interactions FROST + framer-motion ──────────────────────────── */
+
+/* Smooth card hover lift */
+.card, .kpi-card {
+  transition: box-shadow .25s cubic-bezier(.4,0,.2,1),
+              border-color .25s,
+              transform .25s cubic-bezier(.4,0,.2,1);
+}
+
+/* Button press feedback */
+button:active:not(:disabled) { transform: scale(0.97); }
+.btn-new:active { transform: scale(0.96) !important; }
+
+/* Sidebar item hover glow on accent */
+.sb-item.active { box-shadow: inset 2px 0 0 var(--amber); }
+
+/* Input focus glow enhanced */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(14,165,233,.12), 0 2px 8px rgba(14,165,233,.08);
+}
+
+/* Notification slide */
+.notif { backdrop-filter: blur(12px); }
+
+/* KPI value glow on hover */
+.kpi-card:hover .kpi-value {
+  text-shadow: 0 0 20px rgba(14,165,233,.3);
+  transition: text-shadow .3s;
+}
+
+/* Smooth scrollbar */
+* { scrollbar-width: thin; scrollbar-color: rgba(14,165,233,.2) transparent; }
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(14,165,233,.2); border-radius: 99px; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(14,165,233,.4); }
+
+/* Page transition smooth */
+[data-framer-motion] { will-change: opacity, transform; }

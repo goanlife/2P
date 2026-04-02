@@ -1,4 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { AnimatedKPI } from "./AnimatedKPI";
+import { FadeIn, StaggerList } from "./PageTransition";
 import { useI18n } from "../i18n/index.jsx";
 import { AvatarComp } from "./ui/Atoms";
 
@@ -71,16 +73,11 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
           )}
         </div>
       )}
-      <div className="kpi-grid">{kpis.map(k=>(
-        <div key={k.l} className="kpi-card" style={{"--c":k.c, cursor:"pointer"}}
-          onClick={k.action}
-          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="var(--shadow-lg)";}}
-          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="";}}>
-          <div className="kpi-value">{k.v}</div>
-          <div className="kpi-label">{k.l}</div>
-          <div style={{fontSize:10,color:"var(--c, var(--text-3))",opacity:.6,marginTop:4,fontWeight:600}}>Vai →</div>
-        </div>
-      ))}</div>
+      <div className="kpi-grid">
+        {kpis.map((k,i) => (
+          <AnimatedKPI key={k.l} value={k.v} label={k.l} color={k.c} delay={i} onClick={k.action} />
+        ))}
+      </div>
       {manTotale!=null&&!manCaricaTutto&&(
         <div style={{fontSize:11,color:"var(--text-3)",marginTop:-12,marginBottom:4}}>
           * Dato basato su tutto lo storico · Altri KPI sugli ultimi 6 mesi — <button onClick={()=>onNavigate("manutenzioni",{})} style={{fontSize:11,color:"var(--amber)",background:"none",border:"none",cursor:"pointer",padding:0,textDecoration:"underline"}}>Carica tutto per dati completi</button>
