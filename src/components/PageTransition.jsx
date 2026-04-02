@@ -6,9 +6,9 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const variants = {
-  enter: { opacity: 0, y: 16, filter: "blur(4px)" },
-  center: { opacity: 1, y: 0, filter: "blur(0px)" },
-  exit: { opacity: 0, y: -8, filter: "blur(2px)" },
+  enter:  { opacity: 0 },
+  center: { opacity: 1 },
+  exit:   { opacity: 0 },
 };
 
 export function PageTransition({ children, pageKey }) {
@@ -20,8 +20,8 @@ export function PageTransition({ children, pageKey }) {
         animate="center"
         exit="exit"
         variants={variants}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-        style={{ width: "100%", willChange: "opacity, transform" }}
+        transition={{ duration: 0.18, ease: "easeInOut" }}
+        style={{ width: "100%" }}
       >
         {children}
       </motion.div>
