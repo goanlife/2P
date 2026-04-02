@@ -418,6 +418,21 @@ tr:hover td { background: rgba(14,165,233,.03); color: var(--text-1); }
 .search-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(15,23,42,.5); backdrop-filter: blur(10px); display: flex; align-items: flex-start; justify-content: center; padding-top: 80px; }
 .search-box { width: min(640px, 94vw); background: var(--surface); border: 1px solid rgba(14,165,233,.3); border-radius: var(--radius-xl); box-shadow: 0 0 60px rgba(14,165,233,.12), 0 40px 80px rgba(0,0,0,.1); overflow: hidden; }
 
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(6px);
+}
+@media (max-width: 640px) {
+  .overlay { align-items: flex-end; padding: 0; }
+}
+
 /* ─── Animations ─────────────────────────────────────────────────────────── */
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes highlightOdl { 0%{ box-shadow: 0 0 0 2px var(--amber), 0 0 24px rgba(14,165,233,.3); } 50%{ box-shadow: 0 0 0 3px var(--amber), 0 0 40px rgba(14,165,233,.4); } 100%{ box-shadow: none; } }
@@ -711,4 +726,154 @@ input:focus, select:focus, textarea:focus {
 @keyframes titleIn {
   from { opacity:0; transform:translateX(-8px); }
   to   { opacity:1; transform:none; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — breakpoint 640px
+   Tutte le regole necessarie per usare ManuMan da smartphone
+═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── Topbar mini ─────────────────────────────────────────────────────── */
+  .mini-topbar { height: calc(52px + env(safe-area-inset-top, 0px)); }
+  .mini-topbar-title { font-size: 12px; }
+
+  /* ── Page content ────────────────────────────────────────────────────── */
+  .page-content {
+    padding: 14px 12px calc(env(safe-area-inset-bottom, 0px) + 16px);
+  }
+  .page-header { margin-bottom: 16px; }
+  .page-title  { font-size: 16px; }
+
+  /* ── KPI ─────────────────────────────────────────────────────────────── */
+  .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+  .kpi-value { font-size: 24px; }
+  .kpi-label { font-size: 9px; }
+
+  /* ── Cards ───────────────────────────────────────────────────────────── */
+  .card { padding: 14px 14px; border-radius: var(--radius); }
+
+  /* ── Modals: full-bottom-sheet su mobile ─────────────────────────────── */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92vh !important;
+    border-bottom: none !important;
+  }
+  .modal-box::before {
+    left: 40%; right: 40%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    top: 8px;
+  }
+
+  /* ── Bottoni nel footer modal ────────────────────────────────────────── */
+  .modal-footer {
+    flex-wrap: wrap;
+    gap: 8px !important;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .modal-footer button { flex: 1; min-width: 120px; }
+
+  /* ── Filters bar ─────────────────────────────────────────────────────── */
+  .filters { gap: 6px; padding: 10px 10px; }
+  .filters input, .filters select { min-width: 100px; font-size: 12px; }
+
+  /* ── Tabelle → scroll orizzontale ────────────────────────────────────── */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 480px; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  button { min-height: 38px; } /* touch target minimo */
+  .btn-sm { min-height: 32px; }
+  .btn-new { font-size: 11px; padding: 6px 10px; }
+
+  /* ── Sidebar dettaglio (slide-in) → fullscreen ───────────────────────── */
+  .pannello-dettaglio-fixed {
+    width: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  /* ── Kanban → scroll orizzontale ─────────────────────────────────────── */
+  .kanban-board {
+    grid-template-columns: repeat(4, 260px) !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  .kanban-col { scroll-snap-align: start; }
+
+  /* ── Calendario → celle più compatte ─────────────────────────────────── */
+  .cal-cell { min-height: 54px; padding: 3px 2px; }
+  .cal-day-header { padding: 6px 2px; font-size: 9px; }
+  .cal-day-num { font-size: 10px; }
+
+  /* ── Notifiche → full width ──────────────────────────────────────────── */
+  .notif-container {
+    top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
+    left: 12px !important;
+    right: 12px !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Confirm dialog ──────────────────────────────────────────────────── */
+  .confirm-overlay { align-items: flex-end !important; padding: 0 !important; }
+  .confirm-box {
+    border-radius: 20px 20px 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* ── Form inputs ─────────────────────────────────────────────────────── */
+  input, select, textarea {
+    font-size: 16px !important; /* previeni zoom iOS su focus */
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+  textarea { min-height: 80px !important; font-size: 15px !important; }
+  label { font-size: 10px; }
+
+  /* ── Loading screen ──────────────────────────────────────────────────── */
+  .loading-screen canvas { opacity: .6; }
+
+  /* ── Pannello popup giorno calendario ────────────────────────────────── */
+  .popup-giorno-panel {
+    width: 100vw !important;
+    top: auto !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    height: 80vh !important;
+    border-left: none !important;
+    border-top: 1px solid var(--border) !important;
+  }
+}
+
+/* ── iPad / tablet 641-1024px ─────────────────────────────────────────── */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+  .kanban-board { grid-template-columns: repeat(2, 1fr) !important; }
+  .page-content { padding: 20px 16px 32px; }
+}
+
+/* ── Touch device: rimuovi hover effects pesanti ─────────────────────── */
+@media (hover: none) {
+  .card:hover { transform: none !important; }
+  .kpi-card:hover { transform: none !important; }
+  .sb-new-btn:hover { transform: none !important; }
 }

@@ -131,13 +131,13 @@ function GestioneFornitori({ tenantId, onBack }) {
               <button onClick={()=>setForm(null)} className="modal-close">✕</button>
             </div>
             <div style={{padding:"20px 24px",display:"grid",gap:12}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
                 <div><label style={lbl}>Nome *</label>
                   <input style={inp} value={form.nome||""} onChange={e=>setForm(p=>({...p,nome:e.target.value}))} placeholder="Ragione sociale" /></div>
                 <div><label style={lbl}>Codice</label>
                   <input style={inp} value={form.codice||""} onChange={e=>setForm(p=>({...p,codice:e.target.value}))} placeholder="Codice interno" /></div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
                 <div><label style={lbl}>P.IVA</label>
                   <input style={inp} value={form.piva||""} onChange={e=>setForm(p=>({...p,piva:e.target.value}))} placeholder="IT12345678901" /></div>
                 <div><label style={lbl}>Telefono</label>
@@ -238,7 +238,7 @@ function ModalOrdine({ ini, ricambi=[], fornitori=[], tenantId, meOperatore, onC
     <div style={{position:"fixed",inset:0,background:"rgba(4,9,18,.88)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)",padding:"20px"}}>
       <div style={{
         background:"rgba(8,15,30,.97)",border:"1px solid var(--border)",
-        borderRadius:"var(--radius-xl)",width:"min(860px,98vw)",maxHeight:"92vh",
+        borderRadius:"var(--radius-xl)",width:"min(860px,98vw)",maxHeight:"92vh", maxWidth:"min(860px, 100vw)",
         overflow:"hidden",boxShadow:"0 24px 80px rgba(0,0,0,.9)",
         display:"flex",flexDirection:"column",
       }}>
@@ -250,7 +250,7 @@ function ModalOrdine({ ini, ricambi=[], fornitori=[], tenantId, meOperatore, onC
           <button onClick={onClose} className="modal-close">✕</button>
         </div>
 
-        <div style={{display:"grid",gridTemplateColumns:"1fr 340px",flex:1,overflow:"hidden",minHeight:0}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(300px, 100%), 1fr))",flex:1,overflow:"hidden",minHeight:0,maxHeight:"calc(90vh - 120px)"}}>
           {/* Colonna sinistra: form + lista righe */}
           <div style={{padding:"20px 20px 0",display:"flex",flexDirection:"column",gap:14,overflow:"auto",borderRight:"1px solid var(--border)"}}>
             {/* Fornitore */}
@@ -283,7 +283,7 @@ function ModalOrdine({ ini, ricambi=[], fornitori=[], tenantId, meOperatore, onC
             </div>
 
             {/* Date */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
               <div><label style={lbl}>Data ordine</label>
                 <input type="date" style={inp} value={f.data_ordine||""} onChange={e=>sf(p=>({...p,data_ordine:e.target.value}))} /></div>
               <div><label style={lbl}>Data attesa consegna</label>
@@ -446,7 +446,7 @@ function ModalOrdine({ ini, ricambi=[], fornitori=[], tenantId, meOperatore, onC
                 </div>
                 <div><label style={lbl}>Nome articolo *</label>
                   <input style={inp} value={rigaLibera.nome} onChange={e=>setRigaLibera(p=>({...p,nome:e.target.value}))} placeholder="Descrizione articolo" /></div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:8}}>
                   <div><label style={lbl}>Codice / Riferimento</label>
                     <input style={inp} value={rigaLibera.codice} onChange={e=>setRigaLibera(p=>({...p,codice:e.target.value}))} placeholder="ART-001" /></div>
                   <div><label style={lbl}>Quantità</label>
@@ -595,7 +595,7 @@ export function OrdiniAcquisto({ tenantId, ricambi: ricambiProp=[], meOperatore 
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
 
       {/* KPI */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10}}>
         {[
           {l:"Ordini totali", v:kpi.totali,  col:"var(--text-2)", icon:"📦"},
           {l:"In corso",      v:kpi.inCorso,  col:"var(--amber)",  icon:"🔄"},

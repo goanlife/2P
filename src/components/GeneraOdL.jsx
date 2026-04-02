@@ -237,7 +237,7 @@ export function ModalGeneraOdL({
           <>
             <div style={{padding:"20px 24px", display:"grid", gap:16}}>
               {/* Periodo */}
-              <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
                 <div>
                   <div style={{fontSize:11, fontWeight:700, color:"var(--text-2)",
                     textTransform:"uppercase", letterSpacing:".04em", marginBottom:6}}>Da</div>
@@ -258,7 +258,7 @@ export function ModalGeneraOdL({
                   textTransform:"uppercase", letterSpacing:".04em", marginBottom:8}}>
                   Raggruppa attività in OdL per
                 </div>
-                <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8}}>
+                <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:8}}>
                   {[
                     { v:"visita",  l:"Visita", sub:"stesso operatore+giorno → 1 OdL" },
                     { v:"singola", l:"Attività", sub:"1 OdL per ogni attività" },
@@ -407,7 +407,7 @@ export function ModalGeneraOdL({
                 </div>
               </div>
 
-              <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:20}}>
+              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:12, marginBottom:20}}>
                 {[
                   { l:"OdL creati", v:odlAnteprima.length },
                   { l:"Attività generate", v:totAttivita },

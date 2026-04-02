@@ -136,7 +136,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
                 <textarea value={f.descrizione||""} onChange={e=>s("descrizione",e.target.value)}
                   rows={2} style={{width:"100%",resize:"vertical"}} placeholder="Procedure, attenzioni, riferimenti normativi..." />
               </Field>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
                 <Field label="Tipo">
                   <select value={f.tipo_attivita} onChange={e=>s("tipo_attivita",e.target.value)} style={{width:"100%"}}>
                     <option value="ordinaria">Ordinaria</option>

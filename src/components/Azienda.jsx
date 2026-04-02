@@ -514,7 +514,7 @@ function TabEmail({ emailConfig={}, onSalva, tenant, operatori=[], clienti=[] })
           <SwitchToggle on={abilitato} onChange={setAbilitato} />
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, opacity:abilitato?.1:1 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12, opacity:abilitato?.1:1 }}>
           <div>
             <div style={{ fontSize:11, fontWeight:700, textTransform:"uppercase",
               letterSpacing:".05em", color:"var(--text-3)", marginBottom:5 }}>
@@ -698,7 +698,7 @@ export default function Azienda({ tenant, session, operatori=[], ruoloTenant, on
     wrap: { display:"grid", gap:20 },
     card: { background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--radius-xl)", padding:"24px 28px" },
     head: { fontFamily:"var(--font-head)", fontWeight:700, fontSize:16, marginBottom:16 },
-    grid2: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 },
+    grid2: { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:14 },
     lbl: { fontSize:11, fontWeight:700, color:"var(--text-2)", textTransform:"uppercase", letterSpacing:".04em", display:"block", marginBottom:5 },
     inp: { width:"100%", padding:"10px 12px", border:"1px solid var(--border-dim)", borderRadius:"var(--radius-sm)", fontSize:14, background:"var(--surface)", color:"var(--text-1)", boxSizing:"border-box" },
     tabs: { display:"flex", gap:4, borderBottom:"1px solid var(--border)", marginBottom:20 },

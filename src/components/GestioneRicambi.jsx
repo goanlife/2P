@@ -118,7 +118,7 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
       {!readOnly && (
         <div style={{ display: "grid", gap: 6, padding: "10px", background: "var(--surface-2)", borderRadius: 8, border: "1px dashed var(--border-dim)", marginTop: 6 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-3)", marginBottom: 2 }}>Aggiungi ricambio</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 6 }}>
             {catalogo.length > 0 ? (
               <select value={nuova.ricambioId} onChange={e => setNuova(p => ({ ...p, ricambioId: e.target.value, nomeLibero: "" }))} style={st.inp}>
                 <option value="">— Da catalogo —</option>
@@ -210,7 +210,7 @@ export function CatalogoRicambi({ tenantId }) {
       )}
       {mostraForm && (
         <div style={{ background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: 8, padding: 16, marginBottom: 16, display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", display: "block", marginBottom: 4 }}>Nome *</label><input value={form.nome} onChange={e => s("nome")(e.target.value)} style={st.inp} placeholder="Es. Filtro olio 10W-40" /></div>
             <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", display: "block", marginBottom: 4 }}>Codice / SKU</label><input value={form.codice} onChange={e => s("codice")(e.target.value)} style={st.inp} placeholder="Es. FO-001" /></div>
           </div>

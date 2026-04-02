@@ -162,7 +162,7 @@ export function RichiestaIntervento({ meOperatore, siti=[], assets=[], tenantId,
                 {CAUSE.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
               <div>
                 <label style={st.lbl}>Impianto fermo?</label>
                 <div style={{ display:"flex", gap:10, marginTop:4 }}>
@@ -184,7 +184,7 @@ export function RichiestaIntervento({ meOperatore, siti=[], assets=[], tenantId,
             </div>
           </>)}
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <div>
               <label style={st.lbl}>Urgenza</label>
               <select value={f.priorita} onChange={e => set("priorita", e.target.value)} style={st.inp}>

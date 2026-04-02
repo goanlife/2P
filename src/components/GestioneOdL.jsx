@@ -59,7 +59,7 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
           <Field label="Titolo *">
             <input value={f.titolo} onChange={e=>s("titolo",e.target.value)} style={{width:"100%"}} />
           </Field>
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Data inizio *">
               <input type="date" value={f.data_inizio} onChange={e=>s("data_inizio",e.target.value)} style={{width:"100%"}} />
             </Field>

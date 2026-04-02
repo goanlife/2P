@@ -123,7 +123,7 @@ function ModalApprovazione({ richiesta, operatori=[], clienti=[], assets=[], onC
                 {fornitori.map(o=><option key={o.id} value={o.id}>{o.nome}{o.spec?` · ${o.spec}`:""}</option>)}
               </select>
             </Field>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
               <Field label="Data intervento *">
                 <input type="date" value={data} onChange={e=>setData(e.target.value)}
                   min={new Date().toISOString().split("T")[0]} style={{width:"100%"}} />

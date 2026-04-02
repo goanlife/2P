@@ -202,7 +202,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
             <AIClassificaBadge suggerimento={aiSugg} onApplica={applicaAI} />
           )}
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Tipo">
               <select style={sel} value={f.tipo} onChange={e=>set("tipo",e.target.value)}>
                 {TICKET_TIPI.map(t=><option key={t.v} value={t.v}>{t.l}</option>)}
@@ -223,7 +223,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
             </Field>
           )}
 
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Cliente">
               <select style={sel} value={f.cliente_id} onChange={e=>{set("cliente_id",e.target.value);set("asset_id","");}}>
                 <option value="">— Nessun cliente —</option>
@@ -272,7 +272,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
 
           <div style={{ background:"var(--surface-2)", borderRadius:"var(--radius)", padding:"14px", display:"grid", gap:10 }}>
             <div style={{ fontSize:11, fontWeight:700, color:"var(--text-3)", textTransform:"uppercase", letterSpacing:".04em", marginBottom:2 }}>Chi ha segnalato</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
               <Field label="Nome">
                 <input style={inp} value={f.segnalatore_nome} onChange={e=>set("segnalatore_nome",e.target.value)} placeholder="Nome e cognome" />
               </Field>
@@ -325,7 +325,7 @@ function ModalConvertOdL({ ticket, operatori=[], onConverti, onClose }) {
           <div style={{ fontSize:14, fontWeight:700 }}>{ticket.titolo}</div>
         </div>
         <div style={{ padding:"16px 24px 20px", display:"grid", gap:13 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Data inizio *">
               <input style={inp} type="date" value={dataInizio} onChange={e=>setDataI(e.target.value)} />
             </Field>
@@ -396,7 +396,7 @@ function PanelloDettaglio({ ticket, clienti=[], assets=[], operatori=[], tenantI
   // NEXT e NEXT_LBL definite a livello modulo
 
   return (
-    <div style={{ position:"fixed", top:0, right:0, bottom:0, width:"min(500px,100vw)", background:"var(--surface)", borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 32px rgba(0,0,0,.18)", zIndex:500, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+    <div className="pannello-dettaglio-fixed" style={{ position:"fixed", top:0, right:0, bottom:0, width:"min(460px,100vw)", background:"var(--surface)", borderLeft:"1px solid var(--border)", boxShadow:"-4px 0 32px rgba(0,0,0,.18)", zIndex:500, display:"flex", flexDirection:"column", overflow:"hidden" }}>
 
       {/* Header */}
       <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)", flexShrink:0 }}>

@@ -173,6 +173,23 @@ export default function App() {
     notify(`${contesto ? contesto+": " : ""}${msg}`, "error");
   };
   const [sidebarOpen, setSidebar] = useState(false);
+  
+  // Swipe to close sidebar su mobile
+  React.useEffect(() => {
+    let startX = 0;
+    const onTouchStart = e => { startX = e.touches[0].clientX; };
+    const onTouchEnd = e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (dx < -60 && sidebarOpen) setSidebar(false);  // swipe sinistra → chiudi
+      if (dx > 60 && !sidebarOpen && startX < 30) setSidebar(true); // swipe destra da bordo → apri
+    };
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [sidebarOpen]);
   const [menuConfig, setMenuConfig] = useState({});
   const [slaConfig, setSlaConfig] = useState([]);
   const [slaProfili, setSlaProfili] = useState([]); // profili SLA con config per cliente
@@ -1107,7 +1124,7 @@ export default function App() {
   const meOpTema = operatori.find(o=>o.email===session?.user?.email);
   if(meOpTema) await supabase.from("operatori").update({tema:t}).eq("id",meOpTema.id);
 }} />
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:4}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:8,marginTop:4}}>
                 {TEMI.map(t=>(
                   <div key={t.id} onClick={async()=>{
   setTemaCorrente(t.id);

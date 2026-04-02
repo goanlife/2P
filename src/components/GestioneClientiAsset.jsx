@@ -20,13 +20,13 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
   return (
     <Modal title={ini?"Modifica asset":"Nuovo asset"} onClose={onClose} onSave={()=>onSalva({...f,clienteId:f.clienteId?Number(f.clienteId):null})} saveOk={!!f.nome.trim()}>
       <Field label="Nome asset *"><input value={f.nome} onChange={e=>s("nome",e.target.value)} style={{width:"100%"}} /></Field>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
         <Field label="Tipo"><select value={f.tipo} onChange={e=>s("tipo",e.target.value)} style={{width:"100%"}}><option value="">— Seleziona —</option>{TIPI.map(t=><option key={t} value={t}>{t}</option>)}</select></Field>
         <Field label="Stato"><select value={f.stato} onChange={e=>s("stato",e.target.value)} style={{width:"100%"}}><option value="attivo">Attivo</option><option value="manutenzione">In manutenzione</option><option value="inattivo">Inattivo</option></select></Field>
       </div>
       <Field label="Cliente"><select value={f.clienteId||""} onChange={e=>s("clienteId",e.target.value?Number(e.target.value):"")} style={{width:"100%"}}><option value="">— Nessun cliente —</option>{clienti.map(c=><option key={c.id} value={c.id}>{c.rs}</option>)}</select></Field>
       <Field label="Ubicazione"><input value={f.ubicazione} onChange={e=>s("ubicazione",e.target.value)} style={{width:"100%"}} /></Field>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:12}}>
         <Field label="Matricola"><input value={f.matricola} onChange={e=>s("matricola",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Marca"><input value={f.marca} onChange={e=>s("marca",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Modello"><input value={f.modello} onChange={e=>s("modello",e.target.value)} style={{width:"100%"}} /></Field>
@@ -34,7 +34,7 @@ export function ModalAsset({ini, clienti=[], onClose, onSalva, userId}) {
       <Field label="Data installazione"><input type="date" value={f.dataInst} onChange={e=>s("dataInst",e.target.value)} style={{width:"100%"}} /></Field>
       <div style={{borderTop:"1px solid var(--border-dim)",paddingTop:14,marginTop:6}}>
         <div style={{fontSize:11,fontWeight:700,color:"var(--text-3)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:10}}>📊 Dati tecnici e costi</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
           <Field label="Ore utilizzo attuali"><input type="number" min="0" step="0.5" value={f.ore_utilizzo||""} onChange={e=>s("ore_utilizzo",e.target.value)} style={{width:"100%"}} placeholder="Es. 1250" /></Field>
           <Field label="Soglia intervento (ore)"><input type="number" min="0" step="50" value={f.soglia_ore||""} onChange={e=>s("soglia_ore",e.target.value)} style={{width:"100%"}} placeholder="Es. 500 (ogni 500h)" /></Field>
           <Field label="Costo acquisto (€)"><input type="number" min="0" step="100" value={f.costo_acquisto||""} onChange={e=>s("costo_acquisto",e.target.value)} style={{width:"100%"}} placeholder="Es. 8500" /></Field>
@@ -237,7 +237,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
       </div>
       {!filtrati.length&&<div className="empty"><div className="empty-icon">⚙</div><div className="empty-text">Nessun asset trovato</div></div>}
       {showImport && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.55)",
+        <div className="pannello-dettaglio-fixed" style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.55)",
           zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center",
           padding:"24px 16px", overflowY:"auto" }}>
           <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
@@ -271,12 +271,12 @@ export function ModalCliente({ini, onClose, onSalva, userId, tenantId=null}) {
       <Field label="Ragione sociale *"><input value={f.rs} onChange={e=>s("rs",e.target.value)} style={{width:"100%"}} /></Field>
       <Field label="Codice (es. CLI1)"><input value={f.codice||""} onChange={e=>s("codice",e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""))} style={{width:90}} placeholder="CLI1" maxLength={8} /></Field>
     </div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
         <Field label="P.IVA"><input value={f.piva} onChange={e=>s("piva",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Settore"><input value={f.settore} onChange={e=>s("settore",e.target.value)} style={{width:"100%"}} /></Field>
       </div>
       <Field label="Contatto"><input value={f.contatto} onChange={e=>s("contatto",e.target.value)} style={{width:"100%"}} /></Field>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
         <Field label="Telefono"><input value={f.tel} onChange={e=>s("tel",e.target.value)} style={{width:"100%"}} /></Field>
         <Field label="Email"><input type="email" value={f.email} onChange={e=>s("email",e.target.value)} style={{width:"100%"}} /></Field>
       </div>

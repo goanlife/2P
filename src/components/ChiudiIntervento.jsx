@@ -156,7 +156,7 @@ export function ChiudiIntervento({manutenzione, cliente, asset, onClose, onSalva
         <div style={{ padding: "20px 24px" }}>
           {tab === "dati" && (
             <div style={{ display: "grid", gap: 16 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-2)", textTransform: "uppercase", letterSpacing: ".04em", display: "block", marginBottom: 5 }}>
                     Ore effettive *

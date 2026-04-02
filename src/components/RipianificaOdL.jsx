@@ -73,7 +73,7 @@ function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }
         </div>
 
         {/* Selezione azione */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:8, marginBottom:18 }}>
           {[
             { v:"sposta_giorni",    l:"📅 Sposta di N giorni",  sub:"Aggiusta tutte le date" },
             { v:"imposta_data",     l:"📌 Imposta data fissa",  sub:"Stessa data per tutti" },
@@ -133,7 +133,7 @@ function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }
               <label style={{ fontSize:12, fontWeight:600, display:"block", marginBottom:6 }}>
                 Nuovo stato
               </label>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:6 }}>
                 {STATI.map(s => (
                   <div key={s.v} onClick={()=>setNewStato(s.v)} style={{
                     padding:"8px 12px", borderRadius:7, cursor:"pointer",
@@ -260,7 +260,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
           <button onClick={onClose} style={{ background:"none",border:"none",cursor:"pointer",fontSize:20,color:"var(--text-3)" }}>✕</button>
         </div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:24 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:24 }}>
           {/* Colonna filtri */}
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:"var(--text-2)",
@@ -280,7 +280,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
                 <option value="tutti">Tutti gli operatori</option>
                 {opUsati.map(o=><option key={o.id} value={String(o.id)}>{o.nome}</option>)}
               </select>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:8 }}>
                 <div>
                   <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>Da mese</div>
                   <input type="month" value={fMeseDa} onChange={e=>setFMDa(e.target.value)} style={{width:"100%"}} />
@@ -677,7 +677,7 @@ export function PannelloRipianifica({
           {/* Tab C: Export / Import CSV */}
           {tab === "csv" && (
             <div style={{ display:"grid", gap:16 }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
                 <div style={{ background:"var(--surface-2)", border:"1px solid var(--border)",
                   borderRadius:10, padding:"14px 16px" }}>
                   <div style={{ fontWeight:700, fontSize:13, marginBottom:4 }}>📥 1. Esporta</div>

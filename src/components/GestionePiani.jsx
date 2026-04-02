@@ -53,7 +53,7 @@ function ModalPiano({ ini, onClose, onSalva }) {
               textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
               Come aggregare le attività negli Ordini di Lavoro?
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:8 }}>
               {AGGREG.map(a=>(
                 <div key={a.v} onClick={()=>s("aggregazioneOdl",a.v)} style={{
                   padding:"10px 12px", borderRadius:8, cursor:"pointer",
@@ -100,7 +100,7 @@ function ModalVoce({ ini, pianoId, onClose, onSalva }) {
               style={{width:"100%"}} autoFocus
               placeholder="Es. Taglio erba, Verifica estintori, Cambio filtri, Controllo caldaia..." />
           </Field>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Frequenza">
               <select value={f.frequenza} onChange={e=>s("frequenza",e.target.value)} style={{width:"100%"}}>
                 {FREQ.map(fr=><option key={fr.v} value={fr.v}>{fr.l}</option>)}
@@ -111,7 +111,7 @@ function ModalVoce({ ini, pianoId, onClose, onSalva }) {
                 onChange={e=>s("durata",Number(e.target.value))} style={{width:"100%"}} />
             </Field>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Tipo">
               <select value={f.tipo} onChange={e=>s("tipo",e.target.value)} style={{width:"100%"}}>
                 <option value="ordinaria">Ordinaria</option>
@@ -186,7 +186,7 @@ function ModalApplicaSito({ pianoId, ini, clienti=[], operatori=[], onClose, onS
               {fornitori.map(o=><option key={o.id} value={String(o.id)}>{o.nome}{o.spec?` · ${o.spec}`:""}</option>)}
             </select>
           </Field>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
             <Field label="Data inizio contratto">
               <input type="date" value={f.dataInizio} onChange={e=>s("dataInizio",e.target.value)} style={{width:"100%"}} />
             </Field>

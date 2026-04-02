@@ -533,7 +533,7 @@ export function Reportistica({ man=[], clienti=[], assets=[], operatori=[], pian
           letterSpacing:".05em", color:"var(--text-3)", marginBottom:10 }}>
           Parametri comuni ai report
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:12 }}>
           <div>
             <div style={{ fontSize:11, color:"var(--text-3)", marginBottom:4 }}>Cliente</div>
             <select value={params.clienteId} onChange={e=>s("clienteId",e.target.value)} style={{width:"100%"}}>

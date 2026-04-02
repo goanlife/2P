@@ -231,7 +231,7 @@ export function ModalApplicaTemplate({
                 </select>
               </Field>
 
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12 }}>
                 <Field label="Data inizio piano *">
                   <input type="date" value={cfg.dataInizio} min={oggi}
                     onChange={e=>sc("dataInizio",e.target.value)} style={{width:"100%"}} />

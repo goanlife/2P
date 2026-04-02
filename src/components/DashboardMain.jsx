@@ -46,13 +46,13 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
   return (
     <div style={{display:"grid",gap:20}}>
       {/* ── Grafici animati ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 280px", gap:14, marginTop:4 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px,1fr))", gap:14, marginTop:4 }}>
         <TrendChart man={man} />
         <StatoDonut man={man} />
       </div>
 
       {carichi.length > 0 && (
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:14 }}>
           <CaricoChart operatori={operatori} man={man} />
           <div /> {/* placeholder */}
         </div>

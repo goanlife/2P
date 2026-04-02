@@ -195,7 +195,7 @@ export function ModalUtente({ini, onClose, onSalva}) {
       <Field label="Email (per accesso app)"><input type="email" value={f.email||""} onChange={e=>s("email",e.target.value)} placeholder="nome@azienda.it" style={{width:"100%"}} /></Field>
       {f.tipo==="fornitore" && <Field label="Tariffa oraria (€/h)"><input type="number" min="0" step="0.5" value={f.tariffa_ora||""} onChange={e=>s("tariffa_ora",e.target.value)} placeholder="Es. 45.00" style={{width:"100%"}} /></Field>}
       <Field label="Tipologia utente *">
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:8}}>
           {["fornitore","cliente","interno"].map(t=>{
             const desc={fornitore:"Assegnabile alle manutenzioni",cliente:"Vista limitata ai propri siti",interno:"Accesso interno, non assegnabile"}[t];
             const label={fornitore:"Fornitore",cliente:"Cliente",interno:"Interno"}[t];
@@ -212,7 +212,7 @@ export function ModalUtente({ini, onClose, onSalva}) {
           })}
         </div>
       </Field>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))",gap:12}}>
         <Field label="Specializzazione / Ruolo">
           <input value={f.spec} onChange={e=>s("spec",e.target.value)} placeholder="Es. Elettrico, Meccanico..." style={{width:"100%"}} />
         </Field>
@@ -518,7 +518,7 @@ export function GestioneUtenti({
 
               {/* Stats (solo fornitori/interni hanno senso) */}
               {op.tipo!=="cliente"&&(
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:8,marginBottom:12}}>
                   {[{v:att.length,l:t("utenti.active_tasks"),c:op.col},{v:sue.filter(m=>m.stato==="completata").length,l:t("stati.completata"),c:"#059669"},{v:ore+"h",l:t("utenti.hours")}].map(({v,l,c})=>(
                     <div key={l} className="stat-mini"><div className="stat-mini-value" style={{color:c}}>{v}</div><div className="stat-mini-label">{l}</div></div>
                   ))}
@@ -777,7 +777,7 @@ export function GestioneGruppi({gruppi=[], operatori=[], clienti=[], man=[], gOp
               </div>
 
               {/* Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))",gap:8,marginBottom:14}}>
                 {[{v:opsGruppo.length,l:"Utenti"},{v:sitiGruppo.length,l:"Siti"},{v:attive,l:"Attività"}].map(({v,l})=>(
                   <div key={l} className="stat-mini">
                     <div className="stat-mini-value" style={{color:g.col,fontSize:18}}>{v}</div>

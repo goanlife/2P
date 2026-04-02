@@ -48,7 +48,7 @@ export function PopupGiorno({data=[], attivita=[], odlGiorno=[], clienti=[], ass
   const STATO_LBL = { pianificata:"Pianificata", inCorso:"In corso", completata:"Completata", scaduta:"Scaduta" };
   const totOre = Math.round(attivita.reduce((s,m)=>s+m.durata,0)/60*10)/10;
   return (
-    <div style={{position:"fixed",top:0,right:0,bottom:0,width:"min(420px,100vw)",background:"var(--surface)",borderLeft:"1px solid var(--border)",boxShadow:"-4px 0 24px rgba(0,0,0,.15)",zIndex:500,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div className="popup-giorno-panel" style={{position:"fixed",top:0,right:0,bottom:0,width:"min(420px,100vw)",background:"var(--surface)",borderLeft:"1px solid var(--border)",boxShadow:"-4px 0 24px rgba(0,0,0,.15)",zIndex:500,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {/* Header */}
       <div style={{padding:"16px 20px",borderBottom:"1px solid var(--border)",display:"flex",alignItems:"center",gap:12,flexShrink:0}}>
         <div style={{flex:1}}>

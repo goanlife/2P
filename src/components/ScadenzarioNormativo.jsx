@@ -73,7 +73,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
               style={{width:"100%"}} placeholder="Es. Verifica impianto elettrico, Revisione estintori..." />
           </Field>
 
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Categoria">
               <select value={f.categoria} onChange={e=>s("categoria",e.target.value)} style={{width:"100%"}}>
                 {CATEGORIE.map(c=><option key={c.v} value={c.v}>{c.l}</option>)}
@@ -85,7 +85,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
             </Field>
           </div>
 
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Cliente / sito *">
               <select value={f.clienteId} onChange={e=>{s("clienteId",e.target.value);s("assetId","");}} style={{width:"100%"}}>
                 <option value="">— Seleziona —</option>
@@ -100,7 +100,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
             </Field>
           </div>
 
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Scadenza *">
               <input type="date" value={f.scadenza} onChange={e=>s("scadenza",e.target.value)} style={{width:"100%"}} />
             </Field>
@@ -109,7 +109,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
             </Field>
           </div>
 
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Periodicità">
               <select value={f.periodicita_mesi} onChange={e=>s("periodicita_mesi",e.target.value)} style={{width:"100%"}}>
                 {PERIODI.map(p=><option key={p.v} value={p.v}>{p.l}</option>)}
@@ -121,7 +121,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
             </Field>
           </div>
 
-          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:12}}>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:12}}>
             <Field label="Responsabile">
               <select value={f.responsabileId} onChange={e=>s("responsabileId",e.target.value)} style={{width:"100%"}}>
                 <option value="">— Non assegnato —</option>
