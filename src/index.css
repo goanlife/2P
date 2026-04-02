@@ -22,10 +22,10 @@ body { height: 100%; overscroll-behavior: none; }
 /* ─── Design Tokens — NEXUS Dark ────────────────────────────────────────── */
 :root {
   /* Core palette */
-  --navy:      #040912;
-  --navy-2:    #080F1E;
-  --navy-3:    #0D1629;
-  --navy-4:    #141E35;
+  --navy:      #060D1A;
+  --navy-2:    #0C1525;
+  --navy-3:    #122033;
+  --navy-4:    #182840;
 
   /* Electric amber — brand neon */
   --amber:        #FFAB00;
@@ -40,23 +40,23 @@ body { height: 100%; overscroll-behavior: none; }
   --cyan-trace:rgba(0,212,255,.06);
 
   /* Content surfaces — ultra dark */
-  --surface:   #070C18;
-  --surface-2: #0A1020;
-  --surface-3: #0F1728;
+  --surface:   #0C1526;
+  --surface-2: #101C30;
+  --surface-3: #152238;
 
   /* Borders — electric lines */
-  --border:      rgba(255,171,0,.12);
-  --border-dim:  rgba(255,171,0,.07);
+  --border:      rgba(255,171,0,.18);
+  --border-dim:  rgba(255,171,0,.10);
   --border-glow: rgba(255,171,0,.35);
 
   /* Text */
   --slate:     #5A7090;
   --slate-dim: #3A5068;
-  --white:     #E8EEFF;
+  --white:     #F0F4FF;
   --white-dim: #B0BEDC;
-  --text-1:    #D8E4FF;
-  --text-2:    #7B90B8;
-  --text-3:    #445570;
+  --text-1:    #E2ECFF;
+  --text-2:    #8BA4CC;
+  --text-3:    #5A7090;
 
   /* Status colors — electric */
   --green:     #00E5A0;
@@ -110,8 +110,8 @@ body::before {
   inset: 0;
   background-image:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255,171,0,.04) 0%, transparent 70%),
-    linear-gradient(rgba(255,171,0,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,171,0,.03) 1px, transparent 1px);
+    linear-gradient(rgba(255,171,0,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,171,0,.025) 1px, transparent 1px);
   background-size: 100% 100%, 40px 40px, 40px 40px;
   pointer-events: none;
   z-index: 0;
@@ -203,7 +203,7 @@ body::before {
 
 /* ─── Cards ──────────────────────────────────────────────────────────────── */
 .card {
-  background: rgba(7,12,24,.8);
+  background: rgba(12,21,38,.85);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px 22px;
@@ -232,7 +232,7 @@ body::before {
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: rgba(7,12,24,.9);
+  background: rgba(12,21,38,.9);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 18px 16px 14px;
@@ -417,8 +417,8 @@ input, select, textarea {
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--text-1);
-  background: rgba(4,9,18,.8);
-  border: 1px solid var(--border);
+  background: rgba(8,16,32,.9);
+  border: 1px solid rgba(255,171,0,.2);
   border-radius: var(--radius-sm);
   padding: 9px 12px;
   transition: border-color .15s, box-shadow .15s;
@@ -912,7 +912,7 @@ tr:hover td { background: rgba(255,171,0,.03); color: var(--text-1); }
 .sidebar {
   width: 240px;
   min-height: 100vh;
-  background: rgba(4,9,18,.85);
+  background: rgba(8,14,28,.92);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   display: flex;
@@ -1005,7 +1005,7 @@ tr:hover td { background: rgba(255,171,0,.03); color: var(--text-1); }
 /* ─── Mini topbar (mobile) ───────────────────────────────────────────────── */
 .mini-topbar {
   height: calc(54px + env(safe-area-inset-top, 0px));
-  background: rgba(4,9,18,.92);
+  background: rgba(8,14,28,.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;

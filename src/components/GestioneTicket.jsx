@@ -2,8 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { classificaTicket, AIClassificaBadge } from "./AIAssistente";
 import { supabase } from "../supabase";
 import { Overlay, Field } from "./ui/Atoms";
-
-// Costanti importate da constants.js (TICKET_TIPI, TICKET_PRIORITA, TICKET_STATI, SLA_ORE_DEFAULT)
+import { TICKET_TIPI, TICKET_PRIORITA, TICKET_STATI, SLA_ORE_DEFAULT } from "../constants";
 
 // Transizioni di stato dei ticket
 const NEXT     = { in_attesa:"aperto", aperto:"in_lavorazione", in_lavorazione:"risolto", risolto:"chiuso" };
