@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatedKPI } from "./AnimatedKPI";
 import { FadeIn, StaggerList } from "./PageTransition";
+import { TrendChart, StatoDonut, CaricoChart } from "./DashboardCharts";
+import { motion } from "framer-motion";
 import { useI18n } from "../i18n/index.jsx";
 import { AvatarComp } from "./ui/Atoms";
 
@@ -43,6 +45,19 @@ export function Dashboard({man=[], clienti=[], assets=[], piani=[], operatori=[]
   ];
   return (
     <div style={{display:"grid",gap:20}}>
+      {/* ── Grafici animati ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 280px", gap:14, marginTop:4 }}>
+        <TrendChart man={man} />
+        <StatoDonut man={man} />
+      </div>
+
+      {carichi.length > 0 && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+          <CaricoChart operatori={operatori} man={man} />
+          <div /> {/* placeholder */}
+        </div>
+      )}
+
       {confMap.length>0&&(
         <div style={{position:"relative",display:"inline-block"}}>
           <button onClick={()=>setConfOpen(o=>!o)}

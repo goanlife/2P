@@ -609,3 +609,106 @@ input:focus, select:focus, textarea:focus {
 
 /* Page transition smooth */
 [data-framer-motion] { will-change: opacity, transform; }
+
+
+/* ─── WOW animations ─────────────────────────────────────────────────────── */
+
+/* Sidebar items stagger */
+@keyframes slideInSb {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* KPI card entry */
+@keyframes kpiEntry {
+  from { opacity: 0; transform: translateY(20px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Pulse dot per notifiche */
+@keyframes pulseDot {
+  0%,100% { box-shadow: 0 0 0 0 rgba(14,165,233,.4); }
+  50%     { box-shadow: 0 0 0 6px rgba(14,165,233,0); }
+}
+.notif-pulse { animation: pulseDot 2s ease infinite; }
+
+/* Card entry con delay */
+.card-enter {
+  animation: kpiEntry .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+.card-enter:nth-child(1) { animation-delay: .05s; }
+.card-enter:nth-child(2) { animation-delay: .10s; }
+.card-enter:nth-child(3) { animation-delay: .15s; }
+.card-enter:nth-child(4) { animation-delay: .20s; }
+.card-enter:nth-child(5) { animation-delay: .25s; }
+.card-enter:nth-child(6) { animation-delay: .30s; }
+
+/* Tab active indicator spring */
+.sb-item.active::before {
+  transition: height .3s cubic-bezier(.34,1.56,.64,1), opacity .2s;
+}
+
+/* Smooth color transitions su tutto */
+.sb-item, .kpi-card, .card, button, input, select {
+  transition-property: background, border-color, color, box-shadow, transform;
+  transition-duration: .18s;
+  transition-timing-function: cubic-bezier(.4,0,.2,1);
+}
+
+/* Hover lift sulle card delle liste */
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* Recharts: bordo dei tooltip */
+.recharts-tooltip-wrapper { z-index: 100 !important; }
+
+/* Glow accento su sidebar active */
+.sb-item.active {
+  position: relative;
+}
+.sb-item.active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 1px rgba(14,165,233,.2);
+  pointer-events: none;
+}
+
+/* Button primary shimmer on hover */
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -60%;
+  width: 40%; height: 200%;
+  background: rgba(255,255,255,.25);
+  transform: skewX(-20deg) translateX(-100%);
+  transition: none;
+}
+.btn-primary:hover::after {
+  transform: skewX(-20deg) translateX(500%);
+  transition: transform .5s ease;
+}
+
+/* Logo sidebar pulse */
+.sb-logo-icon {
+  animation: glowIcon 3s ease-in-out infinite;
+}
+@keyframes glowIcon {
+  0%,100% { box-shadow: 0 4px 12px rgba(14,165,233,.25); }
+  50%     { box-shadow: 0 4px 20px rgba(14,165,233,.45), 0 0 0 4px rgba(14,165,233,.08); }
+}
+
+/* Active page title slide in */
+.mini-topbar-title {
+  animation: titleIn .3s cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes titleIn {
+  from { opacity:0; transform:translateX(-8px); }
+  to   { opacity:1; transform:none; }
+}

@@ -39,6 +39,8 @@ import { RichiestaIntervento } from "./components/RichiestaIntervento";
 import { Dashboard } from "./components/DashboardMain";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { PageTransition } from "./components/PageTransition";
+import { CursorGlow } from "./components/CursorGlow";
+import { SkeletonDashboard } from "./components/SkeletonLoader";
 
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
@@ -942,7 +944,8 @@ export default function App() {
         <nav className="sb-nav">
           {tabsVisibili.map(tab=>(
             <button key={tab.id} className={"sb-item"+(vista===tab.id?" active":"")}
-              onClick={()=>{ sVWithReset(tab.id); setSidebar(false); }}>
+              onClick={()=>{ sVWithReset(tab.id); setSidebar(false); }}
+              style={{ animation: `slideInSb ${0.15 + tabsVisibili.indexOf(tab)*0.04}s ease both` }}>
               <span className="sb-icon">{tab.id==="ticket"&&isCliente?"📩":tab.icon}</span>
               <span className="sb-label">{tab.id==="ticket"&&isCliente?"Nuova richiesta":(t(`nav.${tab.id}`) || tab.l)}</span>
             </button>
