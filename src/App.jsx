@@ -998,7 +998,7 @@ export default function App() {
 
       </aside>
 
-      <div className="sidebar-body" style={{display:"flex",flexDirection:"column",flex:1,minWidth:0,minHeight:0}}>
+      <div className="sidebar-body">
         <header className="mini-topbar">
           <button className="hamburger-btn" onClick={()=>setSidebar(v=>!v)}>
             <span>☰</span>
@@ -1012,7 +1012,7 @@ export default function App() {
             {!isCliente && <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova</button>}
           </div>
         </header>
-        <main className="page-content" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
+        <main className="page-content">
         <PageTransition pageKey={vista}>
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
