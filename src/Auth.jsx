@@ -2,16 +2,16 @@ import { useState } from 'react'
 import { supabase } from './supabase'
 
 export default function Auth() {
-  const [mode, setMode]       = useState('login')
-  const [email, setEmail]     = useState('')
-  const [pass, setPass]       = useState('')
-  const [loading, setLoading] = useState(false)
-  const [msg, setMsg]         = useState(null)
-  const [err, setErr]         = useState(null)
+  const [mode, setMode]     = useState('login')
+  const [email, setEmail]   = useState('')
+  const [pass, setPass]     = useState('')
+  const [loading, setLoad]  = useState(false)
+  const [msg, setMsg]       = useState(null)
+  const [err, setErr]       = useState(null)
 
   const handle = async () => {
-    if (!email.trim()) { setErr('Inserisci la tua email.'); return; }
-    setLoading(true); setErr(null); setMsg(null);
+    if (!email.trim()) { setErr('Inserisci la tua email.'); return }
+    setLoad(true); setErr(null); setMsg(null)
     try {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pass })
@@ -25,48 +25,48 @@ export default function Auth() {
         if (error) throw error
         setMsg('Email di reset inviata. Controlla la tua casella.')
       }
-    } catch (e) {
-      setErr(e.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (e) { setErr(e.message) }
+    finally { setLoad(false) }
   }
 
   const inp = {
-    width: '100%', padding: '12px 14px', fontSize: 15,
-    border: '1.5px solid #D1D5DB', borderRadius: 9,
+    width: '100%', padding: '14px', fontSize: 16,  /* 16px = no zoom iOS */
+    border: '1.5px solid #D1D5DB', borderRadius: 10,
     background: '#FAFAFA', color: '#111',
     fontFamily: 'system-ui,sans-serif',
     outline: 'none', boxSizing: 'border-box',
-    WebkitAppearance: 'none',
+    WebkitAppearance: 'none', appearance: 'none',
+    minHeight: 52,  /* touch target */
   }
 
   return (
     <div style={{
-      minHeight: '100vh',
+      minHeight: '100dvh',
       background: 'linear-gradient(135deg, #0D1B2A 0%, #152232 60%, #1C2E40 100%)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px', fontFamily: 'system-ui,sans-serif',
+      padding: 'calc(env(safe-area-inset-top,0px) + 20px) 16px calc(env(safe-area-inset-bottom,0px) + 20px)',
+      fontFamily: 'system-ui,sans-serif',
+      boxSizing: 'border-box',
     }}>
       {/* Card */}
       <div style={{
-        background: '#fff', borderRadius: 18, padding: '36px 32px',
-        width: '100%', maxWidth: 400,
+        background: '#fff', borderRadius: 20, padding: 'clamp(24px, 6vw, 40px) clamp(20px, 6vw, 36px)',
+        width: '100%', maxWidth: 420,
         boxShadow: '0 20px 60px rgba(0,0,0,.35)',
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
-            width: 56, height: 56, background: '#F59E0B',
-            borderRadius: 14, display: 'inline-flex',
+            width: 60, height: 60, background: '#0EA5E9',
+            borderRadius: 16, display: 'inline-flex',
             alignItems: 'center', justifyContent: 'center',
             fontSize: 28, marginBottom: 14,
-            boxShadow: '0 4px 16px rgba(245,158,11,.35)',
-          }}>🔧</div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#0D1B2A', letterSpacing: '-.02em' }}>
-            ManuMan
+            boxShadow: '0 4px 20px rgba(14,165,233,.35)',
+          }}>⚙</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '.05em', fontFamily: "'Oxanium',system-ui" }}>
+            MANUМАН
           </div>
-          <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
             {mode === 'login'  ? 'Accedi al tuo account' :
              mode === 'signup' ? 'Crea un nuovo account' :
              'Recupera la password'}
@@ -76,17 +76,17 @@ export default function Auth() {
         {/* Tabs login/signup */}
         {mode !== 'reset' && (
           <div style={{
-            display: 'flex', background: '#F3F4F6', borderRadius: 10,
-            padding: 3, marginBottom: 20, gap: 3,
+            display: 'flex', background: '#F1F5F9', borderRadius: 12,
+            padding: 4, marginBottom: 24, gap: 4,
           }}>
             {[['login','Accedi'],['signup','Registrati']].map(([m, l]) => (
-              <button key={m} onClick={() => { setMode(m); setErr(null); setMsg(null); }}
+              <button key={m} onClick={() => { setMode(m); setErr(null); setMsg(null) }}
                 style={{
-                  flex: 1, padding: '9px 0', borderRadius: 8, border: 'none',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  flex: 1, padding: '11px 0', borderRadius: 9, border: 'none',
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer', minHeight: 44,
                   background: mode === m ? '#fff' : 'transparent',
-                  color: mode === m ? '#0D1B2A' : '#6B7280',
-                  boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,.12)' : 'none',
+                  color: mode === m ? '#0EA5E9' : '#64748B',
+                  boxShadow: mode === m ? '0 1px 6px rgba(0,0,0,.10)' : 'none',
                   transition: 'all .15s',
                 }}>{l}</button>
             ))}
@@ -94,25 +94,24 @@ export default function Auth() {
         )}
 
         {/* Form */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 7, letterSpacing: '.04em', textTransform: 'uppercase' }}>
               Email
             </label>
             <input
-              type="email" value={email}
+              type="email" value={email} inputMode="email"
               onChange={e => setEmail(e.target.value)}
               placeholder="nome@azienda.it"
               style={inp}
               onKeyDown={e => e.key === 'Enter' && handle()}
-              autoComplete="email"
-              autoCapitalize="none"
+              autoComplete="email" autoCapitalize="none" autoCorrect="off"
             />
           </div>
 
           {mode !== 'reset' && (
             <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 7, letterSpacing: '.04em', textTransform: 'uppercase' }}>
                 Password {mode === 'signup' && <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(min. 6 caratteri)</span>}
               </label>
               <input
@@ -129,61 +128,53 @@ export default function Auth() {
           {err && (
             <div style={{
               background: '#FEF2F2', border: '1px solid #FECACA',
-              borderRadius: 8, padding: '10px 14px',
-              fontSize: 13, color: '#DC2626', lineHeight: 1.4,
+              borderRadius: 10, padding: '12px 14px',
+              fontSize: 14, color: '#DC2626', lineHeight: 1.5,
             }}>⚠ {err}</div>
           )}
           {msg && (
             <div style={{
               background: '#F0FDF4', border: '1px solid #A7F3D0',
-              borderRadius: 8, padding: '10px 14px',
-              fontSize: 13, color: '#065F46', lineHeight: 1.4,
+              borderRadius: 10, padding: '12px 14px',
+              fontSize: 14, color: '#065F46', lineHeight: 1.5,
             }}>✅ {msg}</div>
           )}
 
           <button onClick={handle} disabled={loading}
             style={{
-              width: '100%', padding: '13px',
-              background: loading ? '#D1D5DB' : '#F59E0B',
-              color: '#0D1B2A', border: 'none', borderRadius: 10,
-              fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-              marginTop: 4, transition: 'background .15s',
+              width: '100%', padding: '15px',
+              background: loading ? '#D1D5DB' : '#0EA5E9',
+              color: '#fff', border: 'none', borderRadius: 12,
+              fontSize: 16, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer',
+              marginTop: 6, transition: 'all .15s',
+              minHeight: 52,  /* touch target 52px */
               WebkitAppearance: 'none',
+              fontFamily: "'Oxanium',system-ui", letterSpacing: '.04em',
+              boxShadow: loading ? 'none' : '0 4px 16px rgba(14,165,233,.3)',
             }}>
             {loading ? '...' :
              mode === 'login'  ? 'Accedi →' :
              mode === 'signup' ? 'Crea account →' :
-             'Invia email di reset →'}
+             'Invia email →'}
           </button>
         </div>
 
-        {/* Link password dimenticata */}
         {mode === 'login' && (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button onClick={() => { setMode('reset'); setErr(null); setMsg(null); }}
-              style={{ background: 'none', border: 'none', color: '#6B7280',
-                fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
+          <div style={{ textAlign: 'center', marginTop: 18 }}>
+            <button onClick={() => { setMode('reset'); setErr(null); setMsg(null) }}
+              style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 8 }}>
               Password dimenticata?
             </button>
           </div>
         )}
         {mode === 'reset' && (
-          <div style={{ textAlign: 'center', marginTop: 16 }}>
-            <button onClick={() => { setMode('login'); setErr(null); setMsg(null); }}
-              style={{ background: 'none', border: 'none', color: '#6B7280',
-                fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
+          <div style={{ textAlign: 'center', marginTop: 18 }}>
+            <button onClick={() => { setMode('login'); setErr(null); setMsg(null) }}
+              style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 8 }}>
               ← Torna al login
             </button>
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        position: 'absolute', bottom: 20, left: 0, right: 0,
-        textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,.3)',
-      }}>
-        © 2026 ManuMan — Gestione Manutenzioni
       </div>
     </div>
   )

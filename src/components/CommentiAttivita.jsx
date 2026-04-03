@@ -10,7 +10,7 @@ const TIPO_STYLE = {
   richiesta:    { bg:"#EFF6FF",          bd:"#BFDBFE",          icon:"📋", label:"Richiesta" },
 };
 
-export function CommentiAttivita({ manutenzioneId, meOperatore, onStatoChange }) {
+export function CommentiAttivita({ manutenzioneId, meOperatore, onStatoChange, tenantId }) {
   const [commenti, setCommenti] = useState([]);
   const [testo, setTesto]       = useState("");
   const [tipo, setTipo]         = useState("nota");
@@ -46,6 +46,7 @@ export function CommentiAttivita({ manutenzioneId, meOperatore, onStatoChange })
       autore_id:       meOperatore?.id || null,
       testo:           testo.trim(),
       tipo,
+      ...(tenantId && { tenant_id: tenantId }),
     }).select().single();
 
     if (!error && data) {

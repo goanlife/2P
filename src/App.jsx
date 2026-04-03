@@ -998,7 +998,7 @@ export default function App() {
 
       </aside>
 
-      <div className="sidebar-body">
+      <div className="sidebar-body" style={{display:"flex",flexDirection:"column",flex:1,minWidth:0,minHeight:0}}>
         <header className="mini-topbar">
           <button className="hamburger-btn" onClick={()=>setSidebar(v=>!v)}>
             <span>☰</span>
@@ -1012,7 +1012,7 @@ export default function App() {
             {!isCliente && <button className="btn-new" onClick={()=>{siMM(null);sDD("");sMM(true);}}>+ Nuova</button>}
           </div>
         </header>
-        <main className="page-content">
+        <main className="page-content" style={{overflowY:"auto",WebkitOverflowScrolling:"touch"}}>
         <PageTransition pageKey={vista}>
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
@@ -1029,6 +1029,7 @@ export default function App() {
           readOnly={isCliente}
           slaConfig={slaConfig}
           onChiudi={m=>setChiudiModal(m)}
+          tenantId={tenant?.id}
           onVerbale={m=>stampaVerbale(m, clienti.find(c=>c.id===m.clienteId), assets.find(a=>a.id===m.assetId), operatori.find(o=>o.id===m.operatoreId))}
         />}
         {vista==="piani" && <GestionePiani
