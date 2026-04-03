@@ -177,7 +177,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
 
   return (
     <Overlay>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)", width:"min(560px,96vw)", maxHeight:"90vh", overflow:"auto", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+      <div className="modal-box" style={{ width:"min(560px,96vw)", overflow:"auto" }}>
         {/* Header */}
         <div style={{ padding:"20px 24px 16px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontFamily:"var(--font-head)", fontWeight:700, fontSize:16 }}>
@@ -186,7 +186,7 @@ function FormTicket({ ticket=null, clienti=[], assets=[], operatori=[], tenantId
           <button onClick={onClose} style={{ background:"none", border:"none", cursor:"pointer", fontSize:18, color:"var(--text-3)" }}>✕</button>
         </div>
 
-        <div style={{ padding:"20px 24px", display:"grid", gap:14 }}>
+        <div style={{ padding:"clamp(14px,4vw,24px) clamp(14px,5vw,24px)", display:"grid", gap:14 }}>
           <Field label="Titolo *">
             <input style={inp} value={f.titolo} onChange={e=>set("titolo",e.target.value)} placeholder="Descrizione breve del problema..." />
           </Field>
@@ -313,7 +313,7 @@ function ModalConvertOdL({ ticket, operatori=[], onConverti, onClose }) {
 
   return (
     <Overlay zIndex={2000}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)", width:"min(460px,96vw)", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+      <div className="modal-box" style={{ width:"min(460px,96vw)" }}>
         <div style={{ padding:"20px 24px 16px", borderBottom:"1px solid var(--border)" }}>
           <div style={{ fontFamily:"var(--font-head)", fontWeight:700, fontSize:16 }}>📋 Converti in Ordine di Lavoro</div>
           <div style={{ fontSize:12, color:"var(--text-3)", marginTop:3 }}>

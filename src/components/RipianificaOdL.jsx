@@ -59,8 +59,7 @@ function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }
   return (
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)",
       zIndex:1000, display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(480px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+      <div className="modal-box" style={{ width:"min(480px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <div>
@@ -247,8 +246,7 @@ function ModalFiltraApplica({ odl=[], operatori=[], clienti=[], tenantId, onClos
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)",
       zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center",
       padding:"24px 16px", overflowY:"auto" }}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(640px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+      <div className="modal-box" style={{ width:"min(640px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
 
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <div>
@@ -621,8 +619,7 @@ export function PannelloRipianifica({
     <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.5)",
       zIndex:900, display:"flex", alignItems:"flex-start", justifyContent:"center",
       padding:"24px 16px", overflowY:"auto" }}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(700px,96vw)", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+      <div className="modal-box" style={{ width:"min(700px,96vw)", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
 
         {/* Header */}
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",

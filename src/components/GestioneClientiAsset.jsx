@@ -240,8 +240,7 @@ export function GestioneAssets({assets=[], clienti=[], manutenzioni=[], assegnaz
         <div className="pannello-dettaglio-fixed" style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.55)",
           zIndex:1000, display:"flex", alignItems:"flex-start", justifyContent:"center",
           padding:"24px 16px", overflowY:"auto" }}>
-          <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-            width:"min(860px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+          <div className="modal-box" style={{ width:"min(860px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
               <div style={{ fontWeight:800, fontSize:17 }}>📥 Importazione massiva asset</div>
               <button onClick={()=>setShowImport(false)}

@@ -197,7 +197,7 @@ export function ImportaCSV({
 
   // ── STEP: Upload ─────────────────────────────────────────────────────────
   if (step === "upload") return (
-    <div style={S.box}>
+    <div className="modal-box" style={S.box}>
       <div style={S.head}>
         <span style={{ fontFamily:"var(--font-head)", fontWeight:700, fontSize:15 }}>{titolo}</span>
         {templateHeaders.length > 0 && (
@@ -239,7 +239,7 @@ export function ImportaCSV({
 
   // ── STEP: Preview ────────────────────────────────────────────────────────
   if (step === "preview") return (
-    <div style={S.box}>
+    <div className="modal-box" style={S.box}>
       <div style={S.head}>
         <div>
           <span style={{ fontFamily:"var(--font-head)", fontWeight:700, fontSize:15 }}>{titolo} — Anteprima</span>
@@ -317,7 +317,7 @@ export function ImportaCSV({
 
   // ── STEP: Done ───────────────────────────────────────────────────────────
   return (
-    <div style={S.box}>
+    <div className="modal-box" style={S.box}>
       <div style={{ ...S.body, textAlign:"center", padding:"40px 20px" }}>
         <div style={{ fontSize:40, marginBottom:12 }}>{result.err === 0 ? "✅" : "⚠️"}</div>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:8 }}>

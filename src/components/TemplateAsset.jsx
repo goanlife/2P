@@ -104,8 +104,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)", width:"min(640px,96vw)",
-        maxHeight:"90vh", overflow:"auto", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+      <div className="modal-box" style={{ width:"min(640px,96vw)" }}>
         <div style={{ padding:"20px 24px 0", borderBottom:"1px solid var(--border)" }}>
           <div style={{ fontFamily:"var(--font-head)", fontWeight:700, fontSize:17, marginBottom:12 }}>
             {ini ? "Modifica template" : "Nuovo template attività"}

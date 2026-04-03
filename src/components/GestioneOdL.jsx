@@ -44,7 +44,7 @@ function ModalOdL({ odl, operatori=[], onClose, onSalva }) {
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{
+      <div className="modal-box" style={{
         background:"var(--surface)", borderRadius:"var(--radius-xl)",
         width:"min(500px,96vw)", maxHeight:"90vh", overflow:"auto",
         boxShadow:"0 20px 60px rgba(0,0,0,.25)",

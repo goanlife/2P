@@ -57,7 +57,7 @@ function ModalScadenza({ ini, tenantId, clienti=[], assets=[], operatori=[], onC
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{
+      <div className="modal-box" style={{
         background:"var(--surface)", borderRadius:"var(--radius-xl)",
         width:"min(580px,96vw)", maxHeight:"92vh", overflow:"auto",
         boxShadow:"0 20px 60px rgba(0,0,0,.25)",

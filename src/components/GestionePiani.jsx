@@ -31,8 +31,7 @@ function ModalPiano({ ini, onClose, onSalva }) {
   const s = (k,v) => sf(p=>({...p,[k]:v}));
   return (
     <Overlay onClose={onClose}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(500px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+      <div className="modal-box" style={{ width:"min(500px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:20 }}>
           {ini ? "Modifica piano" : "Nuovo piano di manutenzione"}
         </div>
@@ -88,8 +87,7 @@ function ModalVoce({ ini, pianoId, onClose, onSalva }) {
   const s = (k,v) => sf(p=>({...p,[k]:v}));
   return (
     <Overlay onClose={onClose}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(480px,96vw)", maxHeight:"90vh", overflow:"auto",
+      <div className="modal-box" style={{ width:"min(480px,96vw)", maxHeight:"90vh", overflow:"auto",
         padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:20 }}>
           {ini ? "Modifica attività" : "Aggiungi attività al piano"}
@@ -165,8 +163,7 @@ function ModalApplicaSito({ pianoId, ini, clienti=[], operatori=[], onClose, onS
   const ok = !!f.clienteId;
   return (
     <Overlay onClose={onClose}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(460px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
+      <div className="modal-box" style={{ width:"min(460px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.25)" }}>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:6 }}>
           {ini ? "Modifica sito" : "Applica piano a un sito"}
         </div>

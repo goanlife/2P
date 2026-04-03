@@ -72,8 +72,7 @@ function ModalApprovazione({ richiesta, operatori=[], clienti=[], assets=[], onC
 
   return (
     <Overlay onClose={onClose}>
-      <div style={{ background:"var(--surface)", borderRadius:"var(--radius-xl)",
-        width:"min(560px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
+      <div className="modal-box" style={{ width:"min(560px,96vw)", padding:"24px", boxShadow:"0 20px 60px rgba(0,0,0,.3)" }}>
 
         {/* Testata richiesta */}
         <div style={{ background:"var(--surface-2)", borderRadius:10, padding:"14px 16px", marginBottom:18 }}>
