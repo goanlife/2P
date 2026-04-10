@@ -562,10 +562,10 @@ export default function App() {
     sCl(p=>p.map(c=>c.id===f.id?{...c,...f}:c));
     if (profiloCambiato) notify("Profilo SLA aggiornato — si applica alle attività future", "success");
   };
-  const delC = async id => { await supabase.from("clienti").delete().eq("id",id); sCl(p=>p.filter(c=>c.id!==id)); };
+  const delC = async id => { await supabase.from("clienti").delete().eq("id",id).eq("tenant_id",tenant?.id); sCl(p=>p.filter(c=>c.id!==id)); };
   const aggA = async f => { const {data,error}=await supabase.from("assets").insert(toDbA(f,uid(),tenant?.id)).select().single(); if(!error)sAs(p=>[...p,mapA(data)]); };
   const modA = async f => { await supabase.from("assets").update(toDbA(f,uid(),tenant?.id)).eq("id",f.id); sAs(p=>p.map(a=>a.id===f.id?{...a,...f}:a)); };
-  const delA = async id => { await supabase.from("assets").delete().eq("id",id); sAs(p=>p.filter(a=>a.id!==id)); };
+  const delA = async id => { await supabase.from("assets").delete().eq("id",id).eq("tenant_id",tenant?.id); sAs(p=>p.filter(a=>a.id!==id)); };
   const aggOp = async f => { const {data,error}=await supabase.from("operatori").insert(toDbOp(f,uid(),tenant?.id)).select().single(); if(error){notify("Errore: "+error.message);return;} sOp(p=>[...p,mapOp(data)]); };
   const modOp = async f => {
     const {error}=await supabase.from("operatori").update(toDbOp(f,uid(),tenant?.id)).eq("id",f.id);
@@ -578,7 +578,7 @@ export default function App() {
     notify(`Accesso creato per ${email}`, "success");
   } catch(e) { console.error("creaAccesso:", e.message); }
 };
-  const delOp = async id => { await supabase.from("operatori").delete().eq("id",id); sOp(p=>p.filter(o=>o.id!==id)); sSiti(p=>p.filter(s=>s.operatoreId!==id)); };
+  const delOp = async id => { await supabase.from("operatori").delete().eq("id",id).eq("tenant_id",tenant?.id); sOp(p=>p.filter(o=>o.id!==id)); sSiti(p=>p.filter(s=>s.operatoreId!==id)); };
 
   // Salva associazioni siti per un operatore cliente
   const saveSiti = async (operatoreId, clienteIds) => {

@@ -5,7 +5,7 @@ import { supabase } from "../supabase";
 const fmtEuro = v => v ? `€${Number(v).toFixed(2)}` : "—";
 
 // ─── Ricambi usati in un intervento ──────────────────────────────────────
-export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }) {
+export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId = null }) {
   const [righe, setRighe]     = useState([]);
   const [catalogo, setCatalogo] = useState([]);
   const [loading, setLoading]  = useState(true);
@@ -38,6 +38,7 @@ export function InterventoRicambi({ manutenzioneId, readOnly = false, tenantId }
       quantita:        qty,
       prezzo_unitario: nuova.prezzoUnitario ? Number(nuova.prezzoUnitario) : (rc?.prezzo || null),
       note:            nuova.note || null,
+      ...(tenantId && {tenant_id: tenantId}),
     }).select("*, ricambi(nome,codice,unita)").single();
     if (data) {
       setRighe(p => [...p, data]);

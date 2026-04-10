@@ -57,8 +57,10 @@ function GestioneFornitori({ tenantId, onBack }) {
   };
 
   const elimina = async (id) => {
-    await supabase.from("fornitori_acquisto").delete().eq("id",id).eq("tenant_id",tenantId);
-    setFornitori(p=>p.filter(f=>f.id!==id));
+    try {
+      await supabase.from("fornitori_acquisto").delete().eq("id",id).eq("tenant_id",tenantId);
+      setFornitori(p=>p.filter(f=>f.id!==id));
+    } catch(e) { console.error("Errore eliminazione fornitore:", e.message); }
   };
 
   return (

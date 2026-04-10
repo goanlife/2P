@@ -236,7 +236,7 @@ export function ScadenzarioNormativo({ tenantId, clienti=[], assets=[], operator
       await supabase.from("scadenze_normative").insert({
         ...s, id:undefined, scadenza:nuovaScadenza,
         ultimo_adempimento: oggi_, stato:"da_fare",
-        created_at: undefined,
+        created_at: undefined, tenant_id: tenantId
       });
     }
     const { data } = await supabase.from("scadenze_normative").update(updates).eq("id",s.id).select().single();
