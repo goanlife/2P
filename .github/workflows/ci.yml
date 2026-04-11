@@ -1,0 +1,43 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint (zero errors)
+        run: npx eslint src --max-warnings 999 2>&1 | tee /tmp/lint.txt && grep "0 errors" /tmp/lint.txt || (echo "❌ ESLint errors found" && exit 1)
+
+      - name: Test
+        run: npm test
+        env:
+          CI: true
+
+      - name: Build
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Bundle size check
+        run: |
+          SIZE=$(du -sk dist/assets/ | awk '{print $1}')
+          echo "Bundle totale: ${SIZE}KB"
+          if [ "$SIZE" -gt 3000 ]; then
+            echo "⚠ Bundle supera 3MB (${SIZE}KB)"
+          else
+            echo "✅ Bundle OK (${SIZE}KB)"
+          fi
