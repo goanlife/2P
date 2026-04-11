@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { FREQUENZE } from "../constants.js";
 import { PRI_COL } from '../constants';
 import { supabase } from "../supabase";
 import { Field, Modal, Overlay } from "./ui/Atoms";
@@ -79,7 +80,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
       const stepsNew = steps.filter(s => s._new);
       if (stepsNew.length) {
         await supabase.from("template_checklist_steps").insert(
-          stepsNew.map((s, idx) => ({ template_id: templateId, testo: s.testo, obbligatorio: s.obbligatorio, ordine: i }))
+          stepsNew.map((s, idx) => ({ template_id: templateId, testo: s.testo, obbligatorio: s.obbligatorio, ordine: idx }))
         );
       }
 
@@ -171,14 +172,14 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
                 Definisci i passi specifici per questo tipo di asset. Verranno precompilati in ogni intervento generato da questo template.
               </div>
               {steps.map((step, idx) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:8,
+                <div key={idx} style={{ display:"flex", alignItems:"center", gap:8,
                   background:"var(--surface-2)", borderRadius:6, padding:"8px 12px" }}>
                   <input type="checkbox" checked={step.obbligatorio}
-                    onChange={e=>setSteps(p=>p.map((s,j)=>j===i?{...s,obbligatorio:e.target.checked}:s))}
+                    onChange={e=>setSteps(p=>p.map((s,j)=>j===idx?{...s,obbligatorio:e.target.checked}:s))}
                     title="Obbligatorio" />
                   <span style={{ flex:1, fontSize:13 }}>{step.testo}</span>
                   {step.obbligatorio && <span style={{ fontSize:10, color:"var(--red)", fontWeight:700 }}>OBB.</span>}
-                  <button onClick={()=>setSteps(p=>p.filter((_,j)=>j!==i))}
+                  <button onClick={()=>setSteps(p=>p.filter((_,j)=>j!==idx))}
                     style={{ background:"none", border:"none", color:"var(--text-3)", cursor:"pointer", fontSize:16, lineHeight:1 }}>✕</button>
                 </div>
               ))}
@@ -203,7 +204,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
                 Ricambi tipicamente necessari per questo intervento. Il sistema avviserà se lo stock è basso prima dell'intervento.
               </div>
               {ricambi.map((r, idx) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:10,
+                <div key={idx} style={{ display:"flex", alignItems:"center", gap:10,
                   background:"var(--surface-2)", borderRadius:6, padding:"8px 12px" }}>
                   <span style={{ fontSize:18 }}>📦</span>
                   <div style={{ flex:1 }}>
@@ -212,7 +213,7 @@ function ModalTemplate({ ini, tenantId, ricambiCatalogo=[], onClose, onSalva }) 
                   </div>
                   <span style={{ fontSize:12, background:"var(--blue-bg)", color:"var(--blue-bd)",
                     padding:"2px 8px", borderRadius:99, fontWeight:700 }}>×{r.quantita}</span>
-                  <button onClick={()=>setRicambi(p=>p.filter((_,j)=>j!==i))}
+                  <button onClick={()=>setRicambi(p=>p.filter((_,j)=>j!==idx))}
                     style={{ background:"none", border:"none", color:"var(--text-3)", cursor:"pointer", fontSize:16 }}>✕</button>
                 </div>
               ))}

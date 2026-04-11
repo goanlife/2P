@@ -8,24 +8,6 @@ export function ChecklistEditor({ pianoId, pianoPadreId = null, readOnly = false
   const [nuovoTesto, setNuovoTesto] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (pianoId) carica();
-  }, [pianoId]);
-
-  useEffect(() => {
-    if (pianoPadreId) caricaEreditati();
-    else setStepsEreditati([]);
-  }, [pianoPadreId]);
-
-  const caricaEreditati = async () => {
-    const { data } = await supabase
-      .from("piano_checklist")
-      .select("*")
-      .eq("piano_id", pianoPadreId)
-      .order("ordine");
-    setStepsEreditati(data || []);
-  };
-
   const carica = async () => {
     const { data } = await supabase
       .from("piano_checklist")
@@ -173,15 +155,6 @@ export function ChecklistIntervento({ manutenzione, onProgressChange, readOnly=f
     if (manutenzione?.pianoId) carica();
     else setLoading(false);
   }, [manutenzione?.id]);
-
-  const caricaEreditati = async () => {
-    const { data } = await supabase
-      .from("piano_checklist")
-      .select("*")
-      .eq("piano_id", pianoPadreId)
-      .order("ordine");
-    setStepsEreditati(data || []);
-  };
 
   const carica = async () => {
     setLoading(true);

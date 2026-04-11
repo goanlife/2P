@@ -16,7 +16,7 @@ const STATI = [
 ];
 
 // ─── Modale azione bulk ───────────────────────────────────────────────────
-function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica }) {
+function ModalAzioneBulk({ odlSelezionati=[], operatori=[], onClose, onApplica, tenantId=null }) {
   const [azione, setAzione] = useState("sposta_giorni");
   const [giorni, setGiorni] = useState(7);
   const [newData, setNewData] = useState("");
@@ -651,8 +651,7 @@ export function PannelloRipianifica({
         <div style={{ padding:"20px 24px 24px" }}>
           {/* Tab A: Bulk su selezionati */}
           {tab === "bulk" && (
-            <ModalAzioneBulk
-              odlSelezionati={selezionati}
+            <ModalAzioneBulk tenantId={tenantId} odlSelezionati={selezionati}
               operatori={operatori}
               onClose={onClose}
               onApplica={onApplica}

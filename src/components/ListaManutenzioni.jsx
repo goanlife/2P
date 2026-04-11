@@ -28,7 +28,7 @@ const getStatoLabel = (t) => ({
 const PRI_COLOR = { bassa:"#94A3B8", media:"#F59E0B", alta:"#3B82F6", urgente:"#EF4444" };
 
 // ─── Modal Manutenzione ───────────────────────────────────────────────────
-export function ModalManut({ini, clienti=[], assets=[], manutenzioni=[], operatori=[], onClose, onSalva, userId, meOperatore=null}) {
+export function ModalManut({ini, clienti=[], assets=[], manutenzioni=[], operatori=[], onClose, onSalva, userId, meOperatore=null, tenantId=null}) {
   // Solo i fornitori sono assegnabili
   const fornitori = useMemo(()=>operatori.filter(o=>o.tipo==="fornitore"),[operatori]);
   const defOp = fornitori[0]?.id||"";
@@ -108,7 +108,23 @@ export function ChecklistBadge({manutenzioneId, pianoId, numeroIntervento}) {
   );
 }
 
-export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato, onDel, onMod, onDup, initialFilters, onChiudi, onVerbale, readOnly=false, slaConfig=[], slaProfili=[]}) {
+const exportCSV = (man, clienti, assets, operatori, filtrate) => {
+  const rows = filtrate.map(m => {
+    const cl = clienti.find(c => c.id === m.clienteId);
+    const as = assets.find(a => a.id === m.assetId);
+    const op = operatori.find(o => o.id === m.operatoreId);
+    return [m.id, m.titolo, m.tipo, m.stato, m.priorita,
+            cl?.rs || '', as?.nome || '', op?.nome || '',
+            m.data, m.durata, m.note].join(';');
+  });
+  const csv = ['ID;Titolo;Tipo;Stato;Priorita;Cliente;Asset;Operatore;Data;Durata;Note', ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'manutenzioni.csv';
+  a.click();
+};
+
+export function ListaManut({man=[], clienti=[], assets=[], operatori=[], onStato, onDel, onMod, onDup, initialFilters, onChiudi, onVerbale, readOnly=false, slaConfig=[], slaProfili=[], tenantId=null}) {
   const { t } = useI18n();
   const STATO_LABEL = getStatoLabel(t);
   const [fT,sfT]=useState(initialFilters?.tipo||"tutti");

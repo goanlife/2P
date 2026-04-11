@@ -68,7 +68,7 @@ export function ModalApplicaTemplate({
             piano_id:     pianoRow.id,
             testo:        s.testo,
             obbligatorio: s.obbligatorio,
-            ordine:       i,
+            ordine:       idx,
           }))
         );
       }
@@ -253,7 +253,7 @@ export function ModalApplicaTemplate({
                       const stock = r.ricambi?.quantita_stock ?? null;
                       const scarso = stock !== null && stock < r.quantita;
                       return (
-                        <div key={i} style={{ display:"flex", alignItems:"center", gap:8,
+                        <div key={idx} style={{ display:"flex", alignItems:"center", gap:8,
                           background:"var(--surface-2)", borderRadius:6, padding:"8px 12px",
                           fontSize:12 }}>
                           <span>📦</span>
@@ -286,7 +286,7 @@ export function ModalApplicaTemplate({
                       .sort((a,b)=>a.ordine-b.ordine)
                       .slice(0,4)
                       .map((s, idx) => (
-                        <div key={i} style={{ fontSize:12, color:"var(--text-2)",
+                        <div key={idx} style={{ fontSize:12, color:"var(--text-2)",
                           display:"flex", gap:6, alignItems:"flex-start" }}>
                           <span>{s.obbligatorio ? "🔴" : "⬜"}</span>
                           <span>{s.testo}</span>

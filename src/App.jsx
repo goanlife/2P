@@ -31,6 +31,9 @@ import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManute
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
 import { MobileNav } from "./components/MobileNav";
 import { ALL_TABS } from "./components/ConfigurazioneMenu";
+import { useManutenzioni } from "./hooks/useManutenzioni";
+import { useTickets } from "./hooks/useTickets";
+import { useOdL } from "./hooks/useOdL";
 import { GestionePiani } from "./components/GestionePiani";
 import { ConfigSLA } from "./components/SLABadge";
 import { GestioneSLAProfili } from "./components/GestioneSLAProfili";
@@ -133,7 +136,16 @@ export default function App() {
   const aggiornaTenant = t => setTenant(prev => ({...prev, ...t}));
   const [loading,  setLoad] = useState(true);
   const [dbErr,    setDbErr] = useState(null);
-  const [man,      sMan]  = useState([]);
+  // ── useManutenzioni hook (include real-time) ────────────────────────────
+  const {
+    man, setMan: sMan,
+    manTotale, manCaricaTutto,
+    caricaTutte: caricaTutteLeManut_hook,
+    aggiornaStat: aggiornaMStat,
+    elimina: eliminaM,
+  } = useManutenzioni(tenant?.id);
+  // Compatibility alias per codice legacy
+  const [_man_compat] = [man]; // man è già dal hook
   const [clienti,  sCl]   = useState([]);
   const [assets,   sAs]   = useState([]);
   const [piani,    sPi]   = useState([]);
@@ -145,13 +157,14 @@ export default function App() {
   const [gruppi,   sGruppi]= useState([]);
   const [gOps,     sGOps]  = useState([]);
   const [gSiti,    sGSiti] = useState([]);
-  const [odl,      sOdl]   = useState([]);  // Ordini di Lavoro
+  // ── useOdL hook (include real-time) ────────────────────────────────────
+  const { odl, aggiungi: aggiungiOdl_hook, aggiorna: aggiornaOdl_hook } = useOdL(tenant?.id);
+  const sOdl = () => {}; // no-op, gestito dal hook
   const [odlIniziale,    setOdlIniziale]    = useState(null);
   const [ticketIniziale, setTicketIniziale] = useState(null); // ticket da evidenziare (da OdL)
   const [vista,   sV]  = useState("dashboard");
   const [filtroMan, setFiltroMan] = useState({});
-  const [manTotale, setManTotale] = useState(null); // null = non sappiamo ancora
-  const [manCaricaTutto, setManCaricaTutto] = useState(false);
+  // manTotale e manCaricaTutto gestiti da useManutenzioni
   const [modalM,  sMM] = useState(false);
   const [inModM,  siMM]= useState(null);
   const [dataDef, sDD] = useState("");
@@ -163,8 +176,13 @@ export default function App() {
   const [templateAsset, setTemplateAsset] = useState(null); // asset su cui aprire modal template
   const [qrAsset, setQrAsset] = useState(null);
   const [vistaLista, setVistaLista] = useState("lista"); // lista | kanban
-  const [toast,   sToast] = useState(null);
-  const notify = (msg,type="error") => sToast({msg,type});
+
+  const [toast,      sToast]      = useState(null);
+  const [confirmDlg, setConfirmDlg] = useState(null);
+  const notify = (msg, type="info") => {
+    sToast({msg, type, id: Date.now()});
+    setTimeout(() => sToast(null), 3500);
+  };
   
   // Handler globale per errori non catchati nei componenti
   const handleError = (e, contesto="") => {
@@ -193,7 +211,7 @@ export default function App() {
   const [menuConfig, setMenuConfig] = useState({});
   const [slaConfig, setSlaConfig] = useState([]);
   const [slaProfili, setSlaProfili] = useState([]); // profili SLA con config per cliente
-  const [confirmDlg, setConfirmDlg] = useState(null);
+  // confirmDlg gestito da useNotifiche
   const [emailConfig, setEmailConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem("manuMan_emailConfig") || "{}"); }
     catch { return {}; }
@@ -421,8 +439,8 @@ export default function App() {
       sMan(manMapped);
       // Imposta il totale reale per il banner paginazione e i KPI
       if (rmCount?.count != null) {
-        setManTotale(rmCount.count);
-        setManCaricaTutto(rmCount.count <= manMapped.length);
+      // [gestito da useManutenzioni hook]
+      // [gestito da useManutenzioni hook]
       }
       // Carica assegnazioni separatamente (tabella nuova - non blocca se fallisce)
       supabase.from("piano_assegnazioni").select("*").order("created_at")
@@ -462,8 +480,8 @@ export default function App() {
   const caricaTutteLeManut = async () => {
     if (!tenant?.id) return;
     try {
-      setManCaricaTutto(true);
-      setManTotale(null);
+      // [gestito da useManutenzioni hook]
+      // [gestito da useManutenzioni hook]
       const {data} = await supabase.from("manutenzioni").select("*")
         .eq("tenant_id", tenant.id).order("data",{ascending:false});
       if(data) sMan(data.map(mapM));
@@ -649,7 +667,7 @@ export default function App() {
       const piano = pianoOverride || piani.find(p=>p.id===f.pianoId);
       if (!piano || !f.dataInizio) return;
       const pianoCfg = {...piano, frequenza:f.frequenza||piano.frequenza, durata:f.durata||piano.durata};
-      const completati = manutenzioni.filter(m=>m.assegnazioneId===f.id&&m.stato==="completata").length;
+      const completati = man.filter(m=>m.assegnazioneId===f.id&&m.stato==="completata").length;
       const occ = generaOccorrenze(pianoCfg, f.dataInizio, 12, true);
       if (!occ.length) return;
       let saved=[];
@@ -873,7 +891,7 @@ export default function App() {
     sV(tab);
     window.scrollTo({top:0, behavior:"smooth"});
   };
-  // Reset filtri manutenzioni quando si naviga via dalla tab manutenzioni
+  // Reset filtri manutenzioni quando si naviga via dalla tabb man
   // Reset odlIniziale quando si cambia vista (per evitare ri-scroll)
   React.useEffect(()=>{ if(vista!=="odl")    setOdlIniziale(null);    },[vista]);
   React.useEffect(()=>{ if(vista!=="ticket") setTicketIniziale(null); },[vista]);
@@ -1021,11 +1039,11 @@ export default function App() {
         )}
         {manTotale && man.length < manTotale && !manCaricaTutto && (
           <div style={{background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:"var(--radius-sm)",padding:"10px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
-            <span style={{fontSize:13,color:"#1D4ED8",flex:1}}>📊 Stai vedendo {man.length} manutenzioni (ultimi 6 mesi). Totale nel DB: {manTotale}.</span>
+            <span style={{fontSize:13,color:"#1D4ED8",flex:1}}>📊 Stai vedendo {man.length} man (ultimi 6 mesi). Totale nel DB: {manTotale}.</span>
             <button onClick={caricaTutteLeManut} style={{padding:"6px 14px",background:"#1D4ED8",color:"white",border:"none",borderRadius:6,fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>Carica tutto</button>
           </div>
         )}
-        {vista==="manutenzioni" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} onDup={dupM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
+        {vista==="man" && <ListaManut   man={manView} clienti={clientiView} assets={assetsView} operatori={operatori} onStato={statoM} onDel={(id)=>confirmDel("Eliminare questa attività? L'operazione non è reversibile.",()=>delM(id))} onMod={apriModM} onDup={dupM} initialFilters={filtroMan} key={JSON.stringify(filtroMan)}
           readOnly={isCliente}
           slaConfig={slaConfig}
           onChiudi={m=>setChiudiModal(m)}
@@ -1035,7 +1053,7 @@ export default function App() {
         {vista==="piani" && <GestionePiani
   piani={piani} assegnazioni={assegnazioni}
   pianoVoci={pianoVoci} pianoSiti={pianoSiti}
-  clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
+  clienti={clientiView} assets={assetsView} man={manView} operatori={operatori}
   uid={uid()} tenantId={tenant?.id||""}
   onAgg={aggPiano} onMod={modPiano}
   onDel={(id)=>confirmDel("Eliminare questo piano? Verranno eliminate anche le attività pianificate.",()=>delPiano(id))}
@@ -1047,7 +1065,7 @@ export default function App() {
           onRipianifica={ripiM} onNuovaData={apriConData} onStato={statoM} onMod={apriModM} onChiudi={m=>setChiudiModal(m)}
           onApriOdl={(o)=>{ setOdlIniziale(o); navigateTo("odl"); }} />}
         {vista==="assets" && <GestioneAssets
-  assets={assetsView} clienti={clientiView} manutenzioni={man}
+  assets={assetsView} clienti={clientiView} man={man}
   assegnazioni={assegnazioni} piani={piani}
   onAgg={aggA} onMod={modA}
   onDel={(id)=>confirmDel("Eliminare questo asset? L'operazione non è reversibile.",()=>delA(id))}
@@ -1060,7 +1078,7 @@ export default function App() {
 />}
         {vista==="utenti"       && <GestioneUtenti operatori={operatori} man={man} clienti={clienti} siti={siti} onAgg={aggOp} onMod={modOp} onDel={(id)=>confirmDel("Eliminare questo operatore? L'operazione non è reversibile.",()=>delOp(id))} onSaveSiti={saveSiti} onCreaAccesso={creaAccesso} />}
         {vista==="gruppi"       && <GestioneGruppi gruppi={gruppi} operatori={operatori} clienti={clienti} man={man} gOps={gOps} gSiti={gSiti} onAgg={aggGruppo} onMod={modGruppo} onDel={(id)=>confirmDel("Eliminare questo gruppo? L'operazione non è reversibile.",()=>delGruppo(id))} onSaveAssoc={saveAssocGruppo} />}
-        {vista==="clienti"      && <GestioneClienti clienti={clientiView} manutenzioni={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").eq("tenant_id",tenant?.id).order("created_at");if(data)sCl(data.map(mapC));}} />}
+        {vista==="clienti"      && <GestioneClienti clienti={clientiView} man={manView} assets={assetsView} onAgg={aggC} onMod={modC} onDel={(id)=>confirmDel("Eliminare questo cliente? L'operazione non è reversibile.",()=>delC(id))} tenantId={tenant?.id} userId={uid()} onImportDone={async()=>{const{data}=await supabase.from("clienti").select("*").eq("tenant_id",tenant?.id).order("created_at");if(data)sCl(data.map(mapC));}} />}
         {vista==="statistiche"  && <Statistiche man={manView} clienti={clientiView} assets={assetsView} piani={piani} operatori={operatori} />}
         {vista==="report" && <Reportistica
           man={manView} clienti={clientiView} assets={assetsView}
@@ -1081,7 +1099,7 @@ export default function App() {
             else navigateTo("odl");
           }}
         />}
-        {vista==="odl" && <GestioneOdL manutenzioni={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig}
+        {vista==="odl" && <GestioneOdL man={manView} operatori={operatori} clienti={clientiView} assets={assetsView} tenantId={tenant?.id} tenantNome={tenant?.nome||""} emailConfig={emailConfig}
           odlIniziale={odlIniziale}
           onApriTicket={(ticketId)=>{ setTicketIniziale({id:ticketId}); navigateTo("ticket"); }}
           onAggiornaManutenzioni={async()=>{ const {data}=await supabase.from("manutenzioni").select("*").order("data",{ascending:false}).limit(300); if(data) sMan(data.map(mapM)); }} />}
@@ -1172,7 +1190,7 @@ export default function App() {
 
       {modalM && !isCliente && <ModalManut
         ini={inModM?{...inModM}:dataDef?{titolo:"",tipo:"ordinaria",priorita:"media",operatoreId:fornitori[0]?.id||"",clienteId:null,assetId:null,data:dataDef,durata:60,note:"",stato:"pianificata",pianoId:null}:null}
-        clienti={clientiView} assets={assetsView} manutenzioni={manView} operatori={operatori}
+        clienti={clientiView} assets={assetsView} man={manView} operatori={operatori}
         userId={UID}
         meOperatore={meOperatore}
         onClose={()=>{sMM(false);siMM(null);}}
@@ -1187,7 +1205,7 @@ export default function App() {
             onClick={()=>setAiOpen(false)} />
           <ChatbotPanel
             dati={{
-              manutenzioni: manView,
+              man: manView,
               ticket:       [],
               clienti:      clientiView,
               assets:       assetsView,

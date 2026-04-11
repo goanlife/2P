@@ -157,6 +157,14 @@ export function iconaFile(mime) {
   return "📄";
 }
 
+const mapAllegato = r => ({
+  id: r.id, nome: r.nome || r.file_name || 'File',
+  url: r.url || r.file_url || '', tipo: r.tipo || r.file_type || '',
+  dimensione: r.dimensione || r.file_size || 0,
+  createdAt: r.created_at || null, entitaTipo: r.entita_tipo,
+  entitaId: r.entita_id, userId: r.user_id,
+});
+
 export function GestoreAllegati({ entitaTipo, entitaId, userId, tenantId=null }) {
   const [allegati,   setAllegati]  = useState([]);
   const [loading,    setLoading]   = useState(true);
