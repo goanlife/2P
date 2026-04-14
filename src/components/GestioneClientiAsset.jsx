@@ -1,3 +1,4 @@
+import { useValidazione, REGOLE, ErrorField } from "../hooks/useValidazione.jsx";
 import { useI18n } from "../i18n/index.jsx";
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { AssetSaluteBadge } from "./TemplateAsset";

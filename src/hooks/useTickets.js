@@ -1,3 +1,4 @@
+import { usePushNotification } from "./usePushNotification.js";
 /**
  * useTickets — hook per tickets con real-time Supabase
  */
@@ -6,6 +7,7 @@ import { supabase } from "../supabase";
 
 export function useTickets(tenantId) {
   const [tickets, setTickets] = useState([]);
+  const { notificaTicket } = usePushNotification();
   const [loading, setLoading] = useState(false);
   const channelRef = useRef(null);
 
@@ -59,8 +61,11 @@ export function useTickets(tenantId) {
         event: "*", schema: "public", table: "tickets",
         filter: `tenant_id=eq.${tenantId}`,
       }, ({ eventType, new: row, old }) => {
-        if (eventType === "INSERT")
+        if (eventType === "INSERT") {
           setTickets(prev => prev.some(t => t.id === row.id) ? prev : [row, ...prev]);
+          // Notifica browser per ticket urgenti/alti
+          if (row.priorita === "urgente" || row.priorita === "alta") notificaTicket(row);
+        }
         else if (eventType === "UPDATE")
           setTickets(prev => prev.map(t => t.id === row.id ? row : t));
         else if (eventType === "DELETE")

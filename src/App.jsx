@@ -3,29 +3,19 @@ import { FREQUENZE, STATO_LABEL as STATO_LABEL_MAP, PRI_COL as PRI_COLOR_MAP } f
 import { HelpButton } from "./components/HelpPanel";
 import { LanguageSwitcher } from "./components/LanguageSwitcher";
 import { useI18n } from "./i18n/index.jsx";
-import { Reportistica } from "./components/Reportistica";
 import { supabase } from "./supabase";
 import { emailRichiestaRicevuta, emailRichiestaApprovata, emailRichiestaRifiutata, emailInterventoCompletato } from "./notifiche-email.js";
 import Auth from "./Auth";
-import { DashboardFornitore } from "./components/DashboardFornitore";
-import { ChiudiIntervento } from "./components/ChiudiIntervento";
 import { ChecklistEditor, ChecklistIntervento } from "./components/PianoChecklist";
 import { CampanellaNotifiche, useNotifiche } from "./components/Notifiche";
-import { RicercaGlobale } from "./components/RicercaGlobale";
-import { Statistiche } from "./components/Statistiche";
-import { KanbanView } from "./components/KanbanView";
-import { QRCodeAsset, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
+import { QRCodeAsset, QRScanner, stampaVerbale, exportCSV, logAction } from "./utils/features.jsx";
 import Onboarding from "./components/Onboarding";
 import Azienda from "./components/Azienda";
 import { Field, Toast, ConflictiBanner, ConfirmDialog, Overlay, Modal, AvvisoConflitto } from "./components/ui/Atoms";
 import { ModalRipianifica, PopupGiorno, Calendario } from "./components/CalendarioView";
-import { ModalSitiCliente, VistaCliente, ModalUtente, GestioneUtenti, ModalGruppo, ModalAssegnaGruppo, GestioneGruppi, ModalCreaAccesso } from "./components/GestioneUtenti";
 import { ModalAsset, GestioneAssets, ModalCliente, GestioneClienti } from "./components/GestioneClientiAsset";
 import { GestioneTemplateAsset } from "./components/TemplateAsset";
-import { GestioneOdL } from "./components/GestioneOdL";
-import { GestioneTicket } from "./components/GestioneTicket";
 import { ChatbotPanel } from "./components/AIAssistente";
-import { ScadenzarioNormativo } from "./components/ScadenzarioNormativo";
 import { ModalApplicaTemplate } from "./components/ApplicaTemplate";
 import { ModalManut, ChecklistBadge, ListaManut } from "./components/ListaManutenzioni";
 import { applyTheme, SelettoreTema, GestoreAllegati, PannelloAllegati, TEMI } from "./components/AllegatiTemi";
@@ -34,16 +24,29 @@ import { ALL_TABS } from "./components/ConfigurazioneMenu";
 import { useManutenzioni } from "./hooks/useManutenzioni";
 import { useTickets } from "./hooks/useTickets";
 import { useOdL } from "./hooks/useOdL";
-import { GestionePiani } from "./components/GestionePiani";
 import { ConfigSLA } from "./components/SLABadge";
-import { GestioneSLAProfili } from "./components/GestioneSLAProfili";
-import { OrdiniAcquisto } from "./components/OrdiniAcquisto";
-import { RichiestaIntervento } from "./components/RichiestaIntervento";
 import { Dashboard } from "./components/DashboardMain";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { PageTransition } from "./components/PageTransition";
 import { CursorGlow } from "./components/CursorGlow";
 import { SkeletonDashboard } from "./components/SkeletonLoader";
+
+// ── Lazy loaded components (code splitting) ────────────────────────────────
+const { Suspense, lazy } = React;
+const GestioneTicket = lazy(() => import("./components/GestioneTicket").then(m => ({ default: m.GestioneTicket })));
+const GestioneOdL = lazy(() => import("./components/GestioneOdL").then(m => ({ default: m.GestioneOdL })));
+const GestioneUtenti = lazy(() => import("./components/GestioneUtenti").then(m => ({ default: m.GestioneUtenti })));
+const GestionePiani = lazy(() => import("./components/GestionePiani").then(m => ({ default: m.GestionePiani })));
+const OrdiniAcquisto = lazy(() => import("./components/OrdiniAcquisto").then(m => ({ default: m.OrdiniAcquisto })));
+const Reportistica = lazy(() => import("./components/Reportistica").then(m => ({ default: m.Reportistica })));
+const Statistiche = lazy(() => import("./components/Statistiche").then(m => ({ default: m.Statistiche })));
+const ScadenzarioNormativo = lazy(() => import("./components/ScadenzarioNormativo").then(m => ({ default: m.ScadenzarioNormativo })));
+const KanbanView = lazy(() => import("./components/KanbanView").then(m => ({ default: m.KanbanView })));
+const GestioneSLAProfili = lazy(() => import("./components/GestioneSLAProfili").then(m => ({ default: m.GestioneSLAProfili })));
+const RicercaGlobale = lazy(() => import("./components/RicercaGlobale").then(m => ({ default: m.RicercaGlobale })));
+const ChiudiIntervento = lazy(() => import("./components/ChiudiIntervento").then(m => ({ default: m.ChiudiIntervento })));
+const RichiestaIntervento = lazy(() => import("./components/RichiestaIntervento").then(m => ({ default: m.RichiestaIntervento })));
+const DashboardFornitore = lazy(() => import("./components/DashboardFornitore").then(m => ({ default: m.DashboardFornitore })));
 
 
 const GIORNI = ["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
@@ -1031,6 +1034,7 @@ export default function App() {
           </div>
         </header>
         <main className="page-content">
+        <Suspense fallback={<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"60vh",color:"var(--text-3)",fontSize:13,fontFamily:"var(--font-mono)"}}>Caricamento...</div>}>
         <PageTransition pageKey={vista}>
         {vista==="dashboard"    && (
           ruolo === "fornitore" && meOperatore
@@ -1108,6 +1112,7 @@ export default function App() {
 
         {vista==="azienda"      && <Azienda clienti={clienti} tenant={tenant} session={session} operatori={operatori} ruoloTenant={ruoloTenant} onTenantUpdate={aggiornaTenant} gruppi={gruppi} emailConfig={emailConfig} onEmailConfig={salvaEmailConfig} />}
         </PageTransition>
+        </Suspense>
       </main>
 
       {chiudiModal && (

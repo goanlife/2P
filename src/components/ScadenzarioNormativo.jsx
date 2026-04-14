@@ -1,3 +1,4 @@
+import { useValidazione, REGOLE, ErrorField } from "../hooks/useValidazione.jsx";
 import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "../supabase";
 import { Field, Overlay } from "./ui/Atoms";

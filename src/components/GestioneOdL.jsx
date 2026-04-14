@@ -1,3 +1,4 @@
+import { useValidazione, REGOLE, ErrorField } from "../hooks/useValidazione.jsx";
 import React, { useState, useEffect, useMemo } from "react";
 import { PRI_COL } from '../constants';
 import { useI18n } from "../i18n/index.jsx";

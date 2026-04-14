@@ -784,7 +784,6 @@ export function GestioneTicket({ clienti=[], assets=[], operatori=[], tenantId, 
                 onClick={()=>setSel(isSel?null:t)}
                 style={{
                   background:"var(--surface)",
-                  transition:"box-shadow .3s",
                   ...(ticketEvidenziato===t.id ? {boxShadow:"0 0 0 3px var(--amber)",animation:"highlightOdl 3s ease"} : {}),
                   border:`1px solid ${isSel?"var(--amber)":slaOk?"var(--border)":"#FECACA"}`,
                   borderLeft:`4px solid ${tip.col}`,
