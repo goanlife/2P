@@ -1,0 +1,42 @@
+name: Seed Test Data
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'seed_reset_v2.sql'
+
+jobs:
+  seed:
+    name: Esegui seed dati di test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Esegui seed su Supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          PROJECT_REF="nnsylkjahuhttwajuxls"
+          API="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
+          
+          SQL=$(cat seed_reset_v2.sql | grep -v "^--" | tr -d "\n")
+          
+          echo "Esecuzione seed..."
+          HTTP=$(curl -s -o /tmp/r.json -w "%{http_code}" \
+            -X POST "$API" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": $(echo "$SQL" | jq -Rs .)}")
+          
+          BODY=$(cat /tmp/r.json)
+          echo "HTTP: $HTTP"
+          echo "Response: $BODY"
+          
+          if echo "$BODY" | grep -qi '"error"'; then
+            echo "❌ Errore seed: $BODY"
+            exit 1
+          else
+            echo "✅ Seed completato con successo!"
+          fi
