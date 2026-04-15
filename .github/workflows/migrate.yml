@@ -60,7 +60,7 @@ jobs:
               owner_id      uuid references auth.users(id),
               created_at    timestamptz default now()
             );
-            alter table tenants disable row level security;"
+            alter table tenants enable row level security;"
 
           run_sql "tenant_users: tabella" \
             "create table if not exists tenant_users (
@@ -85,7 +85,7 @@ jobs:
               created_at timestamptz default now(),
               expires_at timestamptz
             );
-            alter table tenant_inviti disable row level security;"
+            alter table tenant_inviti enable row level security;"
 
           run_sql "tenant_membri: tabella" \
             "create table if not exists tenant_membri (
@@ -96,7 +96,7 @@ jobs:
               created_at timestamptz default now(),
               unique(tenant_id, user_id)
             );
-            alter table tenant_membri disable row level security;"
+            alter table tenant_membri enable row level security;"
 
           # ══════════════════════════════════════════════════════
           # FASE 2 — Patch tabelle principali (ADD COLUMN IF NOT EXISTS)
@@ -225,7 +225,7 @@ jobs:
               user_id    uuid,
               created_at timestamptz default now()
             );
-            alter table sla_profili disable row level security;"
+            alter table sla_profili enable row level security;"
 
           run_sql "sla_profilo_config: tabella" \
             "create table if not exists sla_profilo_config (
@@ -237,7 +237,7 @@ jobs:
               note              text,
               tenant_id         uuid references tenants(id) on delete cascade
             );
-            alter table sla_profilo_config disable row level security;"
+            alter table sla_profilo_config enable row level security;"
 
           run_sql "sla_config: tabella" \
             "create table if not exists sla_config (
@@ -247,7 +247,7 @@ jobs:
               ore_risposta      int,
               ore_risoluzione   int
             );
-            alter table sla_config disable row level security;"
+            alter table sla_config enable row level security;"
 
           run_sql "ricambi: tabella" \
             "create table if not exists ricambi (
@@ -264,7 +264,7 @@ jobs:
               user_id         uuid,
               created_at      timestamptz default now()
             );
-            alter table ricambi disable row level security;"
+            alter table ricambi enable row level security;"
 
           run_sql "intervento_ricambi: tabella" \
             "create table if not exists intervento_ricambi (
@@ -277,7 +277,7 @@ jobs:
               note            text,
               tenant_id       uuid references tenants(id) on delete cascade
             );
-            alter table intervento_ricambi disable row level security;"
+            alter table intervento_ricambi enable row level security;"
 
           run_sql "ordini_acquisto: tabella" \
             "create table if not exists ordini_acquisto (
@@ -292,7 +292,7 @@ jobs:
               created_at  timestamptz default now(),
               updated_at  timestamptz default now()
             );
-            alter table ordini_acquisto disable row level security;"
+            alter table ordini_acquisto enable row level security;"
 
           run_sql "ordini_acquisto: colonne mancanti (idempotente)" \
             "alter table ordini_acquisto
@@ -318,7 +318,7 @@ jobs:
                created_at  timestamptz default now()
              );
              create index if not exists idx_fornitori_acq_tenant on fornitori_acquisto(tenant_id);
-             alter table fornitori_acquisto disable row level security;"
+             alter table fornitori_acquisto enable row level security;"
 
           run_sql "ordini_acquisto_righe: tabella" \
             "create table if not exists ordini_acquisto_righe (
@@ -332,7 +332,7 @@ jobs:
               note            text,
               tenant_id       uuid references tenants(id) on delete cascade
             );
-            alter table ordini_acquisto_righe disable row level security;"
+            alter table ordini_acquisto_righe enable row level security;"
 
           run_sql "ordine_righe: tabella (alias)" \
             "create table if not exists ordine_righe (
@@ -346,7 +346,7 @@ jobs:
               note            text,
               tenant_id       uuid references tenants(id) on delete cascade
             );
-            alter table ordine_righe disable row level security;"
+            alter table ordine_righe enable row level security;"
 
           run_sql "ordini_lavoro: tabella" \
             "create table if not exists ordini_lavoro (
@@ -368,7 +368,7 @@ jobs:
               created_at      timestamptz default now()
             );
             create index if not exists idx_odl_tenant on ordini_lavoro(tenant_id);
-            alter table ordini_lavoro disable row level security;"
+            alter table ordini_lavoro enable row level security;"
 
           run_sql "piano_assegnazioni: tabella" \
             "create table if not exists piano_assegnazioni (
@@ -392,7 +392,7 @@ jobs:
               user_id      uuid,
               created_at   timestamptz default now()
             );
-            alter table piano_assegnazioni disable row level security;"
+            alter table piano_assegnazioni enable row level security;"
 
           run_sql "piano_voci: tabella" \
             "create table if not exists piano_voci (
@@ -413,7 +413,7 @@ jobs:
               created_at  timestamptz default now()
             );
             create index if not exists idx_piano_voci_piano on piano_voci(piano_id);
-            alter table piano_voci disable row level security;"
+            alter table piano_voci enable row level security;"
 
           run_sql "piano_siti: tabella" \
             "create table if not exists piano_siti (
@@ -431,7 +431,7 @@ jobs:
             );
             create index if not exists idx_piano_siti_piano on piano_siti(piano_id);
             create index if not exists idx_piano_siti_cliente on piano_siti(cliente_id);
-            alter table piano_siti disable row level security;"
+            alter table piano_siti enable row level security;"
 
           run_sql "piano_checklist: tabella" \
             "create table if not exists piano_checklist (
@@ -445,7 +445,7 @@ jobs:
               tenant_id         uuid references tenants(id) on delete cascade
             );
             create index if not exists idx_piano_checklist_piano on piano_checklist(piano_id);
-            alter table piano_checklist disable row level security;"
+            alter table piano_checklist enable row level security;"
 
           run_sql "manutenzione_checklist: tabella" \
             "create table if not exists manutenzione_checklist (
@@ -457,7 +457,7 @@ jobs:
               tenant_id       uuid references tenants(id) on delete cascade
             );
             create index if not exists idx_man_checklist_man on manutenzione_checklist(manutenzione_id);
-            alter table manutenzione_checklist disable row level security;"
+            alter table manutenzione_checklist enable row level security;"
 
           run_sql "allegati: tabella" \
             "create table if not exists allegati (
@@ -473,7 +473,7 @@ jobs:
               created_at  timestamptz default now()
             );
             create index if not exists idx_allegati_entita on allegati(entita_tipo, entita_id);
-            alter table allegati disable row level security;"
+            alter table allegati enable row level security;"
 
           run_sql "allegati_manutenzione: tabella" \
             "create table if not exists allegati_manutenzione (
@@ -488,7 +488,7 @@ jobs:
               created_at      timestamptz default now()
             );
             create index if not exists idx_allegati_man on allegati_manutenzione(manutenzione_id);
-            alter table allegati_manutenzione disable row level security;"
+            alter table allegati_manutenzione enable row level security;"
 
           run_sql "log_attivita: tabella" \
             "create table if not exists log_attivita (
@@ -502,7 +502,7 @@ jobs:
               tenant_id       uuid references tenants(id) on delete cascade,
               created_at      timestamptz default now()
             );
-            alter table log_attivita disable row level security;"
+            alter table log_attivita enable row level security;"
 
           run_sql "loghi: tabella" \
             "create table if not exists loghi (
@@ -511,7 +511,7 @@ jobs:
               logo_url  text,
               updated_at timestamptz default now()
             );
-            alter table loghi disable row level security;"
+            alter table loghi enable row level security;"
 
           run_sql "attivita_commenti: tabella" \
             "create table if not exists attivita_commenti (
@@ -525,7 +525,7 @@ jobs:
               tenant_id       uuid references tenants(id) on delete cascade,
               created_at      timestamptz default now()
             );
-            alter table attivita_commenti disable row level security;"
+            alter table attivita_commenti enable row level security;"
 
           run_sql "gruppi: tabella" \
             "create table if not exists gruppi (
@@ -538,7 +538,7 @@ jobs:
               created_at  timestamptz default now()
             );
             create index if not exists idx_gruppi_tenant on gruppi(tenant_id);
-            alter table gruppi disable row level security;"
+            alter table gruppi enable row level security;"
 
           run_sql "gruppo_operatori: tabella" \
             "create table if not exists gruppo_operatori (
@@ -548,7 +548,7 @@ jobs:
               created_at   timestamptz default now(),
               unique(gruppo_id, operatore_id)
             );
-            alter table gruppo_operatori disable row level security;"
+            alter table gruppo_operatori enable row level security;"
 
           run_sql "gruppo_siti: tabella" \
             "create table if not exists gruppo_siti (
@@ -558,7 +558,7 @@ jobs:
               created_at  timestamptz default now(),
               unique(gruppo_id, cliente_id)
             );
-            alter table gruppo_siti disable row level security;"
+            alter table gruppo_siti enable row level security;"
 
           run_sql "menu_config: tabella" \
             "create table if not exists menu_config (
@@ -569,7 +569,7 @@ jobs:
               tenant_id  uuid references tenants(id) on delete cascade,
               created_at timestamptz default now()
             );
-            alter table menu_config disable row level security;"
+            alter table menu_config enable row level security;"
 
           run_sql "scadenze_normative: tabella" \
             "create table if not exists scadenze_normative (
@@ -587,7 +587,7 @@ jobs:
               created_at            timestamptz default now()
             );
             create index if not exists idx_scadenze_tenant on scadenze_normative(tenant_id);
-            alter table scadenze_normative disable row level security;"
+            alter table scadenze_normative enable row level security;"
 
           run_sql "asset_tipo_template: tabella" \
             "create table if not exists asset_tipo_template (
@@ -605,7 +605,7 @@ jobs:
               created_at    timestamptz default now()
             );
             create index if not exists idx_template_tenant on asset_tipo_template(tenant_id);
-            alter table asset_tipo_template disable row level security;"
+            alter table asset_tipo_template enable row level security;"
 
           run_sql "template_checklist_steps: tabella" \
             "create table if not exists template_checklist_steps (
@@ -615,7 +615,7 @@ jobs:
               ordine      int default 0,
               obbligatorio boolean default true
             );
-            alter table template_checklist_steps disable row level security;"
+            alter table template_checklist_steps enable row level security;"
 
           run_sql "template_ricambi: tabella" \
             "create table if not exists template_ricambi (
@@ -625,7 +625,7 @@ jobs:
               quantita    numeric(10,2) default 1,
               note        text
             );
-            alter table template_ricambi disable row level security;"
+            alter table template_ricambi enable row level security;"
 
           # ══════════════════════════════════════════════════════
           # FASE 4 — Storage bucket per allegati
@@ -715,7 +715,7 @@ jobs:
               created_at   timestamptz default now(),
               unique(operatore_id, cliente_id)
             );
-            alter table operatore_siti disable row level security;"
+            alter table operatore_siti enable row level security;"
 
           # ══════════════════════════════════════════════════════
           # FASE 7 — Sistema Ticket (interventi straordinari)
@@ -761,7 +761,7 @@ jobs:
              create index if not exists idx_tickets_tenant  on tickets(tenant_id);
              create index if not exists idx_tickets_stato   on tickets(stato);
              create index if not exists idx_tickets_cliente on tickets(cliente_id);
-             alter table tickets disable row level security;"
+             alter table tickets enable row level security;"
 
           run_sql "ticket_commenti: tabella" \
             "create table if not exists ticket_commenti (
@@ -775,7 +775,7 @@ jobs:
                created_at  timestamptz default now()
              );
              create index if not exists idx_tick_comm_ticket on ticket_commenti(ticket_id);
-             alter table ticket_commenti disable row level security;"
+             alter table ticket_commenti enable row level security;"
 
           run_sql "RLS: funzione helper SECURITY DEFINER (anti-ricorsione)" \
             "create or replace function public.get_my_tenant_ids()
@@ -812,6 +812,9 @@ jobs:
 
           run_sql "RLS: tickets, ticket_commenti, ordini_acquisto, ordini_acquisto_righe, fornitori_acquisto" \
             "alter table tickets enable row level security; drop policy if exists rls_tickets on tickets; create policy rls_tickets on tickets for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table ticket_commenti enable row level security; drop policy if exists rls_ticket_commenti on ticket_commenti; create policy rls_ticket_commenti on ticket_commenti for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table ordini_acquisto enable row level security; drop policy if exists rls_ordini_acquisto on ordini_acquisto; create policy rls_ordini_acquisto on ordini_acquisto for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table ordini_acquisto_righe enable row level security; drop policy if exists rls_ordini_acquisto_righe on ordini_acquisto_righe; create policy rls_ordini_acquisto_righe on ordini_acquisto_righe for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table fornitori_acquisto enable row level security; drop policy if exists rls_fornitori_acquisto on fornitori_acquisto; create policy rls_fornitori_acquisto on fornitori_acquisto for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids()));"
+
+          run_sql "RLS: ordine_righe (alias ordini_acquisto_righe)" \
+            "alter table ordine_righe enable row level security; drop policy if exists rls_ordine_righe on ordine_righe; create policy rls_ordine_righe on ordine_righe for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids()));"
 
           run_sql "RLS: ricambi, intervento_ricambi, ordini_lavoro, piano_assegnazioni, piano_voci" \
             "alter table ricambi enable row level security; drop policy if exists rls_ricambi on ricambi; create policy rls_ricambi on ricambi for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table intervento_ricambi enable row level security; drop policy if exists rls_intervento_ricambi on intervento_ricambi; create policy rls_intervento_ricambi on intervento_ricambi for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table ordini_lavoro enable row level security; drop policy if exists rls_ordini_lavoro on ordini_lavoro; create policy rls_ordini_lavoro on ordini_lavoro for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table piano_assegnazioni enable row level security; drop policy if exists rls_piano_assegnazioni on piano_assegnazioni; create policy rls_piano_assegnazioni on piano_assegnazioni for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids())); alter table piano_voci enable row level security; drop policy if exists rls_piano_voci on piano_voci; create policy rls_piano_voci on piano_voci for all using (tenant_id in (select public.get_my_tenant_ids())) with check (tenant_id in (select public.get_my_tenant_ids()));"
