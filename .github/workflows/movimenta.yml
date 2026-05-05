@@ -1,0 +1,39 @@
+name: DB Movimentazioni
+on:
+  workflow_dispatch:
+    inputs:
+      description:
+        description: 'Descrizione movimentazione'
+        required: false
+        default: 'Movimentazioni DB manuali'
+
+jobs:
+  movimenta:
+    name: Esegui movimentazioni
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Esegui movimentazioni su Supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          PROJECT_REF="nnsylkjahuhttwajuxls"
+          API="https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query"
+          SQL=$(cat movimentazioni_db.sql | grep -v "^--" | tr -d '\n' | tr -s ' ')
+          echo "Esecuzione movimentazioni..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "$API" \
+            -H "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"query\": $(echo "$SQL" | python3 -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -1)
+          echo "HTTP: $HTTP_CODE"
+          echo "$BODY"
+          if [ "$HTTP_CODE" != "200" ] && [ "$HTTP_CODE" != "201" ]; then
+            echo "❌ Errore HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Movimentazioni completate"
